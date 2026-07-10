@@ -1,10 +1,15 @@
 import json
 from ollama import chat
 
-# Load profile
+## Load profile
 with open("profile.json", "r") as file:
     profile = json.load(file)
-    # Load AI prompt
+
+# Load jobs database
+with open("jobs.json", "r") as file:
+    jobs = json.load(file)
+
+# Load AI prompt
 with open("prompts/career_prompt.txt", "r") as file:
     career_prompt = file.read()
 
@@ -51,7 +56,8 @@ while True:
     print("1. Career Advice")
     print("2. Learning Roadmap")
     print("3. Resume Advice")
-    print("4. Exit")
+    print("4. Find Matching Jobs")
+    print("5. Exit")
 
     choice = input("\nChoose an option: ")
 
@@ -77,9 +83,20 @@ while True:
         )
 
     elif choice == "4":
+        print("\nFinding matching jobs...\n")
+
+        for job in jobs:
+            print(f"""
+Job Title: {job['title']}
+Company: {job['company']}
+Location: {job['location']}
+Required Skills: {', '.join(job['skills'])}
+------------------------------
+""")
+
+    elif choice == "5":
         print("\nGoodbye, Dare! 👋")
         break
 
     else:
         print("\nInvalid option.")
-    
