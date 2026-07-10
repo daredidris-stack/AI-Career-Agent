@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Cloud Engineer",
+    "company": "AWS",
+    "location": "Remote",
+    "skills": [
+      "AWS",
+      "Linux",
+      "Python",
+      "Terraform",
+      "Kubernetes"
+    ]
+  },
+  {
+    "title": "AI Infrastructure Engineer",
+    "company": "AI Startup",
+    "location": "Remote",
+    "skills": [
+      "AWS",
+      "Python",
+      "Docker",
+      "Kubernetes",
+      "Machine Learning"
+    ]
+  },
+  {
+    "title": "DevOps Engineer",
+    "company": "Cloud Company",
+    "location": "Remote",
+    "skills": [
+      "AWS",
+      "Linux",
+      "CI/CD",
+      "Docker",
+      "Terraform"
+    ]
+  }
+]
