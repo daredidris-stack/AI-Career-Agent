@@ -43,6 +43,8 @@ User Question:
     )
 
     return response.message.content
+
+
 def analyze_job_match(job):
     prompt = f"""
 You are an expert technical recruiter.
@@ -80,6 +82,21 @@ Provide:
     return response.message.content
 
 
+def rank_jobs():
+    results = []
+
+    for job in jobs:
+        analysis = analyze_job_match(job)
+
+        results.append({
+            "title": job["title"],
+            "company": job["company"],
+            "analysis": analysis
+        })
+
+    return results
+
+
 while True:
 
     print("\n" + "=" * 50)
@@ -92,7 +109,8 @@ while True:
     print("2. Learning Roadmap")
     print("3. Resume Advice")
     print("4. Find Matching Jobs")
-    print("5. Exit")
+    print("5. Career Ranking Report")
+    print("6. Exit")
 
     choice = input("\nChoose an option: ")
 
@@ -128,6 +146,19 @@ while True:
             print(analyze_job_match(job))
 
     elif choice == "5":
+        print("\nGenerating Career Ranking Report...\n")
+
+        ranked_jobs = rank_jobs()
+
+        for job in ranked_jobs:
+            print("=" * 50)
+            print(job["title"])
+            print(job["company"])
+            print("=" * 50)
+            print(job["analysis"])
+
+
+    elif choice == "6":
         print("\nGoodbye, Dare! 👋")
         break
 
