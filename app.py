@@ -43,6 +43,41 @@ User Question:
     )
 
     return response.message.content
+def analyze_job_match(job):
+    prompt = f"""
+You are an expert technical recruiter.
+
+Analyze the match between this candidate and this job.
+
+Candidate:
+Name: {profile['name']}
+Skills: {', '.join(profile['skills'])}
+Experience: {', '.join(profile['experience'])}
+Target Roles: {', '.join(profile['target_roles'])}
+
+Job:
+Title: {job['title']}
+Company: {job['company']}
+Location: {job['location']}
+Required Skills: {', '.join(job['skills'])}
+
+Provide:
+1. Match percentage
+2. Why this candidate fits
+3. Skills to improve
+"""
+
+    response = chat(
+        model="qwen3:8b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+    )
+
+    return response.message.content
 
 
 while True:
@@ -83,16 +118,14 @@ while True:
         )
 
     elif choice == "4":
-        print("\nFinding matching jobs...\n")
+        print("\nAnalyzing job matches with AI...\n")
 
         for job in jobs:
-            print(f"""
-Job Title: {job['title']}
-Company: {job['company']}
-Location: {job['location']}
-Required Skills: {', '.join(job['skills'])}
-------------------------------
-""")
+            print("=" * 50)
+            print(f"{job['title']} - {job['company']}")
+            print("=" * 50)
+
+            print(analyze_job_match(job))
 
     elif choice == "5":
         print("\nGoodbye, Dare! 👋")
