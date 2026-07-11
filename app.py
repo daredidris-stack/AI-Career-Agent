@@ -223,6 +223,47 @@ Explain why each one is important.
     )
 
     print(response.message.content)
+    
+def generate_learning_plan():
+
+    prompt = f"""
+    You are an expert Cloud Career Mentor.
+
+    Candidate Profile
+
+    Name: {profile['name']}
+
+    Current Skills:
+    {', '.join(profile['skills'])}
+
+    Target Roles:
+    {', '.join(profile['target_roles'])}
+
+    Create a personalized 6-month learning roadmap.
+
+    For each month include:
+
+    • Main topics
+    • Mini projects
+    • Recommended certifications (if applicable)
+    • Expected outcome
+
+    Format the response nicely using Markdown.
+    """
+
+    print("\n🤖 Creating your personalized learning plan...\n")
+
+    response = chat(
+        model="qwen3:8b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+    )
+
+    print(response.message.content)
 
 
 while True:
@@ -232,14 +273,15 @@ while True:
     print("=" * 50)
 
     print(f"Welcome back, {profile['name']}!\n")
-
+    
     print("1. Career Advice")
     print("2. Learning Roadmap")
     print("3. Resume Advice")
     print("4. Find Matching Jobs")
     print("5. Career Ranking Report")
     print("6. Skill Gap Analysis")
-    print("7. Exit")
+    print("7. Personalized Learning Plan")
+    print("8. Exit")
 
     choice = input("\nChoose an option: ")
 
@@ -317,6 +359,9 @@ while True:
         skill_gap_analysis()
 
     elif choice == "7":
+        generate_learning_plan()
+
+    elif choice == "8":
         print("\nGoodbye, Dare! 👋")
         break
 
