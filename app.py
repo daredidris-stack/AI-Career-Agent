@@ -1,6 +1,14 @@
 import json
 import re
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+
+from docx import Document
+
+from resume_reader import read_pdf_resume
+from docx_reader import read_docx_resume
+
 from ollama import chat
 
 ## Load profile
@@ -102,6 +110,7 @@ Example:
     "missing_skills": [],
     "recommendation": "Unable to analyze this job."
     }
+    
 def analyze_resume():
     prompt = f"""
 You are an expert ATS resume reviewer.
@@ -150,6 +159,71 @@ Return ONLY JSON.
         "ats_score":0,
         "strengths":[],
         "improvements":[]
+    }
+    
+def analyze_resume_pdf():
+
+    filename = input("\nEnter resume filename: ")
+
+    if filename.lower().endswith(".pdf"):
+        resume_text = read_pdf_resume(filename)
+
+    elif filename.lower().endswith(".docx"):
+        resume_text = read_docx_resume(filename)
+
+    else:
+        print("\n❌ Unsupported file type.")
+        return {
+        "resume_score": 0,
+        "ats_score": 0,
+        "strengths": [],
+        "improvements": []
+    }
+
+    prompt = f"""
+    You are an expert ATS Resume Reviewer.
+
+    Analyze this resume.
+
+    Resume:
+
+    {resume_text}
+
+    Return ONLY valid JSON.
+
+    {{
+    "resume_score": 90,
+    "ats_score": 88,
+    "strengths": [],
+    "improvements": []
+}}
+"""
+
+    response = chat(
+        model="qwen3:8b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+    )
+
+    text = response.message.content
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+
+    if match:
+        try:
+            return json.loads(match.group())
+        except:
+            pass
+
+    return {
+        "resume_score": 0,
+        "ats_score": 0,
+        "strengths": [],
+        "improvements": []
     }
 
 def rank_jobs():
@@ -265,6 +339,73 @@ def generate_learning_plan():
 
     print(response.message.content)
 
+def export_resume_report(report):
+
+    doc = SimpleDocTemplate("Resume_Report.pdf")
+
+    styles = getSampleStyleSheet()
+
+    story = []
+
+    story.append(Paragraph("<b>AI Resume Analysis</b>", styles["Title"]))
+
+    story.append(
+        Paragraph(
+            f"Resume Score: {report['resume_score']}/100",
+            styles["Normal"]
+        )
+    )
+
+    story.append(
+        Paragraph(
+            f"ATS Score: {report['ats_score']}/100",
+            styles["Normal"]
+        )
+    )
+
+    story.append(Paragraph("<br/><b>Strengths</b>", styles["Heading2"]))
+
+    for item in report["strengths"]:
+        story.append(Paragraph(f"• {item}", styles["Normal"]))
+
+    story.append(Paragraph("<br/><b>Improvements</b>", styles["Heading2"]))
+
+    for item in report["improvements"]:
+        story.append(Paragraph(f"• {item}", styles["Normal"]))
+
+    doc.build(story)
+
+    print("\n✅ Resume_Report.pdf created successfully!\n")
+    
+def export_resume_report_word(report):
+    
+
+    doc = Document()
+    ...
+
+    doc = Document()
+
+    doc.add_heading("AI Resume Analysis", level=1)
+
+    doc.add_heading("Resume Scores", level=2)
+    doc.add_paragraph(f"Resume Score: {report['resume_score']}/100")
+    doc.add_paragraph(f"ATS Score: {report['ats_score']}/100")
+
+    doc.add_heading("Strengths", level=2)
+
+    for item in report["strengths"]:
+        doc.add_paragraph(item, style="List Bullet")
+
+    doc.add_heading("Improvements", level=2)
+
+    for item in report["improvements"]:
+        doc.add_paragraph(item, style="List Bullet")
+
+    doc.save("Resume_Report.docx")
+
+    print("\n✅ Resume_Report.docx created successfully!\n")
+    
+    
 
 while True:
 
@@ -276,12 +417,13 @@ while True:
     
     print("1. Career Advice")
     print("2. Learning Roadmap")
-    print("3. Resume Advice")
-    print("4. Find Matching Jobs")
-    print("5. Career Ranking Report")
-    print("6. Skill Gap Analysis")
-    print("7. Personalized Learning Plan")
-    print("8. Exit")
+    print("3. Resume Advice (Profile)")
+    print("4. Resume PDF Analysis")
+    print("5. Find Matching Jobs")
+    print("6. Career Ranking Report")
+    print("7. Skill Gap Analysis")
+    print("8. Personalized Learning Plan")
+    print("9. Exit")
 
     choice = input("\nChoose an option: ")
 
@@ -317,7 +459,32 @@ while True:
         for item in report["improvements"]:
             print(f"• {item}")
 
+        export_resume_report(report)
+        export_resume_report_word(report)
+        
     elif choice == "4":
+
+        report = analyze_resume_pdf()
+
+        print("\nResume Analysis\n")
+
+        print(f"Resume Score: {report['resume_score']}/100")
+        print(f"ATS Score: {report['ats_score']}/100")
+
+        print("\nStrengths")
+
+        for item in report["strengths"]:
+            print(f"• {item}")
+
+        print("\nImprovements")
+
+        for item in report["improvements"]:
+            print(f"• {item}")
+
+        export_resume_report(report)
+        export_resume_report_word(report)
+
+    elif choice == "5":
         print("\nAnalyzing job matches with AI...\n")
 
         for job in jobs:
@@ -328,7 +495,7 @@ while True:
             print(analyze_job_match(job))
 
 
-    elif choice == "5":
+    elif choice == "6":
         print("\nGenerating Career Ranking Report...\n")
 
         ranked_jobs = rank_jobs()
@@ -338,32 +505,32 @@ while True:
         for index, job in enumerate(ranked_jobs, start=1):
 
             print("=" * 50)
-            print(f"#{index} {job['title']}")
-            print(f"Company: {job['company']}")
-            print(f"Match Score: {job['score']}%")
-            print("=" * 50)
+        print(f"#{index} {job['title']}")
+        print(f"Company: {job['company']}")
+        print(f"Match Score: {job['score']}%")
+        print("=" * 50)
 
-            print("\n✅ Strengths:")
-            for skill in job["strengths"]:
-                print(f"  • {skill}")
+        print("\n✅ Strengths:")
+        for skill in job["strengths"]:
+            print(f"  • {skill}")
 
-            print("\n📚 Skills to Improve:")
-            for skill in job["missing_skills"]:
-                print(f"  • {skill}")
+        print("\n📚 Skills to Improve:")
+        for skill in job["missing_skills"]:
+            print(f"  • {skill}")
 
-            print("\n💡 Recommendation:")
-            print(job["recommendation"])
-            print()
-
-    elif choice == "6":
-        skill_gap_analysis()
+        print("\n💡 Recommendation:")
+        print(job["recommendation"])
+        print()
 
     elif choice == "7":
-        generate_learning_plan()
+        skill_gap_analysis()
 
     elif choice == "8":
+        generate_learning_plan()
+
+    elif choice == "9":
         print("\nGoodbye, Dare! 👋")
         break
 
-else:
-    print("\nInvalid option.")
+    else:
+        print("\nInvalid option.")
