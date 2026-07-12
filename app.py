@@ -1,4 +1,5 @@
 import json
+from pydoc import text
 import re
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph
@@ -11,6 +12,9 @@ from docx_reader import read_docx_resume
 
 from ollama import chat
 
+from adzuna_api import search_jobs
+
+from career_ai import ask_ai
 ## Load profile
 with open("profile.json", "r") as file:
     profile = json.load(file)
@@ -24,63 +28,75 @@ with open("prompts/career_prompt.txt", "r") as file:
     career_prompt = file.read()
 
 
-def ask_ai(question):
-    prompt = f"""
-{career_prompt}
-
-User Profile:
-
-Name: {profile['name']}
-Education: {profile['education']}
-Experience: {', '.join(profile['experience'])}
-Skills: {', '.join(profile['skills'])}
-Target Roles: {', '.join(profile['target_roles'])}
-Preferred Location: {profile['preferred_location']}
-
-User Question:
-
-{question}
-"""
-
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-    )
-
-    return response.message.content
-
 
 def analyze_job_match(job):
     prompt = f"""
-You are an expert technical recruiter.
+    You are an expert technical recruiter.
 
-Analyze the match between this candidate and this job.
+    Analyze how well this candidate matches the following job.
 
-Candidate:
-Name: {profile['name']}
-Skills: {', '.join(profile['skills'])}
-Experience: {', '.join(profile['experience'])}
-Target Roles: {', '.join(profile['target_roles'])}
+    Candidate
 
-Job:
-Title: {job['title']}
-Company: {job['company']}
-Location: {job['location']}
-Required Skills: {', '.join(job['skills'])}
+    Name: {profile['name']}
 
-Return ONLY valid JSON.
+    Skills:
+    {', '.join(profile['skills'])}
 
-Example:
+    Experience:
+    {', '.join(profile['experience'])}
+
+    Target Roles:
+    {', '.join(profile['target_roles'])}
+
+    Job
+
+    Title:
+    {job['title']}
+
+    Company:
+    {job['company']}
+
+    Location:
+    {job['location']}
+
+    Job Description:
+    {job.get('description', '')}
+
+    Read the job description carefully.
+
+    Identify:
+    - technical skills
+    - tools
+    - cloud platforms
+    - responsibilities
+    - certifications
+    - experience required
+
+    Compare them against the candidate.
+
+    Be realistic.
+
+    Only give scores above 90 if the candidate is an excellent match.
+
+    Return ONLY valid JSON.
+
+    Return ONLY valid JSON.
+
+    Return ONLY valid JSON.
+
+    Return ONLY valid JSON.
+
 {{
-    "score": 85,
-    "strengths": ["AWS", "Linux"],
-    "missing_skills": ["Terraform"],
-    "recommendation": "Learn Terraform and Kubernetes."
+    "score": 92,
+    "strengths": [
+        "AWS",
+        "Linux"
+    ],
+    "missing_skills": [
+        "Terraform",
+        "Kubernetes"
+    ],
+    "recommendation": "Strong match. Apply immediately."
 }}
 """
 
@@ -95,6 +111,10 @@ Example:
     )
 
     text = response.message.content
+    
+    print("\n========== RAW AI RESPONSE ==========")
+    print(text)
+    print("=====================================\n")
 
     match = re.search(r"\{.*\}", text, re.DOTALL)
 
@@ -423,22 +443,32 @@ while True:
     print("6. Career Ranking Report")
     print("7. Skill Gap Analysis")
     print("8. Personalized Learning Plan")
-    print("9. Exit")
+    print("9. Live AI Job Search")
+    print("10. Exit")
 
     choice = input("\nChoose an option: ")
 
     if choice == "1":
         question = input("\nWhat would you like to ask?\n> ")
         print("\nThinking...\n")
-        print(ask_ai(question))
+        
+        print(
+            ask_ai(
+                profile,
+                career_prompt,
+                question
+    )
+)
 
     elif choice == "2":
         print("\nThinking...\n")
         print(
             ask_ai(
+                profile,
+                career_prompt,
                 "Create a 6-month roadmap to help me reach my target roles."
-            )
-        )
+    )
+)
 
     elif choice == "3":
 
@@ -527,8 +557,49 @@ while True:
 
     elif choice == "8":
         generate_learning_plan()
-
+        
     elif choice == "9":
+
+        keyword = input("\nEnter job title: ")
+
+        print("\nSearching live jobs...\n")
+
+        jobs = search_jobs(keyword)
+
+        if not jobs:
+            print("No jobs found.")
+            continue
+
+        for job in jobs:
+
+            print("=" * 60)
+            print(f"Job Title : {job['title']}")
+            print(f"Company   : {job['company']}")
+            print(f"Location  : {job['location']}")
+
+            print("\n🤖 AI is analyzing this job...\n")
+
+            analysis = analyze_job_match(job)
+
+            print(f"AI Match Score: {analysis['score']}%")
+
+            print("\n✅ Strengths")
+            for skill in analysis["strengths"]:
+                print(f"• {skill}")
+
+                print("\n📚 Missing Skills")
+            for skill in analysis["missing_skills"]:
+                print(f"• {skill}")
+
+            print("\n💡 Recommendation")
+            print(analysis["recommendation"])
+
+            print("\n🔗 Apply Here")
+            print(job["redirect_url"])
+
+            print("\n")
+
+    elif choice == "10":
         print("\nGoodbye, Dare! 👋")
         break
 
