@@ -1,55 +1,38 @@
-# 🤖 AI Career Agent
+# AI Career Agent
 
 An AI-powered career assistant built with Python and Ollama.
 
-This project helps job seekers analyze career opportunities, improve resumes, create learning roadmaps, and prepare for roles in AI, Cloud, DevOps, and Crypto/Web3.
+## Features
 
-## 🎯 Project Goal
+- AI Career Advice
+- Resume Analysis
+- PDF Resume Reader
+- DOCX Resume Reader
+- ATS Resume Scoring
+- Job Matching
+- Career Ranking
+- Skill Gap Analysis
+- Personalized Learning Plan
+- PDF Report Export
+- Word Report Export
 
-The goal of AI Career Agent is to create a personalized AI assistant that understands a user's professional background and helps them:
+## Technologies
 
-- Identify suitable career paths
-- Find relevant technology roles
-- Improve their resume
-- Build technical learning plans
-- Prepare for interviews
-
-## 🚀 Current Features
-
-- AI career advice
-- Personalized learning roadmap generation
-- Resume improvement recommendations
-- Local AI model integration using Ollama
-- User profile-based responses
-- Interactive command-line interface
-
-## 🛠️ Technologies Used
-
-- Python 3
+- Python
 - Ollama
-- Qwen 3:8B Large Language Model
-- JSON
-- Git
-- Virtual Environment (venv)
+- Qwen 3 8B
+- ReportLab
+- python-docx
+- pdfplumber
 
-## 👤 Developer Profile
+## Future Improvements
 
-**Name:** Dare Daniel Idris
+- Live Job Search (Adzuna)
+- Live Job Search (The Muse)
+- AI Interview Coach
+- Portfolio Project Generator
+- Streamlit Web App
 
-**Background:**
-- AWS Data Center Technician experience
-- Cloud infrastructure
-- Linux systems
-- Network troubleshooting
-- Python automation
+## Author
 
-## 🎯 Target Career Roles
-
-- AI Infrastructure Engineer
-- Cloud Engineer
-- DevOps Engineer
-- MLOps Engineer
-- AI Systems Engineer
-- Web3/Crypto Infrastructure Roles
-
-## 📂 Project Structure
+Dare Daniel Idris
