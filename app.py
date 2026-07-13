@@ -22,6 +22,20 @@ from report_generator import (
     export_resume_report,
     export_resume_report_word,
 )
+from job_matcher import analyze_job_match
+
+from resume_ai import generate_resume_content
+from resume_writer import build_resume
+
+from learning_plan import generate_learning_plan
+
+from skill_gap import skill_gap_analysis
+
+from cover_letter import generate_cover_letter
+from cover_letter_writer import save_cover_letter
+
+from interview_coach import generate_interview
+from interview_writer import save_interview
 
 ## Load profile
 with open("profile.json", "r") as file:
@@ -36,109 +50,6 @@ with open("prompts/career_prompt.txt", "r") as file:
     career_prompt = file.read()
 
 
-
-def analyze_job_match(job):
-    prompt = f"""
-    You are an expert technical recruiter.
-
-    Analyze how well this candidate matches the following job.
-
-    Candidate
-
-    Name: {profile['name']}
-
-    Skills:
-    {', '.join(profile['skills'])}
-
-    Experience:
-    {', '.join(profile['experience'])}
-
-    Target Roles:
-    {', '.join(profile['target_roles'])}
-
-    Job
-
-    Title:
-    {job['title']}
-
-    Company:
-    {job['company']}
-
-    Location:
-    {job['location']}
-
-    Job Description:
-    {job.get('description', '')}
-
-    Read the job description carefully.
-
-    Identify:
-    - technical skills
-    - tools
-    - cloud platforms
-    - responsibilities
-    - certifications
-    - experience required
-
-    Compare them against the candidate.
-
-    Be realistic.
-
-    Only give scores above 90 if the candidate is an excellent match.
-
-    Return ONLY valid JSON.
-
-    Return ONLY valid JSON.
-
-    Return ONLY valid JSON.
-
-    Return ONLY valid JSON.
-
-{{
-    "score": 92,
-    "strengths": [
-        "AWS",
-        "Linux"
-    ],
-    "missing_skills": [
-        "Terraform",
-        "Kubernetes"
-    ],
-    "recommendation": "Strong match. Apply immediately."
-}}
-"""
-
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-    )
-
-    text = response.message.content
-    
-    print("\n========== RAW AI RESPONSE ==========")
-    print(text)
-    print("=====================================\n")
-
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    return {
-    "score": 0,
-    "strengths": [],
-    "missing_skills": [],
-    "recommendation": "Unable to analyze this job."
-    }
-    
 def analyze_resume_pdf():
 
     filename = input("\nEnter resume filename: ")
@@ -208,7 +119,7 @@ def rank_jobs():
     results = []
 
     for job in jobs:
-        analysis = analyze_job_match(job)
+        analysis = analyze_job_match(profile, job)
 
         results.append({
             "title": job["title"],
@@ -223,99 +134,7 @@ def rank_jobs():
 
     return results
 
-def skill_gap_analysis():
-    all_skills = set()
-
-    # Collect all skills required by all jobs
-    for job in jobs:
-        for skill in job["skills"]:
-            all_skills.add(skill)
-
-    # User's current skills
-    user_skills = set(profile["skills"])
-
-    # Find missing skills
-    missing_skills = sorted(all_skills - user_skills)
-
-    print("\n" + "=" * 50)
-    print("📊 Skill Gap Analysis")
-    print("=" * 50)
-
-    print("\n✅ Your Current Skills")
-    for skill in sorted(user_skills):
-        print(f"✓ {skill}")
-
-    print("\n📚 Missing Skills")
-    for skill in missing_skills:
-        print(f"• {skill}")
-
-    prompt = f"""
-You are an expert Cloud Career Coach.
-
-Candidate Skills:
-{', '.join(user_skills)}
-
-Missing Skills:
-{', '.join(missing_skills)}
-
-Recommend the TOP 5 skills to learn first.
-Explain why each one is important.
-"""
-
-    print("\n🤖 AI Recommendations...\n")
-
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-    )
-
-    print(response.message.content)
     
-def generate_learning_plan():
-
-    prompt = f"""
-    You are an expert Cloud Career Mentor.
-
-    Candidate Profile
-
-    Name: {profile['name']}
-
-    Current Skills:
-    {', '.join(profile['skills'])}
-
-    Target Roles:
-    {', '.join(profile['target_roles'])}
-
-    Create a personalized 6-month learning roadmap.
-
-    For each month include:
-
-    • Main topics
-    • Mini projects
-    • Recommended certifications (if applicable)
-    • Expected outcome
-
-    Format the response nicely using Markdown.
-    """
-
-    print("\n🤖 Creating your personalized learning plan...\n")
-
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-    )
-
-    print(response.message.content)
 
 while True:
 
@@ -324,7 +143,7 @@ while True:
     print("=" * 50)
 
     print(f"Welcome back, {profile['name']}!\n")
-    
+
     print("1. Career Advice")
     print("2. Learning Roadmap")
     print("3. Resume Advice (Profile)")
@@ -334,31 +153,36 @@ while True:
     print("7. Skill Gap Analysis")
     print("8. Personalized Learning Plan")
     print("9. Live AI Job Search")
-    print("10. Exit")
+    print("10. Tailor Resume")
+    print("11. Generate Cover Letter")
+    print("12. AI Interview Coach")
+    print("13. Exit")
 
     choice = input("\nChoose an option: ")
 
     if choice == "1":
+
         question = input("\nWhat would you like to ask?\n> ")
+
         print("\nThinking...\n")
-        
+
         print(
             ask_ai(
                 profile,
-                career_prompt,
                 question
-    )
-)
+            )
+        )
 
     elif choice == "2":
+
         print("\nThinking...\n")
+
         print(
             ask_ai(
                 profile,
-                career_prompt,
                 "Create a 6-month roadmap to help me reach my target roles."
-    )
-)
+            )
+        )
 
     elif choice == "3":
 
@@ -370,18 +194,16 @@ while True:
         print(f"ATS Score: {report['ats_score']}/100")
 
         print("\nStrengths")
-
         for item in report["strengths"]:
             print(f"• {item}")
 
         print("\nImprovements")
-
         for item in report["improvements"]:
             print(f"• {item}")
 
         export_resume_report(report)
         export_resume_report_word(report)
-        
+
     elif choice == "4":
 
         report = analyze_resume_pdf()
@@ -392,12 +214,10 @@ while True:
         print(f"ATS Score: {report['ats_score']}/100")
 
         print("\nStrengths")
-
         for item in report["strengths"]:
             print(f"• {item}")
 
         print("\nImprovements")
-
         for item in report["improvements"]:
             print(f"• {item}")
 
@@ -405,17 +225,63 @@ while True:
         export_resume_report_word(report)
 
     elif choice == "5":
-        print("\nAnalyzing job matches with AI...\n")
+
+        print("\n🤖 Analyzing job matches with AI...\n")
+
+        ranked_jobs = []
 
         for job in jobs:
+
+            report = analyze_job_match(profile, job)
+
+            ranked_jobs.append({
+                "job": job,
+                "report": report
+            })
+
+        ranked_jobs.sort(
+            key=lambda x: x["report"]["score"],
+            reverse=True
+        )
+
+        print("=" * 60)
+        print("🏆 BEST JOB MATCHES")
+        print("=" * 60)
+
+        for index, item in enumerate(ranked_jobs, start=1):
+
+            job = item["job"]
+            report = item["report"]
+
+            print(f"\n#{index}")
             print("=" * 50)
             print(f"{job['title']} - {job['company']}")
             print("=" * 50)
 
-            print(analyze_job_match(job))
+            print(f"\nAI Match Score: {report['score']}%")
 
+            if report["score"] >= 85:
+                print("🟢 Excellent Match")
+            elif report["score"] >= 70:
+                print("🟡 Good Match")
+            elif report["score"] >= 50:
+                print("🟠 Needs Improvement")
+            else:
+                print("🔴 Weak Match")
+
+            print("\n✅ Strengths")
+            for skill in report["strengths"]:
+                print(f"• {skill}")
+
+            print("\n📚 Missing Skills")
+            for skill in report["missing_skills"]:
+                print(f"• {skill}")
+
+            print("\n💡 Recommendation")
+            print(report["recommendation"])
 
     elif choice == "6":
+
         print("\nGenerating Career Ranking Report...\n")
 
         ranked_jobs = rank_jobs()
@@ -425,29 +291,53 @@ while True:
         for index, job in enumerate(ranked_jobs, start=1):
 
             print("=" * 50)
-        print(f"#{index} {job['title']}")
-        print(f"Company: {job['company']}")
-        print(f"Match Score: {job['score']}%")
-        print("=" * 50)
+            print(f"#{index} {job['title']}")
+            print(f"Company: {job['company']}")
+            print(f"Match Score: {job['score']}%")
+            print("=" * 50)
 
-        print("\n✅ Strengths:")
-        for skill in job["strengths"]:
-            print(f"  • {skill}")
+            print("\n✅ Strengths:")
+            for skill in job["strengths"]:
+                print(f"• {skill}")
 
-        print("\n📚 Skills to Improve:")
-        for skill in job["missing_skills"]:
-            print(f"  • {skill}")
+            print("\n📚 Skills to Improve:")
+            for skill in job["missing_skills"]:
+                print(f"• {skill}")
 
-        print("\n💡 Recommendation:")
-        print(job["recommendation"])
-        print()
+            print("\n💡 Recommendation:")
+            print(job["recommendation"])
+            print()
 
     elif choice == "7":
-        skill_gap_analysis()
+
+        report = skill_gap_analysis(profile, jobs)
+
+        print("\n" + "=" * 50)
+        print("📊 Skill Gap Analysis")
+        print("=" * 50)
+
+        print("\n✅ Your Current Skills")
+
+        for skill in report["current_skills"]:
+            print(f"✓ {skill}")
+
+        print("\n📚 Missing Skills")
+
+        for skill in report["missing_skills"]:
+            print(f"• {skill}")
+
+        print("\n🤖 AI Recommendations...\n")
+
+        print(report["recommendation"])
 
     elif choice == "8":
-        generate_learning_plan()
-        
+
+        print("\n🤖 Creating your personalized learning plan...\n")
+
+        print(
+            generate_learning_plan(profile)
+    )
+
     elif choice == "9":
 
         keyword = input("\nEnter job title: ")
@@ -469,7 +359,7 @@ while True:
 
             print("\n🤖 AI is analyzing this job...\n")
 
-            analysis = analyze_job_match(job)
+            analysis = analyze_job_match(profile, job)
 
             print(f"AI Match Score: {analysis['score']}%")
 
@@ -477,7 +367,7 @@ while True:
             for skill in analysis["strengths"]:
                 print(f"• {skill}")
 
-                print("\n📚 Missing Skills")
+            print("\n📚 Missing Skills")
             for skill in analysis["missing_skills"]:
                 print(f"• {skill}")
 
@@ -487,11 +377,122 @@ while True:
             print("\n🔗 Apply Here")
             print(job["redirect_url"])
 
-            print("\n")
-
+            print()
+            
     elif choice == "10":
+
+        print("\nAvailable Jobs\n")
+
+        for index, job in enumerate(jobs, start=1):
+            print(f"{index}. {job['title']} - {job['company']}")
+
+        selection = int(input("\nChoose a job number: ")) - 1
+
+        if selection < 0 or selection >= len(jobs):
+            print("\nInvalid selection.")
+            continue
+
+        selected_job = jobs[selection]
+
+        print("\n🤖 Tailoring your resume...\n")
+
+
+
+        ai_resume = generate_resume_content(
+        profile,
+        selected_job
+    )
+
+        filename = (
+        "Tailored_Resume_"
+        + selected_job["company"].replace(" ", "_")
+        + ".docx"
+    )
+
+        build_resume(
+            profile,
+            ai_resume.get("summary", profile["summary"]),
+            ai_resume.get("experience", {}),
+            filename
+    )
+
+        print(f"\n✅ Tailored resume saved as {filename}")
+        
+    elif choice == "11":
+
+        print("\nAvailable Jobs\n")
+
+        for index, job in enumerate(jobs, start=1):
+            print(f"{index}. {job['title']} - {job['company']}")
+
+        selection = int(input("\nChoose a job number: ")) - 1
+
+        if selection < 0 or selection >= len(jobs):
+            print("Invalid selection.")
+            continue
+
+        selected_job = jobs[selection]
+
+        print("\n🤖 Writing your cover letter...\n")
+
+        letter = generate_cover_letter(
+            profile,
+            selected_job
+        )
+
+        filename = (
+            "Cover_Letter_"
+            + selected_job["company"].replace(" ", "_")
+            + ".docx"
+        )
+
+        save_cover_letter(
+            letter,
+            filename
+        )
+
+        print(f"\n✅ Cover letter saved as {filename}")
+        
+    elif choice == "12":
+
+        print("\nAvailable Jobs\n")
+
+        for index, job in enumerate(jobs, start=1):
+            print(f"{index}. {job['title']} - {job['company']}")
+
+        selection = int(input("\nChoose a job number: ")) - 1
+
+        if selection < 0 or selection >= len(jobs):
+            print("\nInvalid selection.")
+            continue
+
+        selected_job = jobs[selection]
+
+        print("\n🤖 Creating interview guide...\n")
+
+        guide = generate_interview(
+            profile,
+            selected_job
+        )
+
+        filename = (
+            "Interview_Guide_"
+            + selected_job["company"].replace(" ", "_")
+         + ".docx"
+        )
+
+        save_interview(
+            guide,
+            filename
+        )
+
+        print(f"\n✅ Interview guide saved as {filename}")
+
+    elif choice == "13":
+
         print("\nGoodbye, Dare! 👋")
         break
 
     else:
+
         print("\nInvalid option.")

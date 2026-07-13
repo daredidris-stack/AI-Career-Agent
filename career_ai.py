@@ -1,10 +1,11 @@
-from ollama import chat
+from services.ollama_service import ask_llm
+from utils.prompts import CAREER_PROMPT
 
 
-def ask_ai(profile, career_prompt, question):
+def ask_ai(profile, question):
 
     prompt = f"""
-{career_prompt}
+{CAREER_PROMPT}
 
 User Profile
 
@@ -14,7 +15,11 @@ Education:
 {profile['education']}
 
 Experience:
-{', '.join(profile['experience'])}
+
+{chr(10).join(
+    f"- {job['role']} at {job['company']} ({job['start']} - {job['end']})"
+    for job in profile["experience"]
+)}
 
 Skills:
 {', '.join(profile['skills'])}
@@ -30,14 +35,4 @@ User Question
 {question}
 """
 
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    return response.message.content
+    return ask_llm(prompt)
