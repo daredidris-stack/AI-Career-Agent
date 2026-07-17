@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Bell, Moon, Search } from "lucide-react";
+import { Bell, Menu, Moon, Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../hooks/useAuth";
 import { getCurrentUser } from "../../services/api";
 import UserMenu from "../header/UserMenu";
 
-function Header() {
+function Header({ onMenuOpen }) {
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,13 +55,22 @@ function Header() {
 
   return (
 
-    <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6">
+    <header className="flex min-h-16 items-center justify-between gap-3 border-b border-gray-800 bg-gray-900 px-3 sm:px-6">
 
       {/* Left Side */}
 
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
 
-        <h2 className="text-xl font-semibold text-white">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={onMenuOpen}
+          className="shrink-0 rounded-lg p-2 text-gray-300 hover:bg-gray-800 hover:text-white md:hidden"
+        >
+          <Menu size={22} />
+        </button>
+
+        <h2 className="truncate text-base font-semibold text-white sm:text-xl">
 
           {pageTitle}
 
@@ -86,15 +95,15 @@ function Header() {
 
       {/* Right Side */}
 
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-4">
 
         <Bell
-          className="text-gray-300 cursor-pointer"
+          className="hidden cursor-pointer text-gray-300 sm:block"
           size={20}
         />
 
         <Moon
-          className="text-gray-300 cursor-pointer"
+          className="hidden cursor-pointer text-gray-300 sm:block"
           size={20}
         />
 

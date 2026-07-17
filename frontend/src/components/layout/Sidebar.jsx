@@ -11,6 +11,7 @@ import {
   UserRound,
   SearchCheck,
   ClipboardList,
+  X,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -92,13 +93,24 @@ const menuItems = [
 ];
 
 
-function Sidebar() {
+function Sidebar({ mobileOpen = false, onClose }) {
 
   return (
 
-    <aside className="w-64 bg-gray-900 text-white min-h-screen border-r border-gray-800">
+    <>
+    {mobileOpen && (
+      <button
+        type="button"
+        aria-label="Close navigation"
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-black/60 md:hidden"
+      />
+    )}
+    <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-r border-gray-800 bg-gray-900 text-white transition-transform duration-200 md:sticky md:top-0 md:z-auto md:block md:h-screen md:w-64 md:shrink-0 md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-      <div className="p-6 border-b border-gray-800">
+      <div className="flex items-start justify-between border-b border-gray-800 p-6">
+
+        <div>
 
         <h1 className="text-2xl font-bold text-blue-400">
           CareerPilot AI
@@ -107,6 +119,17 @@ function Sidebar() {
         <p className="text-sm text-gray-400 mt-1">
           AI Career Copilot
         </p>
+
+        </div>
+
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={onClose}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white md:hidden"
+        >
+          <X size={20} />
+        </button>
 
       </div>
 
@@ -122,6 +145,7 @@ function Sidebar() {
             <NavLink
               key={item.name}
               to={item.path}
+              onClick={onClose}
 
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition ${
@@ -147,6 +171,7 @@ function Sidebar() {
       </nav>
 
     </aside>
+    </>
 
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Link } from "react-router-dom";
 
@@ -6,6 +7,8 @@ import Header from "../components/layout/Header";
 
 
 export default function AppLayout() {
+
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
 
 
   return (
@@ -18,24 +21,29 @@ export default function AppLayout() {
       "
     >
 
-      <Sidebar />
+      <Sidebar
+        mobileOpen={mobileNavigationOpen}
+        onClose={() => setMobileNavigationOpen(false)}
+      />
 
 
       <div
         className="
+          min-w-0
           flex-1
           flex
           flex-col
         "
       >
 
-        <Header />
+        <Header onMenuOpen={() => setMobileNavigationOpen(true)} />
 
 
         <main
           className="
             flex-1
-            p-6
+            p-4
+            sm:p-6
           "
         >
 

@@ -8,6 +8,7 @@
 - `./scripts/verify_release.sh` passes with 170 backend tests.
 - Alembic upgrades from an empty database to the current revision, reports no schema drift, downgrades to base, and upgrades again successfully.
 - Frontend lint and the production build pass. Route-level code splitting keeps every generated JavaScript chunk below the build advisory threshold.
+- Authenticated navigation adapts to mobile widths with an accessible slide-out menu, compact header controls, responsive content padding, and a viewport-bounded account menu.
 - Registration, authenticated login, profile creation, sign-out, and protected-route redirects were exercised through the local interface.
 - A genuine PDF resume was analyzed and persisted with an 85% resume score and 80% ATS score.
 - Job Match, Resume Tailor, and Cover Letter use the authenticated user's latest saved Resume Studio document instead of requiring duplicate resume input.

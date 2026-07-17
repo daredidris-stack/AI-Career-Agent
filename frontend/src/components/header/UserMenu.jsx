@@ -52,13 +52,13 @@ export default function UserMenu({
           {firstName.charAt(0)}
         </div>
 
-        <span className="text-white font-medium">
+        <span className="hidden text-white font-medium sm:inline">
           {firstName}
         </span>
 
         <ChevronDown
           size={18}
-          className="text-gray-400"
+          className="hidden text-gray-400 sm:block"
         />
       </Menu.Button>
 
@@ -76,7 +76,7 @@ export default function UserMenu({
             absolute
             right-0
             mt-3
-            w-72
+            w-[min(18rem,calc(100vw-1.5rem))]
             origin-top-right
             rounded-2xl
             border
