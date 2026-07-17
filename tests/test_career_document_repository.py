@@ -65,6 +65,27 @@ class CareerDocumentRepositoryTests(unittest.TestCase):
 
         self.assertEqual([item.kind for item in documents], ["cover_letter"])
 
+    def test_revision_lookup_is_scoped_to_owner(self):
+        document = self.repository.create(
+            user_id=self.first_id,
+            kind="resume",
+            title="Original",
+            content="Version one",
+            metadata_json="{}",
+        )
+        revision = self.repository.create_revision(document)
+        self.db.commit()
+
+        self.assertIsNone(self.repository.get_revision(
+            revision.id, document.id, self.second_id
+        ))
+        self.assertEqual(
+            self.repository.get_revision(
+                revision.id, document.id, self.first_id
+            ).content,
+            "Version one",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -69,6 +69,7 @@ class CareerDocumentService:
         document = self.get_for_user(user_id, document_id)
         if not title.strip() or not content.strip():
             raise ValueError("Document title and content are required.")
+        self.repository.create_revision(document)
         document.title = title.strip()
         document.content = content.strip()
         return self.repository.save(document)
@@ -76,3 +77,24 @@ class CareerDocumentService:
     def delete_for_user(self, user_id: int, document_id: int) -> None:
         document = self.get_for_user(user_id, document_id)
         self.repository.delete(document)
+
+    def list_versions(self, user_id: int, document_id: int):
+        self.get_for_user(user_id, document_id)
+        return self.repository.list_revisions(document_id, user_id)
+
+    def restore_version(
+        self,
+        user_id: int,
+        document_id: int,
+        revision_id: int,
+    ):
+        document = self.get_for_user(user_id, document_id)
+        revision = self.repository.get_revision(
+            revision_id, document_id, user_id
+        )
+        if not revision:
+            raise DocumentNotFoundError()
+        self.repository.create_revision(document)
+        document.title = revision.title
+        document.content = revision.content
+        return self.repository.save(document)

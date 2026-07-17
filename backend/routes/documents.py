@@ -8,6 +8,7 @@ from backend.models.schemas import (
     CareerDocumentCreate,
     CareerDocumentResponse,
     CareerDocumentUpdate,
+    CareerDocumentRevisionResponse,
 )
 from backend.models.user import User
 from backend.services.career_document_service import (
@@ -63,6 +64,39 @@ def download_document(
         media_type=media_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get(
+    "/{document_id}/versions",
+    response_model=list[CareerDocumentRevisionResponse],
+)
+def list_document_versions(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    service: CareerDocumentService = Depends(get_career_document_service),
+):
+    try:
+        return service.list_versions(current_user.id, document_id)
+    except DocumentNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Document not found.") from error
+
+
+@router.post(
+    "/{document_id}/versions/{revision_id}/restore",
+    response_model=CareerDocumentResponse,
+)
+def restore_document_version(
+    document_id: int,
+    revision_id: int,
+    current_user: User = Depends(get_current_user),
+    service: CareerDocumentService = Depends(get_career_document_service),
+):
+    try:
+        return service.restore_version(
+            current_user.id, document_id, revision_id
+        )
+    except DocumentNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Version not found.") from error
 
 
 @router.post("", response_model=CareerDocumentResponse, status_code=201)

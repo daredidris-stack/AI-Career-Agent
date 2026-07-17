@@ -45,6 +45,32 @@ class CareerDocumentServiceTests(unittest.TestCase):
         self.repository.get_for_user.assert_called_once_with(4, 7)
         self.repository.delete.assert_called_once_with(document)
 
+    def test_update_preserves_previous_version(self):
+        document = SimpleNamespace(
+            id=4, user_id=7, title="Old", content="Old content"
+        )
+        self.repository.get_for_user.return_value = document
+
+        self.service.update_for_user(7, 4, "New", "New content")
+
+        self.repository.create_revision.assert_called_once_with(document)
+        self.repository.save.assert_called_once_with(document)
+        self.assertEqual(document.title, "New")
+
+    def test_restore_is_scoped_to_document_and_owner(self):
+        document = SimpleNamespace(
+            id=4, user_id=7, title="Current", content="Current"
+        )
+        revision = SimpleNamespace(title="Previous", content="Previous")
+        self.repository.get_for_user.return_value = document
+        self.repository.get_revision.return_value = revision
+
+        restored = self.service.restore_version(7, 4, 9)
+
+        self.repository.get_revision.assert_called_once_with(9, 4, 7)
+        self.assertEqual(restored, self.repository.save.return_value)
+        self.assertEqual(document.content, "Previous")
+
 
 if __name__ == "__main__":
     unittest.main()

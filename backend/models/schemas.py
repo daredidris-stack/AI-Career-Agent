@@ -66,6 +66,16 @@ class CareerDocumentResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CareerDocumentRevisionResponse(BaseModel):
+    id: int
+    document_id: int
+    title: str
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

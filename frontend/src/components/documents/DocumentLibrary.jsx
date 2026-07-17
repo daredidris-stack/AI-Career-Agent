@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, FileText, Pencil, Trash2, X } from "lucide-react";
+import { Download, FileText, History, Pencil, Trash2, X } from "lucide-react";
 
 import api from "../../services/api";
 
@@ -15,6 +15,8 @@ const kindLabels = {
 export default function DocumentLibrary({ refreshToken }) {
   const [documents, setDocuments] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [versionDocument, setVersionDocument] = useState(null);
+  const [versions, setVersions] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -44,6 +46,21 @@ export default function DocumentLibrary({ refreshToken }) {
   async function deleteDocument(document) {
     if (!window.confirm(`Delete “${document.title}”?`)) return;
     await api.delete(`/documents/${document.id}`);
+    await loadDocuments();
+  }
+
+  async function showVersions(document) {
+    const response = await api.get(`/documents/${document.id}/versions`);
+    setVersionDocument(document);
+    setVersions(response.data);
+  }
+
+  async function restoreVersion(revision) {
+    await api.post(
+      `/documents/${versionDocument.id}/versions/${revision.id}/restore`,
+    );
+    setVersionDocument(null);
+    setVersions([]);
     await loadDocuments();
   }
 
@@ -85,6 +102,7 @@ export default function DocumentLibrary({ refreshToken }) {
             <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{document.content}</p>
             <div className="mt-5 flex gap-4 text-sm">
               <button onClick={() => setEditing({ ...document })} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
+              <button onClick={() => showVersions(document)} className="flex items-center gap-1 text-violet-400"><History size={15} /> History</button>
               <button onClick={() => downloadDocument(document, "pdf")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> PDF</button>
               <button onClick={() => downloadDocument(document, "docx")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> DOCX</button>
               <button onClick={() => deleteDocument(document)} className="flex items-center gap-1 text-red-400"><Trash2 size={15} /> Delete</button>
@@ -104,6 +122,15 @@ export default function DocumentLibrary({ refreshToken }) {
             <textarea rows={18} value={editing.content} onChange={(event) => setEditing({ ...editing, content: event.target.value })} required className="mt-4 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 font-mono text-sm text-white" />
             <div className="mt-4 flex justify-end gap-3"><button type="button" onClick={() => setEditing(null)} className="px-4 py-2 text-gray-300">Cancel</button><button className="rounded-xl bg-blue-600 px-5 py-2 font-semibold text-white">Save changes</button></div>
           </form>
+        </div>
+      )}
+
+      {versionDocument && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <section className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between"><div><h3 className="text-xl font-bold text-white">Version history</h3><p className="mt-1 text-sm text-gray-400">{versionDocument.title}</p></div><button onClick={() => setVersionDocument(null)} aria-label="Close"><X className="text-gray-400" /></button></div>
+            {versions.length === 0 ? <p className="mt-6 text-gray-400">No earlier versions yet.</p> : <div className="mt-6 space-y-3">{versions.map((revision) => <article key={revision.id} className="rounded-xl border border-gray-700 bg-gray-950 p-4"><p className="font-medium text-white">{revision.title}</p><p className="mt-1 text-xs text-gray-500">{new Date(revision.created_at).toLocaleString()}</p><p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{revision.content}</p><button onClick={() => restoreVersion(revision)} className="mt-4 text-sm font-semibold text-blue-400">Restore this version</button></article>)}</div>}
+          </section>
         </div>
       )}
     </section>
