@@ -8,6 +8,7 @@ from backend.dependencies.repositories import (
     get_career_document_repository,
     get_job_application_repository,
     get_ai_usage_repository,
+    get_user_data_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -30,6 +31,7 @@ from backend.repositories.career_document_repository import (
 )
 from backend.repositories.job_application_repository import JobApplicationRepository
 from backend.repositories.ai_usage_repository import AIUsageRepository
+from backend.repositories.user_data_repository import UserDataRepository
 
 from backend.services.auth_service import (
     AuthService,
@@ -38,6 +40,7 @@ from backend.services.email_service import EmailService
 from backend.services.career_document_service import CareerDocumentService
 from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
+from backend.services.user_data_service import UserDataService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -114,6 +117,12 @@ def get_ai_usage_service(
     repo: AIUsageRepository = Depends(get_ai_usage_repository),
 ):
     return AIUsageService(repo)
+
+
+def get_user_data_service(
+    repo: UserDataRepository = Depends(get_user_data_repository),
+):
+    return UserDataService(repo)
 
 
 def get_resume_service(

@@ -39,6 +39,9 @@ AI_REQUESTS_PER_DAY = max(
     AI_REQUESTS_PER_HOUR,
     int(os.getenv("AI_REQUESTS_PER_DAY", "100")),
 )
+MAX_RESUME_UPLOAD_BYTES = max(
+    1024, int(os.getenv("MAX_RESUME_UPLOAD_BYTES", str(5 * 1024 * 1024)))
+)
 
 APP_ENV = os.getenv("APP_ENV", "development")
 APP_RELEASE = os.getenv("APP_RELEASE", "development")

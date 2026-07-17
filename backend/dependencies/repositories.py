@@ -25,6 +25,7 @@ from backend.repositories.job_application_repository import (
     JobApplicationRepository,
 )
 from backend.repositories.ai_usage_repository import AIUsageRepository
+from backend.repositories.user_data_repository import UserDataRepository
 
 
 def get_user_repository(
@@ -68,3 +69,9 @@ def get_ai_usage_repository(
     db: Session = Depends(get_db),
 ) -> AIUsageRepository:
     return AIUsageRepository(db)
+
+
+def get_user_data_repository(
+    db: Session = Depends(get_db),
+) -> UserDataRepository:
+    return UserDataRepository(db)

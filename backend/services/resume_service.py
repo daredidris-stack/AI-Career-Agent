@@ -13,11 +13,16 @@ from backend.repositories.resume_analysis_repository import (
 )
 from backend.services.candidate_skills import normalize_explicit_skills
 from backend.services.career_document_service import CareerDocumentService
+from backend.core.settings import MAX_RESUME_UPLOAD_BYTES
 
 
 SUPPORTED_RESUME_TYPES = {
     ".docx": read_docx_resume,
     ".pdf": read_pdf_resume,
+}
+FILE_SIGNATURES = {
+    ".pdf": (b"%PDF",),
+    ".docx": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
 }
 
 
@@ -46,6 +51,8 @@ class ResumeService:
             )
 
         temporary_path = None
+        total_bytes = 0
+        first_chunk = True
 
         try:
             with NamedTemporaryFile(
@@ -55,7 +62,21 @@ class ResumeService:
                 temporary_path = Path(temporary_file.name)
 
                 while chunk := await file.read(1024 * 1024):
+                    total_bytes += len(chunk)
+                    if total_bytes > MAX_RESUME_UPLOAD_BYTES:
+                        raise ValueError(
+                            "Resume files must be 5 MB or smaller."
+                        )
+                    if first_chunk:
+                        first_chunk = False
+                        if not chunk.startswith(FILE_SIGNATURES[suffix]):
+                            raise ValueError(
+                                "The uploaded file content does not match its extension."
+                            )
                     temporary_file.write(chunk)
+
+            if total_bytes == 0:
+                raise ValueError("The uploaded resume is empty.")
 
             return resume_reader(
                 str(temporary_path)

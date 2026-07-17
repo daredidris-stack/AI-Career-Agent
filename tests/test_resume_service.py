@@ -63,7 +63,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             file=AsyncMock(),
         )
         file.read = AsyncMock(
-            side_effect=[b"resume bytes", b""]
+            side_effect=[b"%PDF resume bytes", b""]
         )
         file.close = AsyncMock()
 
@@ -100,6 +100,27 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         file.close.assert_awaited_once()
         self.analysis_repository.create.assert_not_called()
 
+    async def test_rejects_file_with_spoofed_extension(self):
+        file = UploadFile(filename="resume.pdf", file=AsyncMock())
+        file.read = AsyncMock(side_effect=[b"not really a PDF", b""])
+        file.close = AsyncMock()
+
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            await self.service.extract_text(file)
+
+        file.close.assert_awaited_once()
+
+    @patch("backend.services.resume_service.MAX_RESUME_UPLOAD_BYTES", 8)
+    async def test_rejects_oversized_file(self):
+        file = UploadFile(filename="resume.pdf", file=AsyncMock())
+        file.read = AsyncMock(side_effect=[b"%PDF too large", b""])
+        file.close = AsyncMock()
+
+        with self.assertRaisesRegex(ValueError, "5 MB or smaller"):
+            await self.service.extract_text(file)
+
+        file.close.assert_awaited_once()
+
     def test_normalizes_and_clamps_scores(self):
         result = self.service._normalize_result({
             "resume_score": 120,
@@ -123,7 +144,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
     )
     async def test_ai_failure_is_not_persisted(self, _mock_analyze_resume):
         file = UploadFile(filename="resume.pdf", file=AsyncMock())
-        file.read = AsyncMock(side_effect=[b"resume bytes", b""])
+        file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
         file.close = AsyncMock()
 
         with patch.dict(
@@ -147,7 +168,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             "Database unavailable"
         )
         file = UploadFile(filename="resume.pdf", file=AsyncMock())
-        file.read = AsyncMock(side_effect=[b"resume bytes", b""])
+        file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
         file.close = AsyncMock()
 
         with patch.dict(
