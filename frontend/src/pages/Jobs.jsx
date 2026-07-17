@@ -108,6 +108,7 @@ function Jobs() {
               className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
             >
               <option value="">Any country</option>
+              <option value="Worldwide">Worldwide</option>
               {countries.map((countryName) => (
                 <option key={countryName} value={countryName}>
                   {countryName}

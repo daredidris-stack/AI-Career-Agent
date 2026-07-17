@@ -136,6 +136,9 @@ class JobSearchService:
         country: str,
         work_mode: str,
     ) -> str:
+        if country.casefold() == "worldwide":
+            return "Worldwide"
+
         if work_mode.casefold() == "remote":
             return "Remote"
 

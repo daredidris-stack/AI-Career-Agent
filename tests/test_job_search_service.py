@@ -171,6 +171,27 @@ class JobSearchServiceTests(unittest.TestCase):
         )
         self.assertEqual(result["filters"]["industry"], "Finance")
 
+    def test_worldwide_search_does_not_include_profile_city(self):
+        aggregator = Mock(return_value=[])
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            aggregator,
+            Mock(return_value=[]),
+        )
+
+        service.search_for_user(
+            42,
+            country="Worldwide",
+            work_mode="Hybrid",
+        )
+
+        aggregator.assert_called_once_with(
+            "Cloud Engineer",
+            "Worldwide",
+            "",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
