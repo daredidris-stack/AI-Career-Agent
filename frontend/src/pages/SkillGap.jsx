@@ -10,22 +10,7 @@ function SkillGap() {
     setLoading(true);
 
     try {
-      const response = await api.post("/skills/analyze", {
-        profile: {
-          skills: ["AWS", "Linux", "Python"],
-        },
-        jobs: [
-          {
-            skills: [
-              "AWS",
-              "Linux",
-              "Docker",
-              "Kubernetes",
-              "Terraform",
-            ],
-          },
-        ],
-      });
+      const response = await api.post("/skills/analyze");
 
       setResult(response.data);
     } catch {

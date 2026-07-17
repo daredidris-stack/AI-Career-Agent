@@ -1,16 +1,37 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 
-router = APIRouter()
+from backend.dependencies.auth import get_current_user
+from backend.dependencies.services import get_skill_gap_service
+from backend.models.user import User
+from backend.services.skill_gap_service import (
+    ProfileRequiredError,
+    SkillGapError,
+    SkillGapService,
+)
 
 
-@router.post("/skills/analyze")
-def analyze_skills(request: dict):
-    return {
-        "current_skills": ["AWS", "Linux", "Python"],
-        "missing_skills": [
-            "Docker",
-            "Kubernetes",
-            "Terraform"
-        ],
-        "recommendation": "Learn Docker first, then Kubernetes, then Terraform."
-    }
+router = APIRouter(
+    prefix="/skills",
+    tags=["Skills"],
+)
+
+
+@router.post("/analyze")
+def analyze_skills(
+    current_user: User = Depends(get_current_user),
+    service: SkillGapService = Depends(
+        get_skill_gap_service
+    ),
+):
+    try:
+        return service.analyze_for_user(current_user.id)
+    except ProfileRequiredError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+    except SkillGapError as error:
+        raise HTTPException(
+            status_code=502,
+            detail=str(error),
+        ) from error

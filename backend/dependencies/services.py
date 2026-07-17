@@ -3,6 +3,7 @@ from fastapi import Depends
 from backend.dependencies.repositories import (
     get_user_repository,
     get_profile_repository,
+    get_job_catalog_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -11,6 +12,10 @@ from backend.repositories.user_repository import (
 
 from backend.repositories.profile_repository import (
     ProfileRepository,
+)
+
+from backend.repositories.job_catalog_repository import (
+    JobCatalogRepository,
 )
 
 from backend.services.auth_service import (
@@ -39,6 +44,10 @@ from backend.services.cover_letter_service import (
 
 from backend.services.job_match_service import (
     JobMatchService,
+)
+
+from backend.services.skill_gap_service import (
+    SkillGapService,
 )
 
 
@@ -101,3 +110,17 @@ def get_job_match_service(
     ),
 ):
     return JobMatchService(repo)
+
+
+def get_skill_gap_service(
+    profile_repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+    job_catalog_repo: JobCatalogRepository = Depends(
+        get_job_catalog_repository
+    ),
+):
+    return SkillGapService(
+        profile_repo,
+        job_catalog_repo,
+    )
