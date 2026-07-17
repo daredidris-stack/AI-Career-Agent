@@ -2,6 +2,8 @@
 
 This checklist is a release gate. A beta is ready only when every required engineering item passes and every external decision is either approved or the affected feature remains disabled.
 
+The current evidence and remaining manual checks are recorded in the [beta readiness report](beta-readiness-report.md).
+
 ## Automated release gate
 
 Run from the repository root:

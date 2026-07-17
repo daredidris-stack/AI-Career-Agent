@@ -180,5 +180,5 @@ npm --prefix frontend run build
 
 ## Current roadmap
 
-The authenticated SaaS foundation and commercialization-readiness roadmap are implemented. See the [beta release checklist](docs/beta-release-checklist.md) and [roadmap handoff](docs/roadmap-handoff.md) for verification, remaining external launch blockers, and evidence-driven next work.
+The authenticated SaaS foundation and commercialization-readiness roadmap are implemented. See the [beta readiness report](docs/beta-readiness-report.md), [beta release checklist](docs/beta-release-checklist.md), and [roadmap handoff](docs/roadmap-handoff.md) for verified evidence, remaining launch blockers, and evidence-driven next work.
 5. Add migrations, PostgreSQL support, observability, subscriptions, and deployment automation.
