@@ -11,6 +11,9 @@
 - Authenticated navigation adapts to mobile widths with an accessible slide-out menu, compact header controls, responsive content padding, and a viewport-bounded account menu.
 - Registration, authenticated login, profile creation, sign-out, and protected-route redirects were exercised through the local interface.
 - A genuine PDF resume was analyzed and persisted with an 85% resume score and 80% ATS score.
+- A render-verified genuine DOCX resume was uploaded through the interface, analyzed, and persisted with an 85% resume score and 80% ATS score.
+- Authenticated PDF and DOCX document export requests completed successfully.
+- A saved document was edited, its revision appeared in history, and restoring that revision recovered the original title and content.
 - Job Match, Resume Tailor, and Cover Letter use the authenticated user's latest saved Resume Studio document instead of requiring duplicate resume input.
 - Job Match returned a grounded 78% SRE match using saved resume and profile evidence.
 - Worldwide job search returned 20 attributed listings from available providers. Missing provider credentials and provider failures degrade without failing the whole search.
@@ -26,9 +29,7 @@
 These items should be completed before inviting a wider tester group:
 
 - Exercise registration email verification and password reset against the selected SMTP provider. Automated service coverage is not a substitute for delivery testing.
-- Upload a genuine DOCX resume through the deployed interface.
-- Download generated PDF and DOCX documents and visually inspect them.
-- Edit a saved document and manually verify revision history and restore.
+- Open the downloaded PDF and DOCX exports in native viewers and visually inspect them. Both authenticated export requests returned successfully during smoke testing.
 - Manually enter and persist an application follow-up reminder. Native date-time entry could not be completed reliably through browser automation.
 - Exercise the Free-plan 429 response through the deployed interface and confirm a second account remains unaffected. Per-user accounting has automated coverage.
 - Confirm the deployed AI timeout, retry, model, and capacity settings under concurrent beta usage. Local AI responses took roughly 12–30 seconds during smoke testing.
