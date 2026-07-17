@@ -180,8 +180,5 @@ npm --prefix frontend run build
 
 ## Current roadmap
 
-1. Finish migrating remaining prototype routes into service-layer architecture.
-2. Complete Resume Studio workflows.
-3. Expand interview and learning features.
-4. Replace temporary job sources with production integrations and storage.
+The authenticated SaaS foundation and commercialization-readiness roadmap are implemented. See the [beta release checklist](docs/beta-release-checklist.md) and [roadmap handoff](docs/roadmap-handoff.md) for verification, remaining external launch blockers, and evidence-driven next work.
 5. Add migrations, PostgreSQL support, observability, subscriptions, and deployment automation.
