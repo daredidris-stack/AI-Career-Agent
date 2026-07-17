@@ -42,6 +42,10 @@ function Jobs() {
 
   async function searchJobs(event) {
     event.preventDefault();
+    await executeSearch(1);
+  }
+
+  async function executeSearch(pageNumber) {
     setLoading(true);
     setError("");
 
@@ -54,6 +58,8 @@ function Jobs() {
           ...(industry.trim() && { industry: industry.trim() }),
           ...(workMode && { work_mode: workMode }),
           ...(minimumScore > 0 && { min_score: minimumScore }),
+          page: pageNumber,
+          per_page: 20,
         },
       });
 
@@ -220,6 +226,28 @@ function Jobs() {
               ))}
             </div>
           )}
+
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              disabled={loading || result.page <= 1}
+              onClick={() => executeSearch(result.page - 1)}
+              className="rounded-xl border border-gray-700 bg-gray-900 px-5 py-3 font-semibold text-white hover:border-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span className="text-sm font-medium text-gray-400">
+              Page {result.page}
+            </span>
+            <button
+              type="button"
+              disabled={loading || !result.has_more}
+              onClick={() => executeSearch(result.page + 1)}
+              className="rounded-xl border border-gray-700 bg-gray-900 px-5 py-3 font-semibold text-white hover:border-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
         </section>
       )}
     </div>

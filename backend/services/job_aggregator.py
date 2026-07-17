@@ -3,6 +3,7 @@ import logging
 from job_search import search_jobs as remoteok_search
 from adzuna_api import search_jobs as adzuna_search
 from arbeitnow_api import search_jobs as arbeitnow_search
+from jooble_api import search_jobs as jooble_search
 
 
 logger = logging.getLogger(__name__)
@@ -12,59 +13,69 @@ def aggregate_jobs(
     keyword,
     location="Remote",
     industry="",
+    page=1,
+    results=20,
 ):
-
     jobs = []
-
-
-    # RemoteOK jobs
-    try:
-        remote_jobs = remoteok_search(keyword)
-
-        for job in remote_jobs:
-            job["source"] = "RemoteOK"
-
-        jobs.extend(remote_jobs)
-
-    except Exception:
-        logger.exception("RemoteOK job search failed")
+    search_term = " ".join(
+        value for value in (keyword, industry) if value
+    )
 
     try:
-        arbeitnow_jobs = arbeitnow_search(
-            keyword,
+        jooble_jobs = jooble_search(
+            search_term,
             location,
-            industry,
+            page,
+            results,
         )
 
-        for job in arbeitnow_jobs:
-            job["source"] = "Arbeitnow"
+        for job in jooble_jobs:
+            job["source"] = "Jooble"
 
-        jobs.extend(arbeitnow_jobs)
+        jobs.extend(jooble_jobs)
     except Exception:
-        logger.exception("Arbeitnow job search failed")
+        logger.exception("Jooble job search failed")
+
+    # Free feeds supplement the first result page.
+    if page == 1:
+        try:
+            remote_jobs = remoteok_search(keyword)
+
+            for job in remote_jobs:
+                job["source"] = "RemoteOK"
+
+            jobs.extend(remote_jobs)
+
+        except Exception:
+            logger.exception("RemoteOK job search failed")
+
+        try:
+            arbeitnow_jobs = arbeitnow_search(
+                keyword,
+                location,
+                industry,
+            )
+
+            for job in arbeitnow_jobs:
+                job["source"] = "Arbeitnow"
+
+            jobs.extend(arbeitnow_jobs)
+        except Exception:
+            logger.exception("Arbeitnow job search failed")
 
 
 
-    # Adzuna jobs
-    try:
-        adzuna_jobs = adzuna_search(
-            " ".join(
-                value
-                for value in (keyword, industry)
-                if value
-            ),
-            location
-        )
+        # Adzuna jobs
+        try:
+            adzuna_jobs = adzuna_search(search_term, location)
 
-        for job in adzuna_jobs:
-            job["source"] = "Adzuna"
+            for job in adzuna_jobs:
+                job["source"] = "Adzuna"
 
-        jobs.extend(adzuna_jobs)
+            jobs.extend(adzuna_jobs)
 
-    except Exception:
-        logger.exception("Adzuna job search failed")
-
-
+        except Exception:
+            logger.exception("Adzuna job search failed")
 
     unique_jobs = []
     seen = set()
@@ -78,4 +89,4 @@ def aggregate_jobs(
             unique_jobs.append(job)
             seen.add(key)
 
-    return unique_jobs[:5]
+    return unique_jobs[:results]

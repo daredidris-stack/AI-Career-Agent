@@ -43,6 +43,8 @@ class JobSearchService:
         industry: str | None = None,
         work_mode: str | None = None,
         min_score: int = 0,
+        page: int = 1,
+        per_page: int = 20,
     ) -> dict[str, Any]:
         profile = self.profile_repository.get_by_user_id(
             user_id
@@ -84,11 +86,16 @@ class JobSearchService:
                 "Add a target role to your profile before searching."
             )
 
+        page = max(1, page)
+        per_page = max(5, min(50, per_page))
+
         try:
             jobs = self.job_aggregator(
                 effective_keyword,
                 effective_location,
                 effective_industry,
+                page,
+                per_page,
             )
             resume_skills = (
                 self.resume_analysis_repository
@@ -99,7 +106,21 @@ class JobSearchService:
                 merge_candidate_skills(profile, resume_skills),
             )
 
-            jobs = self.job_ranker(candidate_profile, jobs)
+            jobs = self._pre_rank(
+                jobs,
+                candidate_profile["technical_skills"],
+                effective_keyword,
+            )
+            provider_count = len(jobs)
+            ai_candidates = jobs[:5]
+            remaining_jobs = jobs[5:]
+            ranked_jobs = list(
+                self.job_ranker(candidate_profile, ai_candidates)
+            )
+            jobs = ranked_jobs + [
+                self._without_ai_score(job)
+                for job in remaining_jobs
+            ]
         except Exception as error:
             raise JobSearchError(
                 "Job search is temporarily unavailable."
@@ -110,12 +131,15 @@ class JobSearchService:
                 job
                 for job in jobs
                 if (
-                    job.get("analysis", {}).get("match_score") or 0
+                    (job.get("analysis") or {}).get("match_score") or 0
                 ) >= min_score
             ]
 
         return {
             "count": len(jobs),
+            "page": page,
+            "per_page": per_page,
+            "has_more": provider_count >= per_page,
             "filters": {
                 "keyword": effective_keyword,
                 "location": effective_location,
@@ -127,6 +151,35 @@ class JobSearchService:
             },
             "jobs": jobs,
         }
+
+    @staticmethod
+    def _pre_rank(
+        jobs: list[dict[str, Any]],
+        skills: list[str],
+        keyword: str,
+    ) -> list[dict[str, Any]]:
+        def relevance(job: dict[str, Any]) -> int:
+            text = " ".join([
+                str(job.get("title") or ""),
+                str(job.get("description") or ""),
+                " ".join(str(value) for value in job.get("skills") or []),
+            ]).casefold()
+            score = 10 if keyword.casefold() in text else 0
+            return score + sum(
+                1 for skill in skills if skill.casefold() in text
+            )
+
+        return sorted(jobs, key=relevance, reverse=True)
+
+    @staticmethod
+    def _without_ai_score(job: dict[str, Any]) -> dict[str, Any]:
+        job["analysis"] = {
+            "match_score": None,
+            "strengths": [],
+            "missing_skills": [],
+            "recommendation": "Open the listing to review full details.",
+        }
+        return job
 
     @staticmethod
     def _search_location(

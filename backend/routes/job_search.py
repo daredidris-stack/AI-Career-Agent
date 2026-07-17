@@ -24,6 +24,8 @@ def search_jobs(
     industry: str | None = None,
     work_mode: str | None = None,
     min_score: int = 0,
+    page: int = 1,
+    per_page: int = 20,
     current_user: User = Depends(get_current_user),
     service: JobSearchService = Depends(
         get_job_search_service
@@ -38,6 +40,8 @@ def search_jobs(
             industry=industry,
             work_mode=work_mode,
             min_score=min_score,
+            page=page,
+            per_page=per_page,
         )
     except ProfileRequiredError as error:
         raise HTTPException(

@@ -35,6 +35,8 @@ class JobSearchRouteTests(unittest.TestCase):
             industry=None,
             work_mode=None,
             min_score=0,
+            page=1,
+            per_page=20,
         )
 
     def test_missing_profile_returns_404(self):

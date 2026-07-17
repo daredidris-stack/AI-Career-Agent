@@ -55,7 +55,9 @@ class JobSearchServiceTests(unittest.TestCase):
         )
 
         self.repository.get_by_user_id.assert_called_once_with(42)
-        aggregator.assert_called_once_with("cloud", "Remote", "")
+        aggregator.assert_called_once_with(
+            "cloud", "Remote", "", 1, 20
+        )
         candidate_profile = ranker.call_args.args[0]
         self.assertEqual(
             candidate_profile["technical_skills"],
@@ -124,6 +126,8 @@ class JobSearchServiceTests(unittest.TestCase):
             "Cloud Engineer",
             "Remote",
             "",
+            1,
+            20,
         )
         self.assertEqual(result["filters"]["keyword"], "Cloud Engineer")
         self.assertEqual(result["filters"]["location"], "Remote")
@@ -144,6 +148,8 @@ class JobSearchServiceTests(unittest.TestCase):
             "Cloud Engineer",
             "Mexico City, Mexico",
             "",
+            1,
+            20,
         )
 
     def test_search_filters_override_profile_defaults(self):
@@ -168,6 +174,8 @@ class JobSearchServiceTests(unittest.TestCase):
             "Platform Engineer",
             "Toronto, Canada",
             "Finance",
+            1,
+            20,
         )
         self.assertEqual(result["filters"]["industry"], "Finance")
 
@@ -190,7 +198,30 @@ class JobSearchServiceTests(unittest.TestCase):
             "Cloud Engineer",
             "Worldwide",
             "",
+            1,
+            20,
         )
+
+    def test_only_top_five_candidates_are_ai_ranked(self):
+        jobs = [
+            {"title": f"Engineer {index}", "description": "AWS"}
+            for index in range(8)
+        ]
+        ranker = Mock(
+            side_effect=lambda _profile, candidates: candidates
+        )
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            Mock(return_value=jobs),
+            ranker,
+        )
+
+        result = service.search_for_user(42, per_page=20)
+
+        self.assertEqual(len(ranker.call_args.args[1]), 5)
+        self.assertEqual(result["count"], 8)
+        self.assertIsNone(result["jobs"][5]["analysis"]["match_score"])
 
 
 if __name__ == "__main__":

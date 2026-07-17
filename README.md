@@ -90,6 +90,7 @@ export JWT_SECRET_KEY="$(openssl rand -hex 32)"
 export DATABASE_URL="sqlite:///./career_agent.db"
 export ADZUNA_APP_ID=""
 export ADZUNA_APP_KEY=""
+export JOOBLE_API_KEY=""
 ```
 
 The available variables are documented in `.env.example`. Do not commit real credentials.
@@ -149,6 +150,7 @@ npm --prefix frontend run build
 | `DATABASE_URL` | No | SQLAlchemy database URL; defaults to local SQLite |
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
+| `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
 
 ## Development principles
 

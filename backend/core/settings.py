@@ -14,6 +14,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = int(
 
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
+JOOBLE_API_KEY = os.getenv("JOOBLE_API_KEY")
 
 
 def require_jwt_secret() -> str:
