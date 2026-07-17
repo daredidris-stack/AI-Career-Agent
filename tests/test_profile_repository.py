@@ -12,9 +12,9 @@ from backend.repositories.profile_repository import ProfileRepository
 
 class ProfileRepositoryTests(unittest.TestCase):
     def setUp(self):
-        engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(engine)
-        session_factory = sessionmaker(bind=engine)
+        self.engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(self.engine)
+        session_factory = sessionmaker(bind=self.engine)
         self.db = session_factory()
 
         user = User(
@@ -30,6 +30,7 @@ class ProfileRepositoryTests(unittest.TestCase):
 
     def tearDown(self):
         self.db.close()
+        self.engine.dispose()
 
     def test_update_changes_fields_and_updated_at(self):
         profile = self.repository.create_profile(

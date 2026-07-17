@@ -29,6 +29,10 @@ from backend.services.job_search_service import (
     JobSearchService,
 )
 
+from backend.services.resume_tailor_service import (
+    ResumeTailorService,
+)
+
 
 def get_auth_service(
     repo: UserRepository = Depends(
@@ -59,3 +63,17 @@ def get_job_search_service(
     ),
 ):
     return JobSearchService(repo)
+
+
+def get_resume_tailor_service(
+    repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+    resume_service: ResumeService = Depends(
+        get_resume_service
+    ),
+):
+    return ResumeTailorService(
+        repo,
+        resume_service,
+    )

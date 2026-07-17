@@ -15,12 +15,15 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             filename="resume.txt",
             file=AsyncMock(),
         )
+        file.close = AsyncMock()
 
         with self.assertRaisesRegex(
             ValueError,
             "Only PDF and DOCX",
         ):
             await service.analyze_upload(file, object())
+
+        file.close.assert_awaited_once()
 
     @patch(
         "backend.services.resume_service.analyze_resume"

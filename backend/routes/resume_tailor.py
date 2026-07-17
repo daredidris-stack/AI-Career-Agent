@@ -1,91 +1,48 @@
-import json
-import os
-import re
-import shutil
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from fastapi import APIRouter, File, Form, UploadFile
-from ollama import chat
-
-from docx_reader import read_docx_resume
-from resume_reader import read_pdf_resume
-
-
-router = APIRouter()
+from backend.dependencies.auth import get_current_user
+from backend.dependencies.services import get_resume_tailor_service
+from backend.models.user import User
+from backend.services.resume_tailor_service import (
+    ProfileRequiredError,
+    ResumeTailorError,
+    ResumeTailorService,
+)
 
 
-@router.post("/resume/tailor-upload")
+router = APIRouter(
+    prefix="/resume",
+    tags=["Resume"],
+)
+
+
+@router.post("/tailor-upload")
 async def tailor_resume_upload(
     file: UploadFile = File(...),
     job_description: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    service: ResumeTailorService = Depends(
+        get_resume_tailor_service
+    ),
 ):
-    os.makedirs("uploads", exist_ok=True)
-    file_path = f"uploads/{file.filename}"
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    if file.filename.lower().endswith(".pdf"):
-        resume_text = read_pdf_resume(file_path)
-    elif file.filename.lower().endswith(".docx"):
-        resume_text = read_docx_resume(file_path)
-    else:
-        return {
-            "error": "Only PDF and DOCX files are supported."
-        }
-
-    prompt = f"""
-You are a professional resume writer.
-
-Rewrite this resume so it matches the job description.
-
-Resume:
-
-{resume_text}
-
-Job Description:
-
-{job_description}
-
-Return ONLY valid JSON.
-
-{{
-    "summary":"",
-    "skills":[],
-    "experience":[]
-}}
-
-Rules:
-
-- Never invent experience.
-- Improve ATS keywords.
-- Rewrite professionally.
-- Keep the candidate truthful.
-"""
-
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-    )
-
-    match = re.search(
-        r"\{.*\}",
-        response.message.content,
-        re.DOTALL,
-    )
-
-    if match:
-        try:
-            return json.loads(match.group())
-        except (TypeError, ValueError):
-            pass
-
-    return {
-        "summary": "",
-        "skills": [],
-        "experience": [],
-    }
+    try:
+        return await service.tailor_for_user(
+            user_id=current_user.id,
+            file=file,
+            job_description=job_description,
+        )
+    except ProfileRequiredError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+    except ResumeTailorError as error:
+        raise HTTPException(
+            status_code=502,
+            detail=str(error),
+        ) from error

@@ -16,15 +16,15 @@ SUPPORTED_RESUME_TYPES = {
 
 
 class ResumeService:
-    async def analyze_upload(
+    async def extract_text(
         self,
         file: UploadFile,
-        profile: Any,
-    ) -> dict:
+    ) -> str:
         suffix = Path(file.filename or "").suffix.lower()
         resume_reader = SUPPORTED_RESUME_TYPES.get(suffix)
 
         if not resume_reader:
+            await file.close()
             raise ValueError(
                 "Only PDF and DOCX files are supported."
             )
@@ -41,16 +41,23 @@ class ResumeService:
                 while chunk := await file.read(1024 * 1024):
                     temporary_file.write(chunk)
 
-            resume_text = resume_reader(
+            return resume_reader(
                 str(temporary_path)
-            )
-
-            return analyze_resume(
-                resume_text,
-                profile,
             )
         finally:
             await file.close()
 
             if temporary_path:
                 temporary_path.unlink(missing_ok=True)
+
+    async def analyze_upload(
+        self,
+        file: UploadFile,
+        profile: Any,
+    ) -> dict:
+        resume_text = await self.extract_text(file)
+
+        return analyze_resume(
+            resume_text,
+            profile,
+        )
