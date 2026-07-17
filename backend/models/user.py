@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, Integer, String, DateTime
 
 from backend.core.time import utc_now
 from backend.database.database import Base
@@ -28,6 +28,11 @@ class User(Base):
         String,
         nullable=False
     )
+
+    token_version = Column(Integer, nullable=False, default=0)
+    failed_login_attempts = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    is_email_verified = Column(Boolean, nullable=False, default=False)
 
 
     first_name = Column(

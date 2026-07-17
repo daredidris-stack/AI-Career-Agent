@@ -43,5 +43,11 @@ def get_current_user(
             detail="User not found",
         )
 
+    if payload.get("token_version") != (user.token_version or 0):
+        raise HTTPException(
+            status_code=401,
+            detail="Token has been revoked",
+        )
+
 
     return user

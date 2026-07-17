@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
 from backend.models.user import User
+from backend.models.profile import Profile
+from backend.models.resume_analysis import ResumeAnalysis
 
 
 class UserRepository:
@@ -43,3 +45,19 @@ class UserRepository:
             .filter(User.id == user_id)
             .first()
         )
+
+    def save(self, user: User) -> User:
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def delete_user(self, user: User) -> None:
+        self.db.query(ResumeAnalysis).filter(
+            ResumeAnalysis.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.query(Profile).filter(
+            Profile.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.delete(user)
+        self.db.commit()

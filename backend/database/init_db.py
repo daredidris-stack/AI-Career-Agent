@@ -28,5 +28,22 @@ if "extracted_skills" not in columns:
             "NOT NULL DEFAULT '[]'"
         ))
 
+user_columns = {
+    column["name"]
+    for column in inspect(engine).get_columns("users")
+}
+user_migrations = {
+    "token_version": "INTEGER NOT NULL DEFAULT 0",
+    "failed_login_attempts": "INTEGER NOT NULL DEFAULT 0",
+    "locked_until": "DATETIME",
+    "is_email_verified": "BOOLEAN NOT NULL DEFAULT 0",
+}
+for name, definition in user_migrations.items():
+    if name not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(text(
+                f"ALTER TABLE users ADD COLUMN {name} {definition}"
+            ))
+
 
 print("Database created successfully")

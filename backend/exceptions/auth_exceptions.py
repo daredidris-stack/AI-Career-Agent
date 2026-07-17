@@ -6,5 +6,9 @@ class InvalidCredentialsError(Exception):
     """Raised when login credentials are invalid."""
 
 
+class LoginLockedError(Exception):
+    """Raised when repeated failed logins temporarily lock an account."""
+
+
 class UserNotFoundError(Exception):
     """Raised when a user cannot be found."""
