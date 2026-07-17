@@ -16,7 +16,10 @@ from backend.routes.users import router as users_router
 from backend.routes.profile import router as profile_router
 from backend.routes.documents import router as documents_router
 from backend.routes.applications import router as applications_router
+from backend.routes.health import router as health_router
 from backend.services.ai_usage_service import AIUsageLimitError
+from backend.core.logging import log_request
+from backend.core.settings import CORS_ALLOWED_ORIGINS
 
 
 app = FastAPI(
@@ -28,14 +31,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-    ],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.middleware("http")(log_request)
 
 
 @app.exception_handler(AIUsageLimitError)
@@ -58,6 +59,7 @@ app.include_router(users_router)
 app.include_router(profile_router)
 app.include_router(documents_router)
 app.include_router(applications_router)
+app.include_router(health_router)
 
 
 @app.get("/")

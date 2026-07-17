@@ -41,7 +41,17 @@ AI_REQUESTS_PER_DAY = max(
 )
 
 APP_ENV = os.getenv("APP_ENV", "development")
+APP_RELEASE = os.getenv("APP_RELEASE", "development")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:5174",
+    ).split(",")
+    if origin.strip()
+]
 REQUIRE_EMAIL_VERIFICATION = (
     os.getenv("REQUIRE_EMAIL_VERIFICATION", "false").casefold() == "true"
 )
