@@ -21,6 +21,22 @@ class DeleteAccountRequest(BaseModel):
     password: str
 
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+class TokenConfirmationRequest(BaseModel):
+    token: str
+
+
+class PasswordResetRequest(TokenConfirmationRequest):
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
@@ -36,6 +52,7 @@ class UserResponse(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     created_at: datetime
+    is_email_verified: bool = False
 
     model_config = {
         "from_attributes": True

@@ -41,3 +41,28 @@ def decode_access_token(token: str):
     except JWTError:
 
         return None
+
+
+def create_action_token(
+    user_id: int,
+    token_version: int,
+    purpose: str,
+    expires_minutes: int,
+) -> str:
+    return jwt.encode(
+        {
+            "user_id": user_id,
+            "token_version": token_version,
+            "purpose": purpose,
+            "exp": datetime.now(UTC) + timedelta(minutes=expires_minutes),
+        },
+        require_jwt_secret(),
+        algorithm=JWT_ALGORITHM,
+    )
+
+
+def decode_action_token(token: str, purpose: str) -> dict | None:
+    payload = decode_access_token(token)
+    if not payload or payload.get("purpose") != purpose:
+        return None
+    return payload

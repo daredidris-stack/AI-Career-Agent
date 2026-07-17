@@ -91,6 +91,8 @@ export DATABASE_URL="sqlite:///./career_agent.db"
 export ADZUNA_APP_ID=""
 export ADZUNA_APP_KEY=""
 export JOOBLE_API_KEY=""
+export FRONTEND_URL="http://localhost:5173"
+export REQUIRE_EMAIL_VERIFICATION="false"
 ```
 
 The available variables are documented in `.env.example`. Do not commit real credentials.
@@ -151,6 +153,14 @@ npm --prefix frontend run build
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
 | `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
+| `FRONTEND_URL` | No | Frontend origin used in verification and reset links |
+| `REQUIRE_EMAIL_VERIFICATION` | No | Blocks unverified login when set to `true` |
+| `SMTP_HOST` | Production | SMTP server used for account emails |
+| `SMTP_PORT` | No | SMTP port; defaults to `587` |
+| `SMTP_USERNAME` | Production | SMTP login username |
+| `SMTP_PASSWORD` | Production | SMTP login password |
+| `SMTP_FROM_EMAIL` | Production | Sender address for account emails |
+| `SMTP_USE_TLS` | No | Enables SMTP STARTTLS; defaults to `true` |
 
 ## Development principles
 

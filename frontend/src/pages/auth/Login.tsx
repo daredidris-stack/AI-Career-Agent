@@ -219,12 +219,12 @@ export default function Login() {
                       Password
                     </span>
 
-                    <button
-                      type="button"
+                    <Link
+                      to="/forgot-password"
                       className="text-sm font-medium text-blue-400 transition hover:text-blue-300"
                     >
                       Forgot password?
-                    </button>
+                    </Link>
 
                   </div>
 

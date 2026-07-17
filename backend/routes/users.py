@@ -21,4 +21,5 @@ def get_me(
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
         "created_at": current_user.created_at,
+        "is_email_verified": current_user.is_email_verified,
     }

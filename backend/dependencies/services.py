@@ -26,6 +26,7 @@ from backend.repositories.resume_analysis_repository import (
 from backend.services.auth_service import (
     AuthService,
 )
+from backend.services.email_service import EmailService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -69,8 +70,7 @@ def get_auth_service(
         get_user_repository
     ),
 ):
-
-    return AuthService(repo)
+    return AuthService(repo, EmailService())
 
 
 

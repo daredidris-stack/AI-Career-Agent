@@ -18,6 +18,7 @@ class AuthServiceTests(unittest.TestCase):
             token_version=0,
             failed_login_attempts=0,
             locked_until=None,
+            is_email_verified=False,
         )
         self.repository = Mock()
         self.repository.get_by_email.return_value = self.user
@@ -66,6 +67,56 @@ class AuthServiceTests(unittest.TestCase):
             self.service.delete_account(self.user, "wrong")
 
         self.repository.delete_user.assert_not_called()
+
+    @patch("backend.services.auth_service.create_action_token", return_value="verify-token")
+    def test_verification_email_contains_frontend_link(self, _create_token):
+        email_service = Mock()
+        service = AuthService(self.repository, email_service)
+
+        service.send_verification(self.user.email)
+
+        body = email_service.send.call_args.args[2]
+        self.assertIn("/verify-email?token=verify-token", body)
+
+    @patch("backend.services.auth_service.create_action_token", return_value="reset-token")
+    def test_password_reset_request_does_not_disclose_missing_account(self, _create_token):
+        self.repository.get_by_email.return_value = None
+        email_service = Mock()
+        service = AuthService(self.repository, email_service)
+
+        service.send_password_reset("missing@example.com")
+
+        email_service.send.assert_not_called()
+
+    @patch("backend.services.auth_service.hash_password", return_value="new-hash")
+    @patch(
+        "backend.services.auth_service.decode_action_token",
+        return_value={"user_id": 7, "token_version": 0},
+    )
+    def test_password_reset_changes_password_and_revokes_tokens(
+        self,
+        _decode,
+        _hash,
+    ):
+        self.repository.get_by_id.return_value = self.user
+
+        self.service.reset_password("token", "new-password")
+
+        self.assertEqual(self.user.password_hash, "new-hash")
+        self.assertEqual(self.user.token_version, 1)
+        self.repository.save.assert_called_with(self.user)
+
+    @patch(
+        "backend.services.auth_service.decode_action_token",
+        return_value={"user_id": 7, "token_version": 0},
+    )
+    def test_email_confirmation_marks_account_verified(self, _decode):
+        self.repository.get_by_id.return_value = self.user
+
+        self.service.confirm_verification("token")
+
+        self.assertTrue(self.user.is_email_verified)
+        self.repository.save.assert_called_with(self.user)
 
 
 if __name__ == "__main__":
