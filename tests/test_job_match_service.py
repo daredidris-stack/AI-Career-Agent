@@ -49,17 +49,39 @@ class JobMatchServiceTests(unittest.TestCase):
         self.assertIn("Target role: Cloud Engineer", prompt)
 
     def test_empty_resume_is_rejected(self):
+        documents = Mock()
+        documents.list_for_user.return_value = []
+        service = JobMatchService(self.repository, documents)
         with self.assertRaisesRegex(
             ValueError,
-            "Resume cannot be empty",
+            "Analyze or create a resume",
         ):
-            self.service.match_for_user(
+            service.match_for_user(
                 6,
                 " ",
                 "Cloud role",
             )
 
         self.repository.get_by_user_id.assert_not_called()
+
+    @patch("backend.services.job_match_service.chat")
+    def test_uses_latest_saved_resume_when_request_omits_it(self, mock_chat):
+        mock_chat.return_value.message.content = """
+        {"match_score": 80, "matching_skills": [],
+         "missing_skills": [], "recommendation": "Apply"}
+        """
+        documents = Mock()
+        documents.list_for_user.return_value = [
+            SimpleNamespace(content="Latest saved resume")
+        ]
+        documents.create_for_user.return_value = SimpleNamespace(id=14)
+        service = JobMatchService(self.repository, documents)
+
+        service.match_for_user(6, None, "Cloud role")
+
+        documents.list_for_user.assert_called_once_with(6, "resume")
+        prompt = mock_chat.call_args.kwargs["messages"][0]["content"]
+        self.assertIn("Latest saved resume", prompt)
 
     def test_empty_job_description_is_rejected(self):
         with self.assertRaisesRegex(

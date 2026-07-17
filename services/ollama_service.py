@@ -37,6 +37,7 @@ def reliable_chat(
                 chat_callable,
                 model=MODEL,
                 messages=[{"role": "user", "content": prompt}],
+                think=False,
                 **({"format": response_format} if response_format else {}),
             )
         except Exception as error:

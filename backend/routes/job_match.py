@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 class JobMatchRequest(BaseModel):
-    resume: str
+    resume: str | None = None
     job_description: str
 
 

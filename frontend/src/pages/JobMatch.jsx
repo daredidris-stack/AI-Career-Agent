@@ -10,14 +10,13 @@ import {
 import api from "../services/api";
 
 function JobMatch() {
-  const [resume, setResume] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const analyze = async () => {
-    if (!resume || !jobDescription) {
-      alert("Please enter both your resume and the job description.");
+    if (!jobDescription) {
+      alert("Please enter the job description.");
       return;
     }
 
@@ -25,7 +24,6 @@ function JobMatch() {
 
     try {
       const response = await api.post("/jobs/match", {
-        resume,
         job_description: jobDescription,
       });
 
@@ -62,29 +60,16 @@ function JobMatch() {
 
       {/* Input Section */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-
-          <h2 className="text-2xl font-bold text-white mb-4">
-            Your Resume
-          </h2>
-
-          <textarea
-            rows={12}
-            value={resume}
-            onChange={(e) => setResume(e.target.value)}
-            placeholder="Paste your resume here..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white resize-none focus:outline-none focus:border-blue-500"
-          />
-
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
 
           <h2 className="text-2xl font-bold text-white mb-4">
             Job Description
           </h2>
+
+          <p className="mb-4 text-sm text-gray-400">
+            Your latest Resume Studio document and authenticated profile are used automatically.
+          </p>
 
           <textarea
             rows={12}

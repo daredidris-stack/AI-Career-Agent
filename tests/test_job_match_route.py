@@ -17,7 +17,6 @@ from backend.services.job_match_service import (
 class JobMatchRouteTests(unittest.TestCase):
     def setUp(self):
         self.request = JobMatchRequest(
-            resume="Resume",
             job_description="Cloud role",
         )
         self.user = SimpleNamespace(id=10)
@@ -40,7 +39,7 @@ class JobMatchRouteTests(unittest.TestCase):
         self.assertEqual(result["match_score"], 80)
         self.service.match_for_user.assert_called_once_with(
             user_id=10,
-            resume="Resume",
+            resume=None,
             job_description="Cloud role",
         )
 

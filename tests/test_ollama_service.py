@@ -39,6 +39,17 @@ class OllamaServiceTests(unittest.TestCase):
         prompt = provider.call_args.kwargs["messages"][0]["content"]
         self.assertEqual(prompt, "12345678")
 
+    def test_disables_extended_model_thinking(self):
+        provider = Mock(
+            return_value=SimpleNamespace(
+                message=SimpleNamespace(content="ok")
+            )
+        )
+
+        reliable_chat("prompt", chat_callable=provider)
+
+        self.assertIs(provider.call_args.kwargs["think"], False)
+
 
 if __name__ == "__main__":
     unittest.main()
