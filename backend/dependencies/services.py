@@ -5,6 +5,7 @@ from backend.dependencies.repositories import (
     get_profile_repository,
     get_job_catalog_repository,
     get_resume_analysis_repository,
+    get_career_document_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -22,11 +23,15 @@ from backend.repositories.job_catalog_repository import (
 from backend.repositories.resume_analysis_repository import (
     ResumeAnalysisRepository,
 )
+from backend.repositories.career_document_repository import (
+    CareerDocumentRepository,
+)
 
 from backend.services.auth_service import (
     AuthService,
 )
 from backend.services.email_service import EmailService
+from backend.services.career_document_service import CareerDocumentService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -83,6 +88,14 @@ def get_profile_service(
     return ProfileService(repo)
 
 
+def get_career_document_service(
+    repo: CareerDocumentRepository = Depends(
+        get_career_document_repository
+    ),
+):
+    return CareerDocumentService(repo)
+
+
 def get_resume_service(
     profile_repo: ProfileRepository = Depends(
         get_profile_repository
@@ -90,8 +103,11 @@ def get_resume_service(
     analysis_repo: ResumeAnalysisRepository = Depends(
         get_resume_analysis_repository
     ),
+    document_service: CareerDocumentService = Depends(
+        get_career_document_service
+    ),
 ):
-    return ResumeService(profile_repo, analysis_repo)
+    return ResumeService(profile_repo, analysis_repo, document_service)
 
 
 def get_job_search_service(
@@ -112,10 +128,14 @@ def get_resume_tailor_service(
     resume_service: ResumeService = Depends(
         get_resume_service
     ),
+    document_service: CareerDocumentService = Depends(
+        get_career_document_service
+    ),
 ):
     return ResumeTailorService(
         repo,
         resume_service,
+        document_service,
     )
 
 
@@ -123,16 +143,22 @@ def get_cover_letter_service(
     repo: ProfileRepository = Depends(
         get_profile_repository
     ),
+    document_service: CareerDocumentService = Depends(
+        get_career_document_service
+    ),
 ):
-    return CoverLetterService(repo)
+    return CoverLetterService(repo, document_service)
 
 
 def get_job_match_service(
     repo: ProfileRepository = Depends(
         get_profile_repository
     ),
+    document_service: CareerDocumentService = Depends(
+        get_career_document_service
+    ),
 ):
-    return JobMatchService(repo)
+    return JobMatchService(repo, document_service)
 
 
 def get_skill_gap_service(

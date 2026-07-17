@@ -3,6 +3,7 @@ from typing import Any
 from ollama import chat
 
 from backend.repositories.profile_repository import ProfileRepository
+from backend.services.career_document_service import CareerDocumentService
 
 
 class ProfileRequiredError(Exception):
@@ -28,8 +29,10 @@ class CoverLetterService:
     def __init__(
         self,
         profile_repository: ProfileRepository,
+        document_service: CareerDocumentService | None = None,
     ):
         self.profile_repository = profile_repository
+        self.document_service = document_service
 
     def generate_for_user(
         self,
@@ -88,9 +91,19 @@ class CoverLetterService:
                 "The AI returned an empty cover letter."
             )
 
-        return {
+        result = {
             "cover_letter": cover_letter,
         }
+        if self.document_service:
+            document = self.document_service.create_for_user(
+                user_id,
+                "cover_letter",
+                "Cover Letter",
+                cover_letter,
+                job_description=job_description,
+            )
+            result["document_id"] = document.id
+        return result
 
     @staticmethod
     def _build_prompt(

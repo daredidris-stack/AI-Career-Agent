@@ -37,6 +37,35 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class CareerDocumentCreate(BaseModel):
+    kind: str
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1)
+    source_filename: str | None = None
+    job_description: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class CareerDocumentUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1)
+
+
+class CareerDocumentResponse(BaseModel):
+    id: int
+    user_id: int
+    kind: str
+    title: str
+    content: str
+    source_filename: str | None
+    job_description: str | None
+    metadata_json: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

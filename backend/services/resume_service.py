@@ -12,6 +12,7 @@ from backend.repositories.resume_analysis_repository import (
     ResumeAnalysisRepository,
 )
 from backend.services.candidate_skills import normalize_explicit_skills
+from backend.services.career_document_service import CareerDocumentService
 
 
 SUPPORTED_RESUME_TYPES = {
@@ -25,9 +26,11 @@ class ResumeService:
         self,
         profile_repository: ProfileRepository,
         analysis_repository: ResumeAnalysisRepository,
+        document_service: CareerDocumentService | None = None,
     ):
         self.profile_repository = profile_repository
         self.analysis_repository = analysis_repository
+        self.document_service = document_service
 
     async def extract_text(
         self,
@@ -89,12 +92,29 @@ class ResumeService:
 
         try:
             self.analysis_repository.create(user_id, filename, result)
+            document = None
+            if self.document_service:
+                document = self.document_service.create_for_user(
+                    user_id,
+                    "resume",
+                    filename,
+                    resume_text,
+                    source_filename=filename,
+                    metadata={
+                        "resume_score": result["resume_score"],
+                        "ats_score": result["ats_score"],
+                        "skills": result["skills"],
+                    },
+                )
         except Exception as error:
             raise ResumeAnalysisError(
                 "Resume analysis could not be saved."
             ) from error
 
-        return result
+        return {
+            **result,
+            **({"document_id": document.id} if document else {}),
+        }
 
     @staticmethod
     def _normalize_result(result: Any) -> dict[str, Any]:

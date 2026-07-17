@@ -121,6 +121,24 @@ class JobMatchServiceTests(unittest.TestCase):
 
         self.assertEqual(result["match_score"], 100)
 
+    @patch("backend.services.job_match_service.chat")
+    def test_match_report_is_saved_to_document_library(self, mock_chat):
+        mock_chat.return_value.message.content = """
+        {"match_score": 80, "matching_skills": [],
+         "missing_skills": [], "recommendation": "Apply"}
+        """
+        documents = Mock()
+        documents.create_for_user.return_value = SimpleNamespace(id=13)
+        service = JobMatchService(self.repository, documents)
+
+        result = service.match_for_user(6, "Resume", "Cloud role")
+
+        self.assertEqual(result["document_id"], 13)
+        self.assertEqual(
+            documents.create_for_user.call_args.args[1],
+            "job_match",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

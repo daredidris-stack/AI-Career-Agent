@@ -112,6 +112,24 @@ class CoverLetterServiceTests(unittest.TestCase):
                 "Cloud role",
             )
 
+    @patch("backend.services.cover_letter_service.chat")
+    def test_generated_letter_is_saved_to_document_library(self, mock_chat):
+        mock_chat.return_value.message.content = "Letter body"
+        documents = Mock()
+        documents.create_for_user.return_value = SimpleNamespace(id=12)
+        service = CoverLetterService(self.repository, documents)
+
+        result = service.generate_for_user(5, "Resume", "Cloud role")
+
+        self.assertEqual(result["document_id"], 12)
+        documents.create_for_user.assert_called_once_with(
+            5,
+            "cover_letter",
+            "Cover Letter",
+            "Letter body",
+            job_description="Cloud role",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import api from "../services/api";
+import DocumentLibrary from "../components/documents/DocumentLibrary";
 
 function Resume() {
   const [file, setFile] = useState(null);
@@ -104,6 +105,8 @@ function Resume() {
         </div>
 
       </div>
+
+      <DocumentLibrary refreshToken={result?.document_id} />
 
       {/* Results */}
 

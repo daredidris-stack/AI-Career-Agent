@@ -7,6 +7,7 @@ from ollama import chat
 
 from backend.repositories.profile_repository import ProfileRepository
 from backend.services.resume_service import ResumeService
+from backend.services.career_document_service import CareerDocumentService
 
 
 class ProfileRequiredError(Exception):
@@ -33,9 +34,11 @@ class ResumeTailorService:
         self,
         profile_repository: ProfileRepository,
         resume_service: ResumeService,
+        document_service: CareerDocumentService | None = None,
     ):
         self.profile_repository = profile_repository
         self.resume_service = resume_service
+        self.document_service = document_service
 
     async def tailor_for_user(
         self,
@@ -57,6 +60,7 @@ class ResumeTailorService:
                 "Create your profile before tailoring a resume."
             )
 
+        source_filename = getattr(file, "filename", None) or "resume"
         try:
             resume_text = await self.resume_service.extract_text(
                 file
@@ -93,6 +97,17 @@ class ResumeTailorService:
             raise ResumeTailorError(
                 "Resume tailoring is temporarily unavailable."
             ) from error
+
+        if self.document_service:
+            document = self.document_service.create_for_user(
+                user_id,
+                "tailored_resume",
+                f"Tailored {source_filename}",
+                json.dumps(result, indent=2),
+                source_filename=source_filename,
+                job_description=job_description.strip(),
+            )
+            result["document_id"] = document.id
 
         return result
 

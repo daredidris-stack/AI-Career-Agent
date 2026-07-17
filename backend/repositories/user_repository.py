@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from backend.models.user import User
 from backend.models.profile import Profile
 from backend.models.resume_analysis import ResumeAnalysis
+from backend.models.career_document import CareerDocument
 
 
 class UserRepository:
@@ -53,6 +54,9 @@ class UserRepository:
         return user
 
     def delete_user(self, user: User) -> None:
+        self.db.query(CareerDocument).filter(
+            CareerDocument.user_id == user.id
+        ).delete(synchronize_session=False)
         self.db.query(ResumeAnalysis).filter(
             ResumeAnalysis.user_id == user.id
         ).delete(synchronize_session=False)

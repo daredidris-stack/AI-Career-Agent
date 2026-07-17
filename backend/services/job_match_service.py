@@ -5,6 +5,7 @@ from typing import Any
 from ollama import chat
 
 from backend.repositories.profile_repository import ProfileRepository
+from backend.services.career_document_service import CareerDocumentService
 
 
 class ProfileRequiredError(Exception):
@@ -30,8 +31,10 @@ class JobMatchService:
     def __init__(
         self,
         profile_repository: ProfileRepository,
+        document_service: CareerDocumentService | None = None,
     ):
         self.profile_repository = profile_repository
+        self.document_service = document_service
 
     def match_for_user(
         self,
@@ -75,7 +78,7 @@ class JobMatchService:
                     }
                 ],
             )
-            return self._parse_response(
+            result = self._parse_response(
                 response.message.content
             )
         except JobMatchError:
@@ -84,6 +87,17 @@ class JobMatchService:
             raise JobMatchError(
                 "Job matching is temporarily unavailable."
             ) from error
+
+        if self.document_service:
+            document = self.document_service.create_for_user(
+                user_id,
+                "job_match",
+                "Job Match Report",
+                json.dumps(result, indent=2),
+                job_description=job_description,
+            )
+            result["document_id"] = document.id
+        return result
 
     @staticmethod
     def _build_prompt(
