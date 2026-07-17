@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Sparkles,
-  FileText,
   Briefcase,
   Copy,
   CheckCircle,
@@ -12,7 +11,6 @@ import api from "../services/api";
 
 function CoverLetter() {
 
-  const [resume, setResume] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [letter, setLetter] = useState("");
@@ -22,8 +20,8 @@ function CoverLetter() {
 
   const generate = async () => {
 
-    if (!resume || !jobDescription) {
-      alert("Please enter your resume and job description.");
+    if (!jobDescription) {
+      alert("Please enter the job description.");
       return;
     }
 
@@ -36,7 +34,6 @@ function CoverLetter() {
       const response = await api.post(
         "/cover-letter",
         {
-          resume,
           job_description: jobDescription,
         }
       );
@@ -98,46 +95,7 @@ function CoverLetter() {
 
       {/* Inputs */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-
-
-          <div className="flex items-center gap-3 mb-5">
-
-            <FileText
-              className="text-blue-500"
-            />
-
-            <h2 className="text-2xl font-bold text-white">
-              Your Resume
-            </h2>
-
-          </div>
-
-
-          <textarea
-
-            rows="12"
-
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white resize-none focus:outline-none focus:border-blue-500"
-
-            placeholder="Paste your resume..."
-
-            value={resume}
-
-            onChange={(e)=>setResume(e.target.value)}
-
-          />
-
-
-        </div>
-
-
-
-
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
 
 
@@ -154,6 +112,10 @@ function CoverLetter() {
 
 
           </div>
+
+          <p className="mb-4 text-sm text-gray-400">
+            Your latest Resume Studio document and authenticated profile are used automatically.
+          </p>
 
 
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from typing import Any
@@ -44,7 +45,7 @@ class ResumeTailorService:
     async def tailor_for_user(
         self,
         user_id: int,
-        file: UploadFile,
+        file: UploadFile | None,
         job_description: str,
     ) -> dict[str, Any]:
         if not job_description.strip():
@@ -61,17 +62,18 @@ class ResumeTailorService:
                 "Create your profile before tailoring a resume."
             )
 
-        source_filename = getattr(file, "filename", None) or "resume"
-        try:
-            resume_text = await self.resume_service.extract_text(
-                file
-            )
-        except ValueError:
-            raise
-        except Exception as error:
-            raise ResumeTailorError(
-                "The uploaded resume could not be read."
-            ) from error
+        if file:
+            source_filename = getattr(file, "filename", None) or "resume"
+            try:
+                resume_text = await self.resume_service.extract_text(file)
+            except ValueError:
+                raise
+            except Exception as error:
+                raise ResumeTailorError(
+                    "The uploaded resume could not be read."
+                ) from error
+        else:
+            resume_text, source_filename = self._latest_resume_for_user(user_id)
 
         prompt = self._build_prompt(
             resume_text,
@@ -80,7 +82,8 @@ class ResumeTailorService:
         )
 
         try:
-            response = reliable_chat(
+            response = await asyncio.to_thread(
+                reliable_chat,
                 prompt,
                 chat_callable=chat,
                 response_format="json",
@@ -107,6 +110,18 @@ class ResumeTailorService:
             result["document_id"] = document.id
 
         return result
+
+    def _latest_resume_for_user(self, user_id: int) -> tuple[str, str]:
+        if self.document_service:
+            resumes = self.document_service.list_for_user(user_id, "resume")
+            if resumes:
+                resume = resumes[0]
+                return str(resume.content).strip(), (
+                    resume.source_filename or resume.title or "resume"
+                )
+        raise ValueError(
+            "Analyze or create a resume before tailoring it."
+        )
 
     @staticmethod
     def _build_prompt(

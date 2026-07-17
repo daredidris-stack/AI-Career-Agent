@@ -17,7 +17,6 @@ from backend.services.cover_letter_service import (
 class CoverLetterRouteTests(unittest.TestCase):
     def setUp(self):
         self.request = CoverLetterRequest(
-            resume="Resume",
             job_description="Cloud role",
         )
         self.user = SimpleNamespace(id=9)
@@ -37,7 +36,7 @@ class CoverLetterRouteTests(unittest.TestCase):
         self.assertEqual(result, {"cover_letter": "Letter"})
         self.service.generate_for_user.assert_called_once_with(
             user_id=9,
-            resume="Resume",
+            resume=None,
             job_description="Cloud role",
         )
 

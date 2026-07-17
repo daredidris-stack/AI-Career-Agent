@@ -84,6 +84,35 @@ class ResumeTailorServiceTests(unittest.IsolatedAsyncioTestCase):
             )
 
     @patch("backend.services.resume_tailor_service.chat")
+    async def test_uses_latest_saved_resume_when_file_is_omitted(
+        self,
+        mock_chat,
+    ):
+        mock_chat.return_value.message.content = """
+        {"summary": "Cloud professional", "skills": ["AWS"],
+         "experience": ["Supported infrastructure"]}
+        """
+        documents = Mock()
+        documents.list_for_user.return_value = [SimpleNamespace(
+            content="Latest saved resume",
+            source_filename="saved.pdf",
+            title="Saved resume",
+        )]
+        documents.create_for_user.return_value = SimpleNamespace(id=15)
+        service = ResumeTailorService(
+            self.repository,
+            self.resume_service,
+            documents,
+        )
+
+        await service.tailor_for_user(8, None, "Cloud role")
+
+        documents.list_for_user.assert_called_once_with(8, "resume")
+        prompt = mock_chat.call_args.kwargs["messages"][0]["content"]
+        self.assertIn("Latest saved resume", prompt)
+        self.resume_service.extract_text.assert_not_awaited()
+
+    @patch("backend.services.resume_tailor_service.chat")
     async def test_invalid_ai_response_returns_service_error(
         self,
         mock_chat,

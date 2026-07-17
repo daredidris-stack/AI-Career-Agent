@@ -18,7 +18,7 @@ router = APIRouter(
 
 
 class CoverLetterRequest(BaseModel):
-    resume: str
+    resume: str | None = None
     job_description: str
 
 

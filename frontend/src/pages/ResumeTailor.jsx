@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Upload,
   Sparkles,
   FileText,
   Briefcase,
@@ -10,17 +9,11 @@ import {
 import api from "../services/api";
 
 function ResumeTailor() {
-  const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
   const tailorResume = async () => {
-    if (!file) {
-      alert("Please upload your resume.");
-      return;
-    }
-
     if (!jobDescription.trim()) {
       alert("Please paste a job description.");
       return;
@@ -31,7 +24,6 @@ function ResumeTailor() {
     try {
       const formData = new FormData();
 
-      formData.append("file", file);
       formData.append("job_description", jobDescription);
 
       const response = await api.post(
@@ -71,35 +63,7 @@ function ResumeTailor() {
 
       {/* Upload & Job Description */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-
-          <div className="flex items-center gap-3 mb-5">
-
-            <Upload className="text-blue-500" />
-
-            <h2 className="text-2xl font-bold text-white">
-              Upload Resume
-            </h2>
-
-          </div>
-
-          <input
-            type="file"
-            accept=".pdf,.docx"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="block w-full bg-gray-800 rounded-xl p-4 text-white"
-          />
-
-          {file && (
-            <p className="text-green-400 mt-4">
-              {file.name}
-            </p>
-          )}
-
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
 
           <div className="flex items-center gap-3 mb-5">
@@ -111,6 +75,10 @@ function ResumeTailor() {
             </h2>
 
           </div>
+
+          <p className="mb-4 text-sm text-gray-400">
+            Your latest Resume Studio document and authenticated profile are used automatically.
+          </p>
 
           <textarea
             rows={10}

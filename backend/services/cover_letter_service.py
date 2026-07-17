@@ -38,14 +38,14 @@ class CoverLetterService:
     def generate_for_user(
         self,
         user_id: int,
-        resume: str,
+        resume: str | None,
         job_description: str,
     ) -> dict[str, str]:
-        resume = resume.strip()
+        resume = (resume or "").strip()
         job_description = job_description.strip()
 
         if not resume:
-            raise ValueError("Resume cannot be empty.")
+            resume = self._latest_resume_for_user(user_id)
 
         if not job_description:
             raise ValueError(
@@ -100,6 +100,15 @@ class CoverLetterService:
             )
             result["document_id"] = document.id
         return result
+
+    def _latest_resume_for_user(self, user_id: int) -> str:
+        if self.document_service:
+            resumes = self.document_service.list_for_user(user_id, "resume")
+            if resumes:
+                return str(resumes[0].content).strip()
+        raise ValueError(
+            "Analyze or create a resume before generating a cover letter."
+        )
 
     @staticmethod
     def _build_prompt(

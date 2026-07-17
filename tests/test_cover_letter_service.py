@@ -51,17 +51,36 @@ class CoverLetterServiceTests(unittest.TestCase):
         self.assertIn("Supported AWS infrastructure.", prompt)
 
     def test_empty_resume_is_rejected_before_profile_lookup(self):
+        documents = Mock()
+        documents.list_for_user.return_value = []
+        service = CoverLetterService(self.repository, documents)
         with self.assertRaisesRegex(
             ValueError,
-            "Resume cannot be empty",
+            "Analyze or create a resume",
         ):
-            self.service.generate_for_user(
+            service.generate_for_user(
                 5,
                 "   ",
                 "Cloud role",
             )
 
         self.repository.get_by_user_id.assert_not_called()
+
+    @patch("backend.services.cover_letter_service.chat")
+    def test_uses_latest_saved_resume_when_request_omits_it(self, mock_chat):
+        mock_chat.return_value.message.content = "Letter body"
+        documents = Mock()
+        documents.list_for_user.return_value = [
+            SimpleNamespace(content="Latest saved resume")
+        ]
+        documents.create_for_user.return_value = SimpleNamespace(id=16)
+        service = CoverLetterService(self.repository, documents)
+
+        service.generate_for_user(5, None, "Cloud role")
+
+        documents.list_for_user.assert_called_once_with(5, "resume")
+        prompt = mock_chat.call_args.kwargs["messages"][0]["content"]
+        self.assertIn("Latest saved resume", prompt)
 
     def test_empty_job_description_is_rejected(self):
         with self.assertRaisesRegex(

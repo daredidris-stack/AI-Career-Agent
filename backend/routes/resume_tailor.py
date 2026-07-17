@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post("/tailor-upload")
 async def tailor_resume_upload(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
     job_description: str = Form(...),
     current_user: User = Depends(get_current_user),
     service: ResumeTailorService = Depends(
