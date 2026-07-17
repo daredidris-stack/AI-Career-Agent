@@ -47,6 +47,36 @@ class HimalayasApiTests(unittest.TestCase):
         self.assertTrue(params["worldwide"])
         self.assertNotIn("country", params)
 
+    @patch("himalayas_api.requests.get")
+    def test_normalizes_string_location_restrictions(self, mock_get):
+        response = Mock()
+        response.json.return_value = {
+            "jobs": [{
+                "title": "Site Reliability Engineer",
+                "locationRestrictions": ["Worldwide", "Mexico"],
+            }]
+        }
+        mock_get.return_value = response
+
+        jobs = search_jobs("SRE", "Worldwide")
+
+        self.assertEqual(jobs[0]["location"], "Worldwide, Mexico")
+
+    @patch("himalayas_api.requests.get")
+    def test_ignores_malformed_location_restrictions(self, mock_get):
+        response = Mock()
+        response.json.return_value = {
+            "jobs": [{
+                "title": "Site Reliability Engineer",
+                "locationRestrictions": [None, 42, {}, ""],
+            }]
+        }
+        mock_get.return_value = response
+
+        jobs = search_jobs("SRE", "Worldwide")
+
+        self.assertEqual(jobs[0]["location"], "Worldwide remote")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@
 - Job Match, Resume Tailor, and Cover Letter use the authenticated user's latest saved Resume Studio document instead of requiring duplicate resume input.
 - Job Match returned a grounded 78% SRE match using saved resume and profile evidence.
 - Worldwide job search returned 20 attributed listings from available providers. Missing provider credentials and provider failures degrade without failing the whole search.
+- Himalayas location normalization accepts both object and string restriction payloads and ignores malformed entries without dropping the provider batch.
 - Application creation, editing, status movement, archive filtering, deletion, and pipeline counters were exercised through the local interface.
 - Account export returned successfully. The disposable beta account was deleted, its credentials stopped working, and database checks found no orphaned profile, document, revision, analysis, application, or AI-usage records.
 - Automated coverage rejects unsupported, spoofed, oversized, and empty resume files.
@@ -30,7 +31,6 @@ These items should be completed before inviting a wider tester group:
 - Manually enter and persist an application follow-up reminder. Native date-time entry could not be completed reliably through browser automation.
 - Exercise the Free-plan 429 response through the deployed interface and confirm a second account remains unaffected. Per-user accounting has automated coverage.
 - Confirm the deployed AI timeout, retry, model, and capacity settings under concurrent beta usage. Local AI responses took roughly 12–30 seconds during smoke testing.
-- Monitor the Himalayas location payload edge case observed during one provider response; aggregation remained available through other providers.
 
 ## Safe scope for invited testers
 

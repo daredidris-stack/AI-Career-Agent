@@ -37,10 +37,7 @@ def _country_filter(location: str) -> str:
 
 
 def _normalize(job: dict[str, Any]) -> dict[str, Any]:
-    locations = job.get("locationRestrictions") or []
-    location = ", ".join(
-        item.get("name", "") for item in locations if item.get("name")
-    ) or "Worldwide remote"
+    location = _location_label(job.get("locationRestrictions"))
     salary = _salary(job)
 
     return {
@@ -58,6 +55,25 @@ def _normalize(job: dict[str, Any]) -> dict[str, Any]:
         "salary_max": job.get("maxSalary"),
         "updated": job.get("pubDate"),
     }
+
+
+def _location_label(value: Any) -> str:
+    if isinstance(value, (str, dict)):
+        value = [value]
+    if not isinstance(value, list):
+        return "Worldwide remote"
+
+    labels = []
+    for item in value:
+        if isinstance(item, str):
+            label = item.strip()
+        elif isinstance(item, dict):
+            label = str(item.get("name") or "").strip()
+        else:
+            label = ""
+        if label:
+            labels.append(label)
+    return ", ".join(labels) or "Worldwide remote"
 
 
 def _salary(job: dict[str, Any]) -> str:
