@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -103,7 +104,11 @@ class ResumeService:
         filename = file.filename or "resume"
         resume_text = await self.extract_text(file)
         try:
-            raw_result = analyze_resume(resume_text, profile)
+            raw_result = await asyncio.to_thread(
+                analyze_resume,
+                resume_text,
+                profile,
+            )
         except Exception as error:
             raise ResumeAnalysisError(
                 "Resume analysis is temporarily unavailable."

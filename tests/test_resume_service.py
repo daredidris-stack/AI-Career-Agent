@@ -89,6 +89,31 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         )
         file.close.assert_awaited_once()
 
+    @patch(
+        "backend.services.resume_service.asyncio.to_thread",
+        new_callable=AsyncMock,
+    )
+    async def test_runs_ai_analysis_off_the_event_loop(self, mock_to_thread):
+        mock_to_thread.return_value = {
+            "resume_score": 80,
+            "ats_score": 75,
+        }
+        file = UploadFile(filename="resume.pdf", file=AsyncMock())
+        file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
+        file.close = AsyncMock()
+
+        with patch.dict(
+            SUPPORTED_RESUME_TYPES,
+            {".pdf": Mock(return_value="Resume text")},
+        ):
+            await self.service.analyze_upload(file, 3)
+
+        mock_to_thread.assert_awaited_once_with(
+            unittest.mock.ANY,
+            "Resume text",
+            self.profile,
+        )
+
     async def test_missing_profile_stops_analysis(self):
         self.profile_repository.get_by_user_id.return_value = None
         file = UploadFile(filename="resume.pdf", file=AsyncMock())
