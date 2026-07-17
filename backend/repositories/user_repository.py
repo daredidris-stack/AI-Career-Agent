@@ -6,6 +6,7 @@ from backend.models.resume_analysis import ResumeAnalysis
 from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
+from backend.models.ai_usage_event import AIUsageEvent
 
 
 class UserRepository:
@@ -56,6 +57,9 @@ class UserRepository:
         return user
 
     def delete_user(self, user: User) -> None:
+        self.db.query(AIUsageEvent).filter(
+            AIUsageEvent.user_id == user.id
+        ).delete(synchronize_session=False)
         self.db.query(JobApplication).filter(
             JobApplication.user_id == user.id
         ).delete(synchronize_session=False)

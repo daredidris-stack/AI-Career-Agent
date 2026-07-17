@@ -155,6 +155,12 @@ npm --prefix frontend run build
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
 | `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
+| `AI_MODEL` | No | Local Ollama model; defaults to `qwen3:8b` |
+| `AI_REQUEST_TIMEOUT_SECONDS` | No | Maximum time for one model attempt; defaults to 45 seconds |
+| `AI_MAX_RETRIES` | No | Retry count for transient model failures; defaults to 1 |
+| `AI_MAX_PROMPT_CHARACTERS` | No | Caps model input size; defaults to 30,000 characters |
+| `AI_REQUESTS_PER_HOUR` | No | Per-account hourly AI request allowance; defaults to 20 |
+| `AI_REQUESTS_PER_DAY` | No | Per-account daily AI request allowance; defaults to 100 |
 | `FRONTEND_URL` | No | Frontend origin used in verification and reset links |
 | `REQUIRE_EMAIL_VERIFICATION` | No | Blocks unverified login when set to `true` |
 | `SMTP_HOST` | Production | SMTP server used for account emails |

@@ -1,6 +1,7 @@
 from typing import Any
 
 from ollama import chat
+from services.ollama_service import reliable_chat
 
 from backend.repositories.profile_repository import ProfileRepository
 from backend.services.career_document_service import CareerDocumentService
@@ -68,14 +69,9 @@ class CoverLetterService:
         )
 
         try:
-            response = chat(
-                model="qwen3:8b",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
+            response = reliable_chat(
+                prompt,
+                chat_callable=chat,
             )
             cover_letter = str(
                 response.message.content

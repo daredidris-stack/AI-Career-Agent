@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.dependencies.auth import get_current_user
-from backend.dependencies.services import get_skill_gap_service
+from backend.dependencies.services import get_ai_usage_service, get_skill_gap_service
 from backend.models.user import User
+from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
 from backend.services.skill_gap_service import (
     ProfileRequiredError,
     SkillGapError,
@@ -22,7 +23,9 @@ def analyze_skills(
     service: SkillGapService = Depends(
         get_skill_gap_service
     ),
+    usage: AIUsageService = Depends(get_ai_usage_service),
 ):
+    reserve_ai_usage(usage, current_user.id, "skill_gap")
     try:
         return service.analyze_for_user(current_user.id)
     except ProfileRequiredError as error:

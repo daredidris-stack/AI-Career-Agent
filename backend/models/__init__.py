@@ -4,6 +4,7 @@ from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
 from backend.models.resume_analysis import ResumeAnalysis
+from backend.models.ai_usage_event import AIUsageEvent
 
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     "CareerDocumentRevision",
     "JobApplication",
     "ResumeAnalysis",
+    "AIUsageEvent",
 ]

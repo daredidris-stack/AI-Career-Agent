@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from backend.dependencies.auth import get_current_user
-from backend.dependencies.services import get_resume_tailor_service
+from backend.dependencies.services import get_ai_usage_service, get_resume_tailor_service
 from backend.models.user import User
+from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
 from backend.services.resume_tailor_service import (
     ProfileRequiredError,
     ResumeTailorError,
@@ -24,7 +25,9 @@ async def tailor_resume_upload(
     service: ResumeTailorService = Depends(
         get_resume_tailor_service
     ),
+    usage: AIUsageService = Depends(get_ai_usage_service),
 ):
+    reserve_ai_usage(usage, current_user.id, "resume_tailor")
     try:
         return await service.tailor_for_user(
             user_id=current_user.id,

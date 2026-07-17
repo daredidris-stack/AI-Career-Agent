@@ -2,6 +2,7 @@ import json
 import re
 
 from ollama import chat
+from services.ollama_service import reliable_chat
 
 
 def _profile_value(profile, field_name, default=""):
@@ -84,14 +85,10 @@ Evaluate:
 """
 
 
-    response = chat(
-        model="qwen3:8b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+    response = reliable_chat(
+        prompt,
+        chat_callable=chat,
+        response_format="json",
     )
 
 

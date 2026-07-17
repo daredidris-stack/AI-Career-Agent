@@ -24,6 +24,22 @@ ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 JOOBLE_API_KEY = os.getenv("JOOBLE_API_KEY")
 
+AI_MODEL = os.getenv("AI_MODEL", "qwen3:8b")
+AI_REQUEST_TIMEOUT_SECONDS = float(
+    os.getenv("AI_REQUEST_TIMEOUT_SECONDS", "45")
+)
+AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "1")))
+AI_MAX_PROMPT_CHARACTERS = max(
+    1000, int(os.getenv("AI_MAX_PROMPT_CHARACTERS", "30000"))
+)
+AI_REQUESTS_PER_HOUR = max(
+    1, int(os.getenv("AI_REQUESTS_PER_HOUR", "20"))
+)
+AI_REQUESTS_PER_DAY = max(
+    AI_REQUESTS_PER_HOUR,
+    int(os.getenv("AI_REQUESTS_PER_DAY", "100")),
+)
+
 APP_ENV = os.getenv("APP_ENV", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 REQUIRE_EMAIL_VERIFICATION = (

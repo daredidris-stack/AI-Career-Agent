@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routes.skills import router as skills_router
@@ -14,6 +16,7 @@ from backend.routes.users import router as users_router
 from backend.routes.profile import router as profile_router
 from backend.routes.documents import router as documents_router
 from backend.routes.applications import router as applications_router
+from backend.services.ai_usage_service import AIUsageLimitError
 
 
 app = FastAPI(
@@ -33,6 +36,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(AIUsageLimitError)
+def ai_usage_limit_handler(
+    _request: Request, error: AIUsageLimitError
+):
+    return JSONResponse(status_code=429, content={"detail": str(error)})
 
 
 app.include_router(skills_router)

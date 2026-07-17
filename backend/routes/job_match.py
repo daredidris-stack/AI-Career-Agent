@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from backend.dependencies.auth import get_current_user
-from backend.dependencies.services import get_job_match_service
+from backend.dependencies.services import get_ai_usage_service, get_job_match_service
 from backend.models.user import User
+from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
 from backend.services.job_match_service import (
     JobMatchError,
     JobMatchService,
@@ -29,7 +30,9 @@ def match_job(
     service: JobMatchService = Depends(
         get_job_match_service
     ),
+    usage: AIUsageService = Depends(get_ai_usage_service),
 ):
+    reserve_ai_usage(usage, current_user.id, "job_match")
     try:
         return service.match_for_user(
             user_id=current_user.id,
