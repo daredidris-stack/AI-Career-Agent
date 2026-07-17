@@ -98,8 +98,11 @@ def get_job_search_service(
     repo: ProfileRepository = Depends(
         get_profile_repository
     ),
+    analysis_repo: ResumeAnalysisRepository = Depends(
+        get_resume_analysis_repository
+    ),
 ):
-    return JobSearchService(repo)
+    return JobSearchService(repo, analysis_repo)
 
 
 def get_resume_tailor_service(

@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 def aggregate_jobs(
     keyword,
-    location="Remote"
+    location="Remote",
+    industry="",
 ):
 
     jobs = []
@@ -32,7 +33,11 @@ def aggregate_jobs(
     # Adzuna jobs
     try:
         adzuna_jobs = adzuna_search(
-            keyword,
+            " ".join(
+                value
+                for value in (keyword, industry)
+                if value
+            ),
             location
         )
 

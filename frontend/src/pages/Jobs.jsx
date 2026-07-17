@@ -1,5 +1,277 @@
+import { useEffect, useState } from "react";
+import {
+  BriefcaseBusiness,
+  Building2,
+  ExternalLink,
+  MapPin,
+  Search,
+  Sparkles,
+} from "lucide-react";
+
+import api from "../services/api";
+import { getProfile } from "../services/api";
+
+
 function Jobs() {
-  return <h1 className="p-8 text-4xl text-white">Jobs</h1>;
+  const [targetRole, setTargetRole] = useState("");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [workMode, setWorkMode] = useState("");
+  const [minimumScore, setMinimumScore] = useState(0);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadProfileDefaults() {
+      try {
+        const response = await getProfile();
+        setTargetRole(response.data.target_role || "");
+        setCountry(response.data.country || "");
+        setCity(response.data.city || "");
+        setWorkMode(response.data.preferred_work_mode || "");
+      } catch {
+        // The API will provide the actionable profile error on search.
+      }
+    }
+
+    loadProfileDefaults();
+  }, []);
+
+  async function searchJobs(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get("/jobs/search", {
+        params: {
+          ...(targetRole.trim() && { keyword: targetRole.trim() }),
+          ...(country.trim() && { country: country.trim() }),
+          ...(city.trim() && { city: city.trim() }),
+          ...(industry.trim() && { industry: industry.trim() }),
+          ...(workMode && { work_mode: workMode }),
+          ...(minimumScore > 0 && { min_score: minimumScore }),
+        },
+      });
+
+      setResult(response.data);
+    } catch (requestError) {
+      setResult(null);
+      setError(
+        requestError.response?.data?.detail
+          || "Job search is temporarily unavailable.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <section className="rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white shadow-xl">
+        <div className="flex items-center gap-3">
+          <Sparkles size={30} />
+          <h1 className="text-4xl font-bold">Matched Jobs</h1>
+        </div>
+        <p className="mt-3 max-w-3xl text-lg text-blue-100">
+          Search and rank opportunities using your profile and latest resume skills.
+        </p>
+      </section>
+
+      <form
+        onSubmit={searchJobs}
+        className="rounded-2xl border border-gray-800 bg-gray-900 p-6"
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              Target role
+            </span>
+            <input
+              value={targetRole}
+              onChange={(event) => setTargetRole(event.target.value)}
+              placeholder="Site Reliability Engineer"
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              Country
+            </span>
+            <input
+              value={country}
+              onChange={(event) => setCountry(event.target.value)}
+              placeholder="Mexico"
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              City
+            </span>
+            <input
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              placeholder="Queretaro"
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              Industry
+            </span>
+            <input
+              value={industry}
+              onChange={(event) => setIndustry(event.target.value)}
+              placeholder="Technology, finance, healthcare..."
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              Work arrangement
+            </span>
+            <select
+              value={workMode}
+              onChange={(event) => setWorkMode(event.target.value)}
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Any arrangement</option>
+              <option value="Remote">Remote</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="On-site">On-site</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">
+              Minimum match
+            </span>
+            <select
+              value={minimumScore}
+              onChange={(event) => setMinimumScore(Number(event.target.value))}
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+            >
+              <option value={0}>Any score</option>
+              <option value={50}>50%+</option>
+              <option value={70}>70%+</option>
+              <option value={85}>85%+</option>
+            </select>
+          </label>
+
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">
+            Profile values are prefilled and can be adjusted for this search.
+          </p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+          >
+            <Search size={19} />
+            {loading ? "Matching..." : "Find My Jobs"}
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-200">
+          {error}
+        </div>
+      )}
+
+      {result && (
+        <section className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                {result.count} matched {result.count === 1 ? "job" : "jobs"}
+              </h2>
+              <p className="mt-1 text-gray-400">
+                {result.filters.keyword} - {result.filters.location}
+              </p>
+            </div>
+          </div>
+
+          {result.jobs.length === 0 ? (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-gray-300">
+              No matching jobs were found. Try a broader role or location.
+            </div>
+          ) : (
+            <div className="grid gap-5 xl:grid-cols-2">
+              {result.jobs.map((job, index) => (
+                <JobCard key={`${job.source}-${job.title}-${index}`} job={job} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
 }
+
+
+function JobCard({ job }) {
+  const score = job.analysis?.match_score;
+  const url = job.redirect_url || job.url;
+
+  return (
+    <article className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-lg">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-blue-400">
+            <BriefcaseBusiness size={20} />
+            <span className="text-sm font-semibold">{job.source || "Job listing"}</span>
+          </div>
+          <h3 className="mt-3 text-xl font-bold text-white">{job.title || "Untitled role"}</h3>
+        </div>
+
+        {Number.isFinite(Number(score)) && (
+          <div className="rounded-xl bg-blue-600/20 px-3 py-2 text-lg font-bold text-blue-300">
+            {Number(score)}%
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-400">
+        <span className="flex items-center gap-2">
+          <Building2 size={17} />
+          {job.company || "Company not listed"}
+        </span>
+        <span className="flex items-center gap-2">
+          <MapPin size={17} />
+          {job.location || "Location not listed"}
+        </span>
+      </div>
+
+      {job.analysis?.recommendation && (
+        <p className="mt-5 line-clamp-4 text-sm leading-6 text-gray-300">
+          {job.analysis.recommendation}
+        </p>
+      )}
+
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-400 hover:text-blue-300"
+        >
+          View job
+          <ExternalLink size={17} />
+        </a>
+      )}
+    </article>
+  );
+}
+
 
 export default Jobs;

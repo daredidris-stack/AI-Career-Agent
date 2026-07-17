@@ -30,10 +30,11 @@ class JobSearchRouteTests(unittest.TestCase):
         service.search_for_user.assert_called_once_with(
             user_id=7,
             keyword="cloud",
-            location="Remote",
-            experience="",
+            country=None,
+            city=None,
+            industry=None,
+            work_mode=None,
             min_score=0,
-            ai_rank=True,
         )
 
     def test_missing_profile_returns_404(self):

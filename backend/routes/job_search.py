@@ -18,11 +18,12 @@ router = APIRouter(
 
 @router.get("/search")
 def search_jobs(
-    keyword: str,
-    location: str = "Remote",
-    experience: str = "",
+    keyword: str | None = None,
+    country: str | None = None,
+    city: str | None = None,
+    industry: str | None = None,
+    work_mode: str | None = None,
     min_score: int = 0,
-    ai_rank: bool = True,
     current_user: User = Depends(get_current_user),
     service: JobSearchService = Depends(
         get_job_search_service
@@ -32,10 +33,11 @@ def search_jobs(
         return service.search_for_user(
             user_id=current_user.id,
             keyword=keyword,
-            location=location,
-            experience=experience,
+            country=country,
+            city=city,
+            industry=industry,
+            work_mode=work_mode,
             min_score=min_score,
-            ai_rank=ai_rank,
         )
     except ProfileRequiredError as error:
         raise HTTPException(

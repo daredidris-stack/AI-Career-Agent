@@ -9,6 +9,7 @@ import {
   Target,
   Sparkles,
   UserRound,
+  SearchCheck,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -44,6 +45,12 @@ const menuItems = [
     name: "Job Match",
     path: "/job-match",
     icon: Target,
+  },
+
+  {
+    name: "Jobs",
+    path: "/jobs",
+    icon: SearchCheck,
   },
 
   {
