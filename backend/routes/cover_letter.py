@@ -1,9 +1,19 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from ollama import chat
+
+from backend.dependencies.auth import get_current_user
+from backend.dependencies.services import get_cover_letter_service
+from backend.models.user import User
+from backend.services.cover_letter_service import (
+    CoverLetterError,
+    CoverLetterService,
+    ProfileRequiredError,
+)
 
 
-router = APIRouter()
+router = APIRouter(
+    tags=["Cover Letter"],
+)
 
 
 class CoverLetterRequest(BaseModel):
@@ -11,77 +21,32 @@ class CoverLetterRequest(BaseModel):
     job_description: str
 
 
-
 @router.post("/cover-letter")
-def generate_cover_letter(request: CoverLetterRequest):
-
-    if not request.resume.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Resume cannot be empty"
-        )
-
-
-    if not request.job_description.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Job description cannot be empty"
-        )
-
-
-
-    prompt = f"""
-You are an expert technical recruiter and career coach.
-
-Create a professional cover letter customized for this job.
-
-Candidate Resume:
-
-{request.resume}
-
-
-Target Job Description:
-
-{request.job_description}
-
-
-Rules:
-
-- Write approximately 300 words.
-- Use a professional hiring-manager tone.
-- Only mention skills and experience present in the resume.
-- Do not create fake companies, projects, certifications, or achievements.
-- Connect the candidate's experience to the job requirements.
-- Highlight relevant technical skills.
-- End with a confident professional closing.
-
-
-Return ONLY the cover letter.
-"""
-
-
-
+def generate_cover_letter(
+    request: CoverLetterRequest,
+    current_user: User = Depends(get_current_user),
+    service: CoverLetterService = Depends(
+        get_cover_letter_service
+    ),
+):
     try:
-
-        response = chat(
-            model="qwen3:8b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+        return service.generate_for_user(
+            user_id=current_user.id,
+            resume=request.resume,
+            job_description=request.job_description,
         )
-
-
-        return {
-            "cover_letter": response.message.content
-        }
-
-
-    except Exception as error:
-
+    except ProfileRequiredError as error:
         raise HTTPException(
-            status_code=500,
-            detail=f"AI generation failed: {str(error)}"
-        )
+            status_code=404,
+            detail=str(error),
+        ) from error
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+    except CoverLetterError as error:
+        raise HTTPException(
+            status_code=502,
+            detail=str(error),
+        ) from error

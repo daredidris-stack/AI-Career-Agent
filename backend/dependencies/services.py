@@ -33,6 +33,10 @@ from backend.services.resume_tailor_service import (
     ResumeTailorService,
 )
 
+from backend.services.cover_letter_service import (
+    CoverLetterService,
+)
+
 
 def get_auth_service(
     repo: UserRepository = Depends(
@@ -77,3 +81,11 @@ def get_resume_tailor_service(
         repo,
         resume_service,
     )
+
+
+def get_cover_letter_service(
+    repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+):
+    return CoverLetterService(repo)
