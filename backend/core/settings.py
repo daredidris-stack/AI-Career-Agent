@@ -1,9 +1,17 @@
 import os
 
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./career_agent.db",
+def normalize_database_url(value: str) -> str:
+    """Use SQLAlchemy's psycopg 3 driver for hosted PostgreSQL URLs."""
+    if value.startswith("postgres://"):
+        return value.replace("postgres://", "postgresql+psycopg://", 1)
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+psycopg://", 1)
+    return value
+
+
+DATABASE_URL = normalize_database_url(
+    os.getenv("DATABASE_URL", "sqlite:///./career_agent.db")
 )
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")

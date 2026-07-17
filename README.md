@@ -95,6 +95,8 @@ export FRONTEND_URL="http://localhost:5173"
 export REQUIRE_EMAIL_VERIFICATION="false"
 ```
 
+Production databases use Alembic migrations. See [Database operations](docs/database-operations.md) for PostgreSQL setup, existing-database adoption, backups, and restore drills.
+
 The available variables are documented in `.env.example`. Do not commit real credentials.
 
 Initialize the database and start the API:
