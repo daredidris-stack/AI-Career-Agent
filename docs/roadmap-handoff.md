@@ -30,5 +30,5 @@ Until those items are resolved, run a controlled non-commercial beta, keep billi
 2. Add administrator authorization and audited aggregate operations reporting.
 3. Add malware scanning and isolated asynchronous document processing.
 4. Add saved job alerts and application follow-up notifications after email deliverability is proven.
-5. Improve frontend code splitting and mobile navigation; the current build passes with a non-blocking large-bundle advisory.
+5. Validate mobile navigation with beta users and address evidence-backed usability issues. Route-level code splitting is implemented and the production build has no large-bundle advisory.
 6. Select further Resume Studio, interview, or learning features based on measured activation and retention rather than assumptions.

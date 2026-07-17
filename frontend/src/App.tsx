@@ -1,34 +1,46 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
-import Dashboard from "./pages/Dashboard";
-import SkillGap from "./pages/SkillGap";
-import Resume from "./pages/Resume";
-import Jobs from "./pages/Jobs";
-import Interview from "./pages/Interview";
-import Learning from "./pages/Learning";
-import Settings from "./pages/Settings";
-import JobMatch from "./pages/JobMatch";
-import ResumeTailor from "./pages/ResumeTailor";
-import CoverLetter from "./pages/CoverLetter";
-import Applications from "./pages/Applications";
-import Terms from "./pages/Terms";
-import PrivacyNotice from "./pages/PrivacyNotice";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const SkillGap = lazy(() => import("./pages/SkillGap"));
+const Resume = lazy(() => import("./pages/Resume"));
+const Jobs = lazy(() => import("./pages/Jobs"));
+const Interview = lazy(() => import("./pages/Interview"));
+const Learning = lazy(() => import("./pages/Learning"));
+const Settings = lazy(() => import("./pages/Settings"));
+const JobMatch = lazy(() => import("./pages/JobMatch"));
+const ResumeTailor = lazy(() => import("./pages/ResumeTailor"));
+const CoverLetter = lazy(() => import("./pages/CoverLetter"));
+const Applications = lazy(() => import("./pages/Applications"));
+const Terms = lazy(() => import("./pages/Terms"));
+const PrivacyNotice = lazy(() => import("./pages/PrivacyNotice"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
+const Profile = lazy(() => import("./pages/Profile"));
 
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import Profile from "./pages/Profile";
+function RouteFallback() {
+  return (
+    <div
+      role="status"
+      className="flex min-h-screen items-center justify-center bg-gray-950 text-gray-300"
+    >
+      Loading NextHire AI...
+    </div>
+  );
+}
 
 
 export default function App() {
 
   return (
 
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
 
       {/* Public routes */}
@@ -130,6 +142,7 @@ export default function App() {
 
 
     </Routes>
+    </Suspense>
 
   );
 }
