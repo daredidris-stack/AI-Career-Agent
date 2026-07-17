@@ -102,17 +102,12 @@ Evaluate:
     )
 
 
-    if match:
-        try:
-            return json.loads(match.group())
+    if not match:
+        raise ValueError("Resume analysis did not return JSON.")
 
-        except:
-            pass
-
-
-    return {
-        "resume_score": 0,
-        "ats_score": 0,
-        "strengths": [],
-        "improvements": []
-    }
+    try:
+        return json.loads(match.group())
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "Resume analysis returned malformed JSON."
+        ) from error

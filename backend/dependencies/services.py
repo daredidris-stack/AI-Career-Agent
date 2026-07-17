@@ -4,6 +4,7 @@ from backend.dependencies.repositories import (
     get_user_repository,
     get_profile_repository,
     get_job_catalog_repository,
+    get_resume_analysis_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -16,6 +17,10 @@ from backend.repositories.profile_repository import (
 
 from backend.repositories.job_catalog_repository import (
     JobCatalogRepository,
+)
+
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
 )
 
 from backend.services.auth_service import (
@@ -78,8 +83,15 @@ def get_profile_service(
     return ProfileService(repo)
 
 
-def get_resume_service():
-    return ResumeService()
+def get_resume_service(
+    profile_repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+    analysis_repo: ResumeAnalysisRepository = Depends(
+        get_resume_analysis_repository
+    ),
+):
+    return ResumeService(profile_repo, analysis_repo)
 
 
 def get_job_search_service(
@@ -155,8 +167,12 @@ def get_dashboard_service(
     analytics_service: AnalyticsService = Depends(
         get_analytics_service
     ),
+    analysis_repo: ResumeAnalysisRepository = Depends(
+        get_resume_analysis_repository
+    ),
 ):
     return DashboardService(
         profile_repo,
         analytics_service,
+        analysis_repo,
     )

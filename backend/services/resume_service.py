@@ -7,6 +7,10 @@ from fastapi import UploadFile
 from docx_reader import read_docx_resume
 from resume_analyzer import analyze_resume
 from resume_reader import read_pdf_resume
+from backend.repositories.profile_repository import ProfileRepository
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
+)
 
 
 SUPPORTED_RESUME_TYPES = {
@@ -16,6 +20,14 @@ SUPPORTED_RESUME_TYPES = {
 
 
 class ResumeService:
+    def __init__(
+        self,
+        profile_repository: ProfileRepository,
+        analysis_repository: ResumeAnalysisRepository,
+    ):
+        self.profile_repository = profile_repository
+        self.analysis_repository = analysis_repository
+
     async def extract_text(
         self,
         file: UploadFile,
@@ -53,11 +65,60 @@ class ResumeService:
     async def analyze_upload(
         self,
         file: UploadFile,
-        profile: Any,
+        user_id: int,
     ) -> dict:
-        resume_text = await self.extract_text(file)
+        profile = self.profile_repository.get_by_user_id(user_id)
 
-        return analyze_resume(
-            resume_text,
-            profile,
-        )
+        if not profile:
+            await file.close()
+            raise ProfileRequiredError(
+                "Create your profile before analyzing a resume."
+            )
+
+        filename = file.filename or "resume"
+        resume_text = await self.extract_text(file)
+        try:
+            raw_result = analyze_resume(resume_text, profile)
+        except Exception as error:
+            raise ResumeAnalysisError(
+                "Resume analysis is temporarily unavailable."
+            ) from error
+
+        result = self._normalize_result(raw_result)
+
+        try:
+            self.analysis_repository.create(user_id, filename, result)
+        except Exception as error:
+            raise ResumeAnalysisError(
+                "Resume analysis could not be saved."
+            ) from error
+
+        return result
+
+    @staticmethod
+    def _normalize_result(result: Any) -> dict[str, Any]:
+        if not isinstance(result, dict):
+            raise ResumeAnalysisError("Resume analysis returned invalid data.")
+
+        try:
+            resume_score = max(0, min(100, int(result["resume_score"])))
+            ats_score = max(0, min(100, int(result["ats_score"])))
+        except (KeyError, TypeError, ValueError) as error:
+            raise ResumeAnalysisError(
+                "Resume analysis returned invalid scores."
+            ) from error
+
+        return {
+            "resume_score": resume_score,
+            "ats_score": ats_score,
+            "strengths": list(result.get("strengths") or []),
+            "improvements": list(result.get("improvements") or []),
+        }
+
+
+class ProfileRequiredError(Exception):
+    pass
+
+
+class ResumeAnalysisError(Exception):
+    pass

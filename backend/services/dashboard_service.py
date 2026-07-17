@@ -1,6 +1,9 @@
 from typing import Any
 
 from backend.repositories.profile_repository import ProfileRepository
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
+)
 from backend.services.analytics_service import (
     AnalyticsError,
     AnalyticsService,
@@ -20,9 +23,11 @@ class DashboardService:
         self,
         profile_repository: ProfileRepository,
         analytics_service: AnalyticsService,
+        resume_analysis_repository: ResumeAnalysisRepository,
     ):
         self.profile_repository = profile_repository
         self.analytics_service = analytics_service
+        self.resume_analysis_repository = resume_analysis_repository
 
     def get_for_user(self, user: Any) -> dict[str, Any]:
         profile = self.profile_repository.get_by_user_id(user.id)
@@ -41,6 +46,9 @@ class DashboardService:
 
         missing_skills = analytics["missing_skills"]
         recommended_skill = self._recommended_skill(missing_skills)
+        latest_resume = (
+            self.resume_analysis_repository.get_latest_by_user_id(user.id)
+        )
 
         return {
             "user": {
@@ -63,9 +71,11 @@ class DashboardService:
                 "completion": analytics["profile_completion"],
             },
             "skill_gap": analytics["skill_gap"],
-            "resume_score": None,
+            "resume_score": (
+                latest_resume.resume_score if latest_resume else None
+            ),
             "jobs_available": analytics["jobs_available"],
-            "ats_score": None,
+            "ats_score": latest_resume.ats_score if latest_resume else None,
             "skills_completed": analytics["skills_completed"],
             "career_progress": analytics["profile_completion"],
             "recommended_skill": recommended_skill,

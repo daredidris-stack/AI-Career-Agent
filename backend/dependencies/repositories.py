@@ -15,6 +15,10 @@ from backend.repositories.job_catalog_repository import (
     JobCatalogRepository,
 )
 
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
+)
+
 
 def get_user_repository(
     db: Session = Depends(get_db),
@@ -33,3 +37,9 @@ def get_profile_repository(
 
 def get_job_catalog_repository():
     return JobCatalogRepository()
+
+
+def get_resume_analysis_repository(
+    db: Session = Depends(get_db),
+) -> ResumeAnalysisRepository:
+    return ResumeAnalysisRepository(db)

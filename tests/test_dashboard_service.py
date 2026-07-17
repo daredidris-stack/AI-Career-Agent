@@ -38,9 +38,14 @@ class DashboardServiceTests(unittest.TestCase):
             "missing_skills": ["Terraform"],
             "weekly_progress": [],
         }
+        self.resume_analysis_repository = Mock()
+        self.resume_analysis_repository.get_latest_by_user_id.return_value = (
+            SimpleNamespace(resume_score=84, ats_score=79)
+        )
         self.service = DashboardService(
             self.profile_repository,
             self.analytics_service,
+            self.resume_analysis_repository,
         )
 
     def test_builds_dashboard_from_profile_and_analytics(self):
@@ -53,8 +58,8 @@ class DashboardServiceTests(unittest.TestCase):
         self.assertEqual(result["user"]["name"], "Ada Lovelace")
         self.assertEqual(result["jobs_available"], 3)
         self.assertEqual(result["recommended_skill"]["name"], "Terraform")
-        self.assertIsNone(result["resume_score"])
-        self.assertIsNone(result["ats_score"])
+        self.assertEqual(result["resume_score"], 84)
+        self.assertEqual(result["ats_score"], 79)
         self.assertEqual(result["recent_activity"], [])
 
     def test_missing_profile_stops_dashboard(self):
@@ -64,6 +69,17 @@ class DashboardServiceTests(unittest.TestCase):
             self.service.get_for_user(self.user)
 
         self.analytics_service.get_for_profile.assert_not_called()
+        self.resume_analysis_repository.get_latest_by_user_id.assert_not_called()
+
+    def test_dashboard_supports_user_without_resume_analysis(self):
+        self.resume_analysis_repository.get_latest_by_user_id.return_value = (
+            None
+        )
+
+        result = self.service.get_for_user(self.user)
+
+        self.assertIsNone(result["resume_score"])
+        self.assertIsNone(result["ats_score"])
 
     def test_analytics_failure_returns_dashboard_error(self):
         self.analytics_service.get_for_profile.side_effect = AnalyticsError(
