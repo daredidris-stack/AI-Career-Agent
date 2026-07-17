@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 
 from backend.dependencies.auth import get_current_user
 from backend.dependencies.services import get_career_document_service
@@ -12,6 +14,7 @@ from backend.services.career_document_service import (
     CareerDocumentService,
     DocumentNotFoundError,
 )
+from backend.services.document_export_service import export_document
 
 
 router = APIRouter(prefix="/documents", tags=["Career Documents"])
@@ -39,6 +42,27 @@ def get_document(
         return service.get_for_user(current_user.id, document_id)
     except DocumentNotFoundError as error:
         raise HTTPException(status_code=404, detail="Document not found.") from error
+
+
+@router.get("/{document_id}/export")
+def download_document(
+    document_id: int,
+    format: str = "pdf",
+    current_user: User = Depends(get_current_user),
+    service: CareerDocumentService = Depends(get_career_document_service),
+):
+    try:
+        document = service.get_for_user(current_user.id, document_id)
+        content, media_type, filename = export_document(document, format)
+    except DocumentNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Document not found.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return StreamingResponse(
+        BytesIO(content),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("", response_model=CareerDocumentResponse, status_code=201)

@@ -47,12 +47,16 @@ export default function DocumentLibrary({ refreshToken }) {
     await loadDocuments();
   }
 
-  function downloadDocument(document) {
-    const blob = new Blob([document.content], { type: "text/plain" });
+  async function downloadDocument(document, format) {
+    const response = await api.get(`/documents/${document.id}/export`, {
+      params: { format },
+      responseType: "blob",
+    });
+    const blob = response.data;
     const url = URL.createObjectURL(blob);
     const link = window.document.createElement("a");
     link.href = url;
-    link.download = `${document.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "document"}.txt`;
+    link.download = `${document.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "document"}.${format}`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -81,7 +85,8 @@ export default function DocumentLibrary({ refreshToken }) {
             <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{document.content}</p>
             <div className="mt-5 flex gap-4 text-sm">
               <button onClick={() => setEditing({ ...document })} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
-              <button onClick={() => downloadDocument(document)} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> Export</button>
+              <button onClick={() => downloadDocument(document, "pdf")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> PDF</button>
+              <button onClick={() => downloadDocument(document, "docx")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> DOCX</button>
               <button onClick={() => deleteDocument(document)} className="flex items-center gap-1 text-red-400"><Trash2 size={15} /> Delete</button>
             </div>
           </article>
