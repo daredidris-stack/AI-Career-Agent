@@ -19,4 +19,5 @@ class ResumeAnalysis(Base):
     ats_score = Column(Integer, nullable=False)
     strengths = Column(Text, nullable=False, default="[]")
     improvements = Column(Text, nullable=False, default="[]")
+    extracted_skills = Column(Text, nullable=False, default="[]")
     created_at = Column(DateTime, default=utc_now, nullable=False)

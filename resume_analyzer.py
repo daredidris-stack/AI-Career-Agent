@@ -59,7 +59,8 @@ Format:
     "resume_score": 0,
     "ats_score": 0,
     "strengths": [],
-    "improvements": []
+    "improvements": [],
+    "skills": []
 }}
 
 Evaluate:
@@ -78,6 +79,8 @@ Evaluate:
 - Resume structure
 - Quantified achievements
 - Career progression
+- Extract only technical skills explicitly present in the resume
+- Do not infer or invent skills that are not written in the resume
 """
 
 

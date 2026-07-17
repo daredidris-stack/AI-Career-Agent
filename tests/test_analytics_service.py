@@ -35,6 +35,10 @@ class AnalyticsServiceTests(unittest.TestCase):
             {"title": "Cloud Engineer"},
             {"title": "Platform Engineer"},
         ]
+        self.resume_analysis_repository = Mock()
+        self.resume_analysis_repository.get_latest_skills_by_user_id.return_value = [
+            "Terraform",
+        ]
         self.analyzer = Mock(
             return_value={
                 "current_skills": ["Python", "AWS"],
@@ -44,6 +48,7 @@ class AnalyticsServiceTests(unittest.TestCase):
         self.service = AnalyticsService(
             self.profile_repository,
             self.job_catalog_repository,
+            self.resume_analysis_repository,
             self.analyzer,
         )
 
@@ -51,8 +56,13 @@ class AnalyticsServiceTests(unittest.TestCase):
         result = self.service.get_for_user(7)
 
         self.profile_repository.get_by_user_id.assert_called_once_with(7)
-        self.analyzer.assert_called_once_with(
-            self.profile,
+        analyzer_profile = self.analyzer.call_args.args[0]
+        self.assertEqual(
+            analyzer_profile["technical_skills"],
+            ["Python", "AWS", "Terraform"],
+        )
+        self.assertEqual(
+            self.analyzer.call_args.args[1],
             self.job_catalog_repository.list_jobs.return_value,
         )
         self.assertEqual(result["profile_completion"], 60)

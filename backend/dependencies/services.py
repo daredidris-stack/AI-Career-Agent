@@ -139,10 +139,14 @@ def get_skill_gap_service(
     job_catalog_repo: JobCatalogRepository = Depends(
         get_job_catalog_repository
     ),
+    analysis_repo: ResumeAnalysisRepository = Depends(
+        get_resume_analysis_repository
+    ),
 ):
     return SkillGapService(
         profile_repo,
         job_catalog_repo,
+        analysis_repo,
     )
 
 
@@ -153,10 +157,14 @@ def get_analytics_service(
     job_catalog_repo: JobCatalogRepository = Depends(
         get_job_catalog_repository
     ),
+    analysis_repo: ResumeAnalysisRepository = Depends(
+        get_resume_analysis_repository
+    ),
 ):
     return AnalyticsService(
         profile_repo,
         job_catalog_repo,
+        analysis_repo,
     )
 
 

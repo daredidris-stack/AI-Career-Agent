@@ -113,7 +113,27 @@ class ResumeService:
             "ats_score": ats_score,
             "strengths": list(result.get("strengths") or []),
             "improvements": list(result.get("improvements") or []),
+            "skills": ResumeService._normalize_skills(
+                result.get("skills")
+            ),
         }
+
+    @staticmethod
+    def _normalize_skills(skills: Any) -> list[str]:
+        if not isinstance(skills, list):
+            return []
+
+        normalized = []
+        seen = set()
+
+        for skill in skills:
+            value = str(skill).strip()
+            key = value.casefold()
+            if value and key not in seen:
+                normalized.append(value)
+                seen.add(key)
+
+        return normalized
 
 
 class ProfileRequiredError(Exception):

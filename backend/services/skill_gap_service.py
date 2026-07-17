@@ -4,6 +4,13 @@ from backend.repositories.job_catalog_repository import (
     JobCatalogRepository,
 )
 from backend.repositories.profile_repository import ProfileRepository
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
+)
+from backend.services.candidate_skills import (
+    merge_candidate_skills,
+    profile_with_skills,
+)
 from skill_gap import skill_gap_analysis
 
 
@@ -20,12 +27,14 @@ class SkillGapService:
         self,
         profile_repository: ProfileRepository,
         job_catalog_repository: JobCatalogRepository,
+        resume_analysis_repository: ResumeAnalysisRepository,
         analyzer: Callable[..., dict[str, Any]] = (
             skill_gap_analysis
         ),
     ):
         self.profile_repository = profile_repository
         self.job_catalog_repository = job_catalog_repository
+        self.resume_analysis_repository = resume_analysis_repository
         self.analyzer = analyzer
 
     def analyze_for_user(
@@ -44,7 +53,15 @@ class SkillGapService:
 
         try:
             jobs = self.job_catalog_repository.list_jobs()
-            result = self.analyzer(profile, jobs)
+            resume_skills = (
+                self.resume_analysis_repository
+                .get_latest_skills_by_user_id(user_id)
+            )
+            skills = merge_candidate_skills(profile, resume_skills)
+            result = self.analyzer(
+                profile_with_skills(profile, skills),
+                jobs,
+            )
         except Exception as error:
             raise SkillGapError(
                 "Skill-gap analysis is temporarily unavailable."

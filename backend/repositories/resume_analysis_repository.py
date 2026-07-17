@@ -23,11 +23,32 @@ class ResumeAnalysisRepository:
             ats_score=result["ats_score"],
             strengths=json.dumps(result["strengths"]),
             improvements=json.dumps(result["improvements"]),
+            extracted_skills=json.dumps(result.get("skills") or []),
         )
         self.db.add(analysis)
         self.db.commit()
         self.db.refresh(analysis)
         return analysis
+
+    def get_latest_skills_by_user_id(self, user_id: int) -> list[str]:
+        analysis = self.get_latest_by_user_id(user_id)
+
+        if not analysis:
+            return []
+
+        try:
+            skills = json.loads(analysis.extracted_skills or "[]")
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+        if not isinstance(skills, list):
+            return []
+
+        return [
+            str(skill).strip()
+            for skill in skills
+            if str(skill).strip()
+        ]
 
     def get_latest_by_user_id(
         self,

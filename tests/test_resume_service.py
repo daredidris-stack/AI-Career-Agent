@@ -56,6 +56,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             "ats_score": 75,
             "strengths": [],
             "improvements": [],
+            "skills": ["AWS", "Linux", "aws"],
         }
         file = UploadFile(
             filename="resume.pdf",
@@ -76,6 +77,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result["resume_score"], 80)
+        self.assertEqual(result["skills"], ["AWS", "Linux"])
         mock_analyze_resume.assert_called_once_with(
             "Resume text",
             self.profile,
@@ -103,11 +105,13 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             "resume_score": 120,
             "ats_score": "-4",
             "strengths": ["Clear structure"],
+            "skills": ["AWS", " aws ", "Python"],
         })
 
         self.assertEqual(result["resume_score"], 100)
         self.assertEqual(result["ats_score"], 0)
         self.assertEqual(result["improvements"], [])
+        self.assertEqual(result["skills"], ["AWS", "Python"])
 
     def test_rejects_invalid_scores(self):
         with self.assertRaises(ResumeAnalysisError):

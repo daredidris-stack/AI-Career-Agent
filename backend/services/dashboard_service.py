@@ -38,7 +38,10 @@ class DashboardService:
             )
 
         try:
-            analytics = self.analytics_service.get_for_profile(profile)
+            analytics = self.analytics_service.get_for_profile(
+                profile,
+                user.id,
+            )
         except AnalyticsError as error:
             raise DashboardError(
                 "Dashboard insights are temporarily unavailable."

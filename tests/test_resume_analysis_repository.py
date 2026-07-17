@@ -37,6 +37,7 @@ class ResumeAnalysisRepositoryTests(unittest.TestCase):
                 "ats_score": 65,
                 "strengths": ["Clear"],
                 "improvements": ["Add metrics"],
+                "skills": ["AWS", "Linux"],
             },
         )
         second = self.repository.create(
@@ -47,6 +48,7 @@ class ResumeAnalysisRepositoryTests(unittest.TestCase):
                 "ats_score": 80,
                 "strengths": [],
                 "improvements": [],
+                "skills": ["AWS", "Python"],
             },
         )
 
@@ -56,6 +58,10 @@ class ResumeAnalysisRepositoryTests(unittest.TestCase):
         self.assertEqual(latest.id, second.id)
         self.assertEqual(latest.resume_score, 85)
         self.assertEqual(latest.filename, "second.pdf")
+        self.assertEqual(
+            self.repository.get_latest_skills_by_user_id(self.user_id),
+            ["AWS", "Python"],
+        )
 
     def test_returns_none_without_analysis(self):
         self.assertIsNone(

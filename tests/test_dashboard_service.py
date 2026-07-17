@@ -53,7 +53,8 @@ class DashboardServiceTests(unittest.TestCase):
 
         self.profile_repository.get_by_user_id.assert_called_once_with(9)
         self.analytics_service.get_for_profile.assert_called_once_with(
-            self.profile
+            self.profile,
+            9,
         )
         self.assertEqual(result["user"]["name"], "Ada Lovelace")
         self.assertEqual(result["jobs_available"], 3)

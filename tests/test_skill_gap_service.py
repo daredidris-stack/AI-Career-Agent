@@ -26,6 +26,11 @@ class SkillGapServiceTests(unittest.TestCase):
                 "skills": ["AWS", "Terraform"],
             }
         ]
+        self.resume_analysis_repository = Mock()
+        self.resume_analysis_repository.get_latest_skills_by_user_id.return_value = [
+            "Python",
+            "AWS",
+        ]
         self.analyzer = Mock(
             return_value={
                 "current_skills": ["AWS", "Linux"],
@@ -36,6 +41,7 @@ class SkillGapServiceTests(unittest.TestCase):
         self.service = SkillGapService(
             self.profile_repository,
             self.job_catalog_repository,
+            self.resume_analysis_repository,
             self.analyzer,
         )
 
@@ -43,8 +49,13 @@ class SkillGapServiceTests(unittest.TestCase):
         result = self.service.analyze_for_user(4)
 
         self.profile_repository.get_by_user_id.assert_called_once_with(4)
-        self.analyzer.assert_called_once_with(
-            self.profile,
+        analyzer_profile = self.analyzer.call_args.args[0]
+        self.assertEqual(
+            analyzer_profile["technical_skills"],
+            ["AWS", "Linux", "Python"],
+        )
+        self.assertEqual(
+            self.analyzer.call_args.args[1],
             self.job_catalog_repository.list_jobs.return_value,
         )
         self.assertEqual(
@@ -59,6 +70,7 @@ class SkillGapServiceTests(unittest.TestCase):
             self.service.analyze_for_user(4)
 
         self.job_catalog_repository.list_jobs.assert_not_called()
+        self.resume_analysis_repository.get_latest_skills_by_user_id.assert_not_called()
 
     def test_catalog_failure_returns_service_error(self):
         self.job_catalog_repository.list_jobs.side_effect = (

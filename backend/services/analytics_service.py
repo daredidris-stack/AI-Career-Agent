@@ -4,6 +4,13 @@ from backend.repositories.job_catalog_repository import (
     JobCatalogRepository,
 )
 from backend.repositories.profile_repository import ProfileRepository
+from backend.repositories.resume_analysis_repository import (
+    ResumeAnalysisRepository,
+)
+from backend.services.candidate_skills import (
+    merge_candidate_skills,
+    profile_with_skills,
+)
 from skill_gap import calculate_skill_gap
 
 
@@ -39,10 +46,12 @@ class AnalyticsService:
         self,
         profile_repository: ProfileRepository,
         job_catalog_repository: JobCatalogRepository,
+        resume_analysis_repository: ResumeAnalysisRepository,
         analyzer: Callable[..., dict[str, Any]] = calculate_skill_gap,
     ):
         self.profile_repository = profile_repository
         self.job_catalog_repository = job_catalog_repository
+        self.resume_analysis_repository = resume_analysis_repository
         self.analyzer = analyzer
 
     def get_for_user(self, user_id: int) -> dict[str, Any]:
@@ -53,12 +62,26 @@ class AnalyticsService:
                 "Create your profile before viewing analytics."
             )
 
-        return self.get_for_profile(profile)
+        return self.get_for_profile(profile, user_id)
 
-    def get_for_profile(self, profile: Any) -> dict[str, Any]:
+    def get_for_profile(
+        self,
+        profile: Any,
+        user_id: int | None = None,
+    ) -> dict[str, Any]:
         try:
             jobs = self.job_catalog_repository.list_jobs()
-            skill_report = self.analyzer(profile, jobs)
+            resume_skills = (
+                self.resume_analysis_repository
+                .get_latest_skills_by_user_id(user_id)
+                if user_id is not None
+                else []
+            )
+            skills = merge_candidate_skills(profile, resume_skills)
+            skill_report = self.analyzer(
+                profile_with_skills(profile, skills),
+                jobs,
+            )
         except Exception as error:
             raise AnalyticsError(
                 "Career analytics are temporarily unavailable."
