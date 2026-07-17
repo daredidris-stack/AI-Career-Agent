@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+from unittest.mock import patch
 
 from skill_gap import calculate_skill_gap, skill_gap_analysis
 
@@ -17,6 +18,17 @@ JOBS = [
 
 
 class SkillGapAnalysisTests(unittest.TestCase):
+    @patch("skill_gap.ask_llm", return_value="Recommendation")
+    def test_prompt_prohibits_inferred_current_skills(self, mock_ask_llm):
+        skill_gap_analysis(
+            {"current_role": "DCO", "technical_skills": ""},
+            JOBS,
+        )
+
+        prompt = mock_ask_llm.call_args.args[0]
+        self.assertIn("Do not infer skills", prompt)
+        self.assertIn("authoritative list", prompt)
+
     def test_calculates_skill_gap_without_ai_recommendation(self):
         result = calculate_skill_gap(
             {"technical_skills": "AWS, Linux"},

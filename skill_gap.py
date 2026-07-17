@@ -141,6 +141,10 @@ def skill_gap_analysis(
 You are a senior career advisor.
 
 Analyze this candidate's skill gaps using only the supplied profile and job data.
+Treat the supplied current technical skills as the complete, authoritative list.
+Do not infer skills from the candidate's role, experience, or typical duties.
+If the current technical skills list is empty, state that no skills were explicitly provided.
+Never describe an unlisted skill as a current skill.
 
 Candidate profile:
 - Current role: {current_role}
