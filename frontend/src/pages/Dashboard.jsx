@@ -1,39 +1,374 @@
-import Sidebar from "../components/layout/Sidebar";
+import { useEffect, useState } from "react";
+
+import {
+  Briefcase,
+  FileText,
+  Target,
+  TrendingUp,
+  Award,
+  CheckCircle,
+} from "lucide-react";
+
 import DashboardCard from "../components/cards/DashboardCard";
+import CareerAnalytics from "../components/charts/CareerAnalytics";
+import api from "../services/api";
+
 
 function Dashboard() {
-  return (
-    <div className="flex min-h-screen bg-slate-950 text-white">
-      <Sidebar />
 
-      <main className="flex-1 p-8">
-        <h1 className="text-4xl font-bold">
-          Dashboard
+  const [data, setData] = useState(null);
+
+
+  useEffect(() => {
+
+    async function fetchDashboard() {
+
+      try {
+
+        const response = await api.get("/dashboard");
+
+        setData(response.data);
+
+
+      } catch {
+
+      }
+
+    }
+
+
+    fetchDashboard();
+
+
+  }, []);
+
+
+
+  if (!data) {
+
+    return (
+
+      <div className="flex items-center justify-center h-screen">
+
+        <h1 className="text-3xl font-bold text-white">
+          Loading Dashboard...
         </h1>
 
-        <p className="text-gray-400 mt-2">
-          Welcome back! Here's your AI career overview.
+      </div>
+
+    );
+
+  }
+
+
+
+  return (
+
+    <div className="space-y-8">
+
+
+      {/* Hero */}
+
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 shadow-xl">
+
+        <h1 className="text-4xl font-bold text-white">
+
+          Welcome to NextHire AI  👋
+
+        </h1>
+
+
+        <p className="text-blue-100 mt-3 text-lg">
+
+          Your AI-powered career platform for job matching, resume optimization, and professional growth.
+
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-          <DashboardCard
-            title="Skill Gap"
-            value="3 Skills"
-          />
 
-          <DashboardCard
-            title="Resume Score"
-            value="82%"
-          />
+      </div>
 
-          <DashboardCard
-            title="Job Matches"
-            value="15"
-          />
+
+
+
+
+      {/* Cards */}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+
+        <DashboardCard
+
+          title="Missing Skills"
+
+          value={data.skill_gap}
+
+          icon={<Briefcase size={28}/>}
+
+        />
+
+
+
+        <DashboardCard
+
+          title="Resume Score"
+
+          value={`${data.resume_score}%`}
+
+          icon={<FileText size={28}/>}
+
+        />
+
+
+
+        <DashboardCard
+
+          title="Job Matches"
+
+          value={data.job_matches}
+
+          icon={<Target size={28}/>}
+
+        />
+
+
+
+        <DashboardCard
+
+          title="Career Progress"
+
+          value={`${data.career_progress}%`}
+
+          icon={<TrendingUp size={28}/>}
+
+        />
+
+        <DashboardCard
+
+          title="ATS Score"
+
+          value={`${data.ats_score}%`}
+
+          icon={<Award size={28}/>}
+
+        />
+
+
+        <DashboardCard
+
+          title="Skills Completed"
+
+          value={data.skills_completed}
+
+          icon={<CheckCircle size={28}/>}
+
+        />
+
+
+      </div>
+
+
+
+
+
+
+      {/* Progress + Skill */}
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+
+
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+
+
+          <h2 className="text-2xl font-bold text-white">
+
+            Career Progress
+
+          </h2>
+
+
+
+          <p className="text-gray-400 mt-2">
+
+            Progress toward becoming a Cloud Engineer.
+
+          </p>
+
+
+
+
+          <div className="mt-8 w-full bg-gray-700 rounded-full h-5">
+
+
+            <div
+
+              className="bg-blue-500 h-5 rounded-full"
+
+              style={{
+                width:`${data.career_progress}%`
+              }}
+
+            ></div>
+
+
+          </div>
+
+
+
+          <p className="mt-3 text-right text-blue-400 font-bold">
+
+            {data.career_progress}%
+
+          </p>
+
+
         </div>
-      </main>
+
+
+
+
+
+
+
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+
+
+          <h2 className="text-2xl font-bold text-white">
+
+            Recommended Next Skill
+
+          </h2>
+
+
+
+          <div className="flex items-center gap-4 mt-8">
+
+
+            <Award
+
+              size={50}
+
+              className="text-yellow-400"
+
+            />
+
+
+
+            <div>
+
+
+              <h3 className="text-xl font-bold text-white">
+
+                {data.recommended_skill.name}
+
+              </h3>
+
+
+
+              <p className="text-gray-400">
+
+                {data.recommended_skill.description}
+
+              </p>
+
+
+            </div>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+
+
+      {/* Activity */}
+
+
+      <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+
+
+        <h2 className="text-2xl font-bold text-white mb-6">
+
+          Recent AI Activity
+
+        </h2>
+
+
+
+        <div className="space-y-4">
+
+
+          {data.recent_activity.map((item,index)=>(
+
+
+            <div
+
+              key={index}
+
+              className="flex items-center gap-3"
+
+            >
+
+
+              <CheckCircle
+
+                className="text-green-500"
+
+              />
+
+
+              <span className="text-white">
+
+                {item}
+
+              </span>
+
+
+            </div>
+
+
+          ))}
+
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+
+      {/* Analytics */}
+
+
+      <CareerAnalytics
+
+        progress={data.weekly_progress}
+
+      />
+
+
+
+
+
     </div>
+
   );
+
 }
+
+
 
 export default Dashboard;

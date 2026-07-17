@@ -11,10 +11,3 @@ def read_docx_resume(filename):
         text += paragraph.text + "\n"
 
     return text
-
-
-if __name__ == "__main__":
-
-    text = read_docx_resume("resume.docx")
-
-    print(text)

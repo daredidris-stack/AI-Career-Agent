@@ -1,41 +1,134 @@
+import {
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  GraduationCap,
+  MessageSquare,
+  Settings,
+  FileSignature,
+  Target,
+  Sparkles,
+} from "lucide-react";
+
 import { NavLink } from "react-router-dom";
 
+
 const menuItems = [
-  { name: "Dashboard", path: "/" },
-  { name: "Skill Gap", path: "/skill-gap" },
-  { name: "Resume", path: "/resume" },
-  { name: "Jobs", path: "/jobs" },
-  { name: "Interview", path: "/interview" },
-  { name: "Learning", path: "/learning" },
-  { name: "Settings", path: "/settings" },
+
+  {
+    name: "Dashboard",
+    path: "/",
+    icon: LayoutDashboard,
+  },
+
+  {
+    name: "Skill Gap",
+    path: "/skills",
+    icon: Briefcase,
+  },
+
+  {
+    name: "Resume Studio",
+    path: "/resume",
+    icon: FileText,
+  },
+
+  {
+    name: "Job Match",
+    path: "/job-match",
+    icon: Target,
+  },
+
+  {
+    name: "Resume Tailor",
+    path: "/resume-tailor",
+    icon: Sparkles,
+  },
+  {
+    name: "Cover Letter",
+    path: "/cover-letter",
+    icon: FileSignature,
+  },
+
+  {
+    name: "Interview Center",
+    path: "/interview",
+    icon: MessageSquare,
+  },
+
+  {
+    name: "Learning",
+    path: "/learning",
+    icon: GraduationCap,
+  },
+
+  {
+    name: "Settings",
+    path: "/settings",
+    icon: Settings,
+  },
+
 ];
 
-function Sidebar() {
-  return (
-    <aside className="w-64 bg-slate-900 text-white min-h-screen p-6">
-      <h1 className="text-2xl font-bold mb-8">
-        🚀 AI Career Assistant
-      </h1>
 
-      <nav className="flex flex-col gap-2">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `p-3 rounded-lg transition ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-slate-800"
-              }`
-            }
-          >
-            {item.name}
-          </NavLink>
-        ))}
+function Sidebar() {
+
+  return (
+
+    <aside className="w-64 bg-gray-900 text-white min-h-screen border-r border-gray-800">
+
+      <div className="p-6 border-b border-gray-800">
+
+        <h1 className="text-2xl font-bold text-blue-400">
+          CareerPilot AI
+        </h1>
+
+        <p className="text-sm text-gray-400 mt-1">
+          AI Career Copilot
+        </p>
+
+      </div>
+
+
+      <nav className="mt-6 px-3">
+
+        {menuItems.map((item) => {
+
+          const Icon = item.icon;
+
+          return (
+
+            <NavLink
+              key={item.name}
+              to={item.path}
+
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition ${
+                  isActive
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-300 hover:bg-gray-800"
+                }`
+              }
+            >
+
+              <Icon size={20} />
+
+              <span>
+                {item.name}
+              </span>
+
+            </NavLink>
+
+          );
+
+        })}
+
       </nav>
+
     </aside>
+
   );
 }
+
 
 export default Sidebar;

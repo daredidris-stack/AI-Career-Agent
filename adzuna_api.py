@@ -1,21 +1,27 @@
 import requests
 
-from config import ADZUNA_APP_ID, ADZUNA_APP_KEY
+from backend.core.settings import ADZUNA_APP_ID, ADZUNA_APP_KEY
 
 
 def search_jobs(keyword, location="Mexico", results=10):
 
-    url = (
-        f"https://api.adzuna.com/v1/api/jobs/mx/search/1"
-        f"?app_id={ADZUNA_APP_ID}"
-        f"&app_key={ADZUNA_APP_KEY}"
-        f"&results_per_page={results}"
-        f"&what={keyword}"
-        f"&where={location}"
-        f"&content-type=application/json"
-    )
+    if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
+        return []
 
-    response = requests.get(url)
+    url = "https://api.adzuna.com/v1/api/jobs/mx/search/1"
+
+    response = requests.get(
+        url,
+        params={
+            "app_id": ADZUNA_APP_ID,
+            "app_key": ADZUNA_APP_KEY,
+            "results_per_page": results,
+            "what": keyword,
+            "where": location,
+            "content-type": "application/json",
+        },
+        timeout=15,
+    )
 
     if response.status_code != 200:
         print("Error:", response.status_code)
