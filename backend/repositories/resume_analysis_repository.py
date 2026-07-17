@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from backend.models.resume_analysis import ResumeAnalysis
+from backend.services.candidate_skills import normalize_explicit_skills
 
 
 class ResumeAnalysisRepository:
@@ -44,11 +45,7 @@ class ResumeAnalysisRepository:
         if not isinstance(skills, list):
             return []
 
-        return [
-            str(skill).strip()
-            for skill in skills
-            if str(skill).strip()
-        ]
+        return normalize_explicit_skills(skills)
 
     def get_latest_by_user_id(
         self,

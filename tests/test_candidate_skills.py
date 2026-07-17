@@ -3,11 +3,34 @@ from types import SimpleNamespace
 
 from backend.services.candidate_skills import (
     merge_candidate_skills,
+    normalize_explicit_skills,
     profile_with_skills,
 )
 
 
 class CandidateSkillsTests(unittest.TestCase):
+    def test_splits_grouped_resume_skills_and_adds_capabilities(self):
+        result = normalize_explicit_skills([
+            "AWS EC2, S3, IAM, VPC, CloudWatch",
+            "Linux, Python, GitHub Actions",
+        ])
+
+        self.assertEqual(
+            result,
+            [
+                "AWS EC2",
+                "S3",
+                "IAM",
+                "VPC",
+                "CloudWatch",
+                "Linux",
+                "Python",
+                "GitHub Actions",
+                "AWS",
+                "CI/CD",
+            ],
+        )
+
     def test_merges_profile_and_resume_skills_without_duplicates(self):
         profile = SimpleNamespace(
             technical_skills="AWS, Linux",

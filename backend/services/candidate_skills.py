@@ -9,28 +9,54 @@ PROFILE_SKILL_CONTEXT_FIELDS = (
 )
 
 
+def normalize_explicit_skills(skills: Any) -> list[str]:
+    if isinstance(skills, str):
+        values = [skills]
+    elif isinstance(skills, list):
+        values = skills
+    else:
+        return []
+
+    normalized = []
+    seen = set()
+
+    for item in values:
+        for skill in str(item).split(","):
+            value = skill.strip()
+            key = value.casefold()
+            if value and key not in seen:
+                normalized.append(value)
+                seen.add(key)
+
+    explicit_keys = {skill.casefold() for skill in normalized}
+    if any(key.startswith("aws ") for key in explicit_keys):
+        _append_unique(normalized, seen, "AWS")
+    if "github actions" in explicit_keys:
+        _append_unique(normalized, seen, "CI/CD")
+
+    return normalized
+
+
+def _append_unique(
+    skills: list[str],
+    seen: set[str],
+    value: str,
+) -> None:
+    key = value.casefold()
+    if key not in seen:
+        skills.append(value)
+        seen.add(key)
+
+
 def merge_candidate_skills(
     profile: Any,
     resume_skills: list[str],
 ) -> list[str]:
     profile_skills = getattr(profile, "technical_skills", None) or ""
-    if not isinstance(resume_skills, list):
-        resume_skills = []
-    values = [
-        *str(profile_skills).split(","),
+    return normalize_explicit_skills([
+        profile_skills,
         *resume_skills,
-    ]
-    merged = []
-    seen = set()
-
-    for skill in values:
-        value = str(skill).strip()
-        key = value.casefold()
-        if value and key not in seen:
-            merged.append(value)
-            seen.add(key)
-
-    return merged
+    ])
 
 
 def profile_with_skills(

@@ -68,6 +68,35 @@ class ResumeAnalysisRepositoryTests(unittest.TestCase):
             self.repository.get_latest_by_user_id(self.user_id)
         )
 
+    def test_normalizes_grouped_skills_from_stored_analysis(self):
+        self.repository.create(
+            self.user_id,
+            "grouped.pdf",
+            {
+                "resume_score": 80,
+                "ats_score": 75,
+                "strengths": [],
+                "improvements": [],
+                "skills": [
+                    "AWS EC2, S3",
+                    "Linux, Python, GitHub Actions",
+                ],
+            },
+        )
+
+        self.assertEqual(
+            self.repository.get_latest_skills_by_user_id(self.user_id),
+            [
+                "AWS EC2",
+                "S3",
+                "Linux",
+                "Python",
+                "GitHub Actions",
+                "AWS",
+                "CI/CD",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

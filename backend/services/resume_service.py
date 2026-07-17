@@ -11,6 +11,7 @@ from backend.repositories.profile_repository import ProfileRepository
 from backend.repositories.resume_analysis_repository import (
     ResumeAnalysisRepository,
 )
+from backend.services.candidate_skills import normalize_explicit_skills
 
 
 SUPPORTED_RESUME_TYPES = {
@@ -120,20 +121,7 @@ class ResumeService:
 
     @staticmethod
     def _normalize_skills(skills: Any) -> list[str]:
-        if not isinstance(skills, list):
-            return []
-
-        normalized = []
-        seen = set()
-
-        for skill in skills:
-            value = str(skill).strip()
-            key = value.casefold()
-            if value and key not in seen:
-                normalized.append(value)
-                seen.add(key)
-
-        return normalized
+        return normalize_explicit_skills(skills)
 
 
 class ProfileRequiredError(Exception):
