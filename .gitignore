@@ -1,11 +1,41 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
 
-Resume_Report.pdf
-Resume_Report.docx
+# Environment and local credentials
+.env
+.env.*
+!.env.example
+/config.py
 
-resume.pdf
-resume.docx
+# Databases
+*.db
+*.sqlite
+*.sqlite3
 
-config.py
+# Uploads and generated documents
+uploads/
+*.docx
+*.pdf
+
+# Frontend dependencies and builds
+node_modules/
+frontend/node_modules/
+frontend/dist/
+build/
+dist/
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs and machine-specific files
+*.log
+.DS_Store
+.idea/
+.vscode/

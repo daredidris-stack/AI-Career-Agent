@@ -30,8 +30,7 @@ function JobMatch() {
       });
 
       setResult(response.data);
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Job matching failed.");
     }
 

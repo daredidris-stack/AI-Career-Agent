@@ -37,8 +37,7 @@ function Resume() {
       );
 
       setResult(response.data);
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Resume analysis failed.");
     }
 

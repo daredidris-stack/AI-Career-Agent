@@ -48,11 +48,6 @@ function SkillGap() {
         </p>
       </div>
 
-      {/* Tailwind Test */}
-      <div className="bg-red-500 text-white p-6 rounded-xl text-2xl">
-        Tailwind Test
-      </div>
-
       <button
         onClick={analyze}
         disabled={loading}

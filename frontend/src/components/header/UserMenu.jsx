@@ -13,7 +13,7 @@ import {
 
 export default function UserMenu({
   firstName = "Dare",
-  fullName = "Dare Daniel",
+  fullName = "User",
   onLogout,
 }) {
   return (

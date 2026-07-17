@@ -45,9 +45,7 @@ function CoverLetter() {
       setLetter(response.data.cover_letter);
 
 
-    } catch(error){
-
-      console.error(error);
+    } catch {
 
       alert("Failed to generate cover letter.");
 
