@@ -1,13 +1,26 @@
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from job_search import search_jobs as remoteok_search
 from adzuna_api import search_jobs as adzuna_search
 from arbeitnow_api import search_jobs as arbeitnow_search
 from himalayas_api import search_jobs as himalayas_search
 from jooble_api import search_jobs as jooble_search
+from backend.core.settings import (
+    ADZUNA_APP_ID,
+    ADZUNA_APP_KEY,
+    JOOBLE_API_KEY,
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+class AggregatedJobs(list):
+    def __init__(self, jobs, provider_status):
+        super().__init__(jobs)
+        self.provider_status = provider_status
 
 
 def aggregate_jobs(
@@ -18,79 +31,73 @@ def aggregate_jobs(
     results=20,
 ):
     provider_batches = []
+    provider_status = []
     search_term = " ".join(
         value for value in (keyword, industry) if value
     )
 
-    try:
-        jooble_jobs = jooble_search(
+    def collect(
+        name: str,
+        search: Callable[[], list[dict[str, Any]]],
+        configured: bool = True,
+    ) -> None:
+        try:
+            jobs = search()
+            for job in jobs:
+                job["source"] = name
+            provider_batches.append(jobs)
+            provider_status.append({
+                "name": name,
+                "status": (
+                    "active" if jobs else
+                    "no_results" if configured else
+                    "not_configured"
+                ),
+                "count": len(jobs),
+            })
+        except Exception:
+            logger.exception("%s job search failed", name)
+            provider_status.append({
+                "name": name,
+                "status": "unavailable",
+                "count": 0,
+            })
+
+    collect(
+        "Jooble",
+        lambda: jooble_search(
             search_term,
             location,
             page,
             results,
-        )
-
-        for job in jooble_jobs:
-            job["source"] = "Jooble"
-
-        provider_batches.append(jooble_jobs)
-    except Exception:
-        logger.exception("Jooble job search failed")
-
-    try:
-        himalayas_jobs = himalayas_search(
+        ),
+        configured=bool(JOOBLE_API_KEY),
+    )
+    collect(
+        "Himalayas",
+        lambda: himalayas_search(
             search_term,
             location,
             page,
-        )
-
-        for job in himalayas_jobs:
-            job["source"] = "Himalayas"
-
-        provider_batches.append(himalayas_jobs)
-    except Exception:
-        logger.exception("Himalayas job search failed")
+        ),
+    )
 
     # Free feeds supplement the first result page.
     if page == 1:
-        try:
-            remote_jobs = remoteok_search(keyword)
-
-            for job in remote_jobs:
-                job["source"] = "RemoteOK"
-
-            provider_batches.append(remote_jobs)
-
-        except Exception:
-            logger.exception("RemoteOK job search failed")
-
-        try:
-            arbeitnow_jobs = arbeitnow_search(
+        collect("RemoteOK", lambda: remoteok_search(keyword))
+        collect(
+            "Arbeitnow",
+            lambda: arbeitnow_search(
                 keyword,
                 location,
                 industry,
-            )
-
-            for job in arbeitnow_jobs:
-                job["source"] = "Arbeitnow"
-
-            provider_batches.append(arbeitnow_jobs)
-        except Exception:
-            logger.exception("Arbeitnow job search failed")
-
-
-
-        # Adzuna jobs
-        try:
-            adzuna_jobs = adzuna_search(search_term, location)
-
-            for job in adzuna_jobs:
-                job["source"] = "Adzuna"
-
-            provider_batches.append(adzuna_jobs)
-
-        except Exception:
-            logger.exception("Adzuna job search failed")
+            ),
+        )
+        collect(
+            "Adzuna",
+            lambda: adzuna_search(search_term, location),
+            configured=bool(ADZUNA_APP_ID and ADZUNA_APP_KEY),
+        )
 
     unique_jobs = []
     seen = set()
@@ -109,4 +116,4 @@ def aggregate_jobs(
                 unique_jobs.append(job)
                 seen.add(key)
 
-    return unique_jobs[:results]
+    return AggregatedJobs(unique_jobs[:results], provider_status)

@@ -7,6 +7,7 @@ from backend.services.job_search_service import (
     JobSearchService,
     ProfileRequiredError,
 )
+from backend.services.job_aggregator import AggregatedJobs
 
 
 class JobSearchServiceTests(unittest.TestCase):
@@ -222,6 +223,22 @@ class JobSearchServiceTests(unittest.TestCase):
         self.assertEqual(len(ranker.call_args.args[1]), 5)
         self.assertEqual(result["count"], 8)
         self.assertIsNone(result["jobs"][5]["analysis"]["match_score"])
+
+    def test_returns_provider_status_from_aggregator(self):
+        jobs = AggregatedJobs(
+            [{"title": "Cloud Engineer"}],
+            [{"name": "Himalayas", "status": "active", "count": 1}],
+        )
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            Mock(return_value=jobs),
+            Mock(return_value=[{"title": "Cloud Engineer"}]),
+        )
+
+        result = service.search_for_user(42)
+
+        self.assertEqual(result["providers"], jobs.provider_status)
 
 
 if __name__ == "__main__":

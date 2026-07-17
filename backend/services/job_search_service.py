@@ -97,6 +97,7 @@ class JobSearchService:
                 page,
                 per_page,
             )
+            provider_status = getattr(jobs, "provider_status", [])
             resume_skills = (
                 self.resume_analysis_repository
                 .get_latest_skills_by_user_id(user_id)
@@ -140,6 +141,7 @@ class JobSearchService:
             "page": page,
             "per_page": per_page,
             "has_more": provider_count >= per_page,
+            "providers": provider_status,
             "filters": {
                 "keyword": effective_keyword,
                 "location": effective_location,

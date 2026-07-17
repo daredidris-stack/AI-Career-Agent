@@ -34,6 +34,32 @@ class JobAggregatorTests(unittest.TestCase):
             {job["source"] for job in jobs},
             {"Jooble", "Himalayas"},
         )
+        statuses = {item["name"]: item for item in jobs.provider_status}
+        self.assertEqual(statuses["Jooble"]["status"], "active")
+        self.assertEqual(statuses["Himalayas"]["count"], 20)
+
+    @patch("backend.services.job_aggregator.adzuna_search", return_value=[])
+    @patch("backend.services.job_aggregator.arbeitnow_search", return_value=[])
+    @patch("backend.services.job_aggregator.remoteok_search", return_value=[])
+    @patch("backend.services.job_aggregator.himalayas_search", return_value=[])
+    @patch(
+        "backend.services.job_aggregator.jooble_search",
+        side_effect=RuntimeError("timeout"),
+    )
+    def test_provider_failure_does_not_break_other_sources(
+        self,
+        _jooble_search,
+        _himalayas_search,
+        _remoteok_search,
+        _arbeitnow_search,
+        _adzuna_search,
+    ):
+        jobs = aggregate_jobs("Engineer", "Worldwide")
+
+        statuses = {item["name"]: item for item in jobs.provider_status}
+        self.assertEqual(jobs, [])
+        self.assertEqual(statuses["Jooble"]["status"], "unavailable")
+        self.assertEqual(statuses["Himalayas"]["status"], "no_results")
 
 
 if __name__ == "__main__":

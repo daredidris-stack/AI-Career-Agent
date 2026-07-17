@@ -215,6 +215,17 @@ function Jobs() {
             </div>
           </div>
 
+          {result.providers?.length > 0 && (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+              <p className="text-sm font-semibold text-gray-300">Job sources</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.providers.map((provider) => (
+                  <ProviderStatus key={provider.name} provider={provider} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {result.jobs.length === 0 ? (
             <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center text-gray-300">
               No matching jobs were found. Try a broader role or location.
@@ -251,6 +262,28 @@ function Jobs() {
         </section>
       )}
     </div>
+  );
+}
+
+
+function ProviderStatus({ provider }) {
+  const styles = {
+    active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    no_results: "border-gray-700 bg-gray-800 text-gray-400",
+    not_configured: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    unavailable: "border-red-500/30 bg-red-500/10 text-red-300",
+  };
+  const labels = {
+    active: `${provider.count} found`,
+    no_results: "No matches",
+    not_configured: "Not configured",
+    unavailable: "Temporarily unavailable",
+  };
+
+  return (
+    <span className={`rounded-full border px-3 py-1 text-xs font-medium ${styles[provider.status] || styles.no_results}`}>
+      {provider.name}: {labels[provider.status] || "Unknown"}
+    </span>
   );
 }
 
