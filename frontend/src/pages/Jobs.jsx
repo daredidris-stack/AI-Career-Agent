@@ -10,6 +10,7 @@ import {
 
 import api from "../services/api";
 import { getProfile } from "../services/api";
+import { countries } from "../data/countries";
 
 
 function Jobs() {
@@ -101,12 +102,18 @@ function Jobs() {
             <span className="mb-2 block text-sm font-medium text-gray-300">
               Country
             </span>
-            <input
+            <select
               value={country}
               onChange={(event) => setCountry(event.target.value)}
-              placeholder="Mexico"
               className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
-            />
+            >
+              <option value="">Any country</option>
+              {countries.map((countryName) => (
+                <option key={countryName} value={countryName}>
+                  {countryName}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block">
