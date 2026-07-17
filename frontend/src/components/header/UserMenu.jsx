@@ -10,12 +10,15 @@ import {
   CircleHelp,
   LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function UserMenu({
   firstName = "Dare",
   fullName = "User",
   onLogout,
 }) {
+  const navigate = useNavigate();
+
   return (
     <Menu
       as="div"
@@ -96,16 +99,19 @@ export default function UserMenu({
             <MenuItem
               icon={<User size={18} />}
               label="My Profile"
+              onClick={() => navigate("/profile")}
             />
 
             <MenuItem
               icon={<LayoutDashboard size={18} />}
               label="Dashboard"
+              onClick={() => navigate("/dashboard")}
             />
 
             <MenuItem
               icon={<Settings size={18} />}
               label="Settings"
+              onClick={() => navigate("/settings")}
             />
 
             <MenuItem

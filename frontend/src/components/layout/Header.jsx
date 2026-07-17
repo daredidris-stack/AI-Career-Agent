@@ -42,6 +42,7 @@ function Header() {
     "/interview": "Interview Center",
     "/learning": "Learning",
     "/settings": "Settings",
+    "/profile": "Profile",
     "/skill-gap": "Skill Gap Analysis",
   };
 

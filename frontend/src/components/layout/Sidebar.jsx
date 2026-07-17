@@ -8,6 +8,7 @@ import {
   FileSignature,
   Target,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -23,8 +24,14 @@ const menuItems = [
 
   {
     name: "Skill Gap",
-    path: "/skills",
+    path: "/skill-gap",
     icon: Briefcase,
+  },
+
+  {
+    name: "Profile",
+    path: "/profile",
+    icon: UserRound,
   },
 
   {
