@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from skill_gap import skill_gap_analysis
+from skill_gap import calculate_skill_gap, skill_gap_analysis
 
 
 JOBS = [
@@ -17,6 +17,16 @@ JOBS = [
 
 
 class SkillGapAnalysisTests(unittest.TestCase):
+    def test_calculates_skill_gap_without_ai_recommendation(self):
+        result = calculate_skill_gap(
+            {"technical_skills": "AWS, Linux"},
+            JOBS,
+        )
+
+        self.assertEqual(result["current_skills"], ["AWS", "Linux"])
+        self.assertIn("Terraform", result["missing_skills"])
+        self.assertNotIn("recommendation", result)
+
     @patch("skill_gap.ask_llm", return_value="Recommendation")
     def test_uses_normalized_database_profile_fields(
         self,

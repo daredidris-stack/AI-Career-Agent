@@ -17,6 +17,8 @@ import api from "../services/api";
 function Dashboard() {
 
   const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
 
   useEffect(() => {
@@ -25,12 +27,18 @@ function Dashboard() {
 
       try {
 
+        setError("");
+
         const response = await api.get("/dashboard");
 
         setData(response.data);
 
 
       } catch {
+
+        setError(
+          "Dashboard could not be loaded. Please try again.",
+        );
 
       }
 
@@ -40,11 +48,35 @@ function Dashboard() {
     fetchDashboard();
 
 
-  }, []);
+  }, [reloadKey]);
 
 
 
   if (!data) {
+
+    if (error) {
+
+      return (
+
+        <div className="flex h-screen flex-col items-center justify-center gap-4 text-white">
+
+          <p className="text-xl font-semibold">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setReloadKey((value) => value + 1)}
+            className="rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-700"
+          >
+            Retry
+          </button>
+
+        </div>
+
+      );
+
+    }
 
     return (
 

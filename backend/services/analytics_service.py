@@ -4,7 +4,7 @@ from backend.repositories.job_catalog_repository import (
     JobCatalogRepository,
 )
 from backend.repositories.profile_repository import ProfileRepository
-from skill_gap import skill_gap_analysis
+from skill_gap import calculate_skill_gap
 
 
 PROFILE_COMPLETION_FIELDS = (
@@ -39,7 +39,7 @@ class AnalyticsService:
         self,
         profile_repository: ProfileRepository,
         job_catalog_repository: JobCatalogRepository,
-        analyzer: Callable[..., dict[str, Any]] = skill_gap_analysis,
+        analyzer: Callable[..., dict[str, Any]] = calculate_skill_gap,
     ):
         self.profile_repository = profile_repository
         self.job_catalog_repository = job_catalog_repository

@@ -103,11 +103,10 @@ def skill_gap_analysis(
     jobs: Any,
 ) -> dict[str, Any]:
     """Analyze gaps using normalized database profile fields."""
+    skill_report = calculate_skill_gap(profile, jobs)
     profile = profile or {}
-
-    current_skills = _normalize_skills(
-        _get_profile_value(profile, "technical_skills")
-    )
+    current_skills = skill_report["current_skills"]
+    missing_skills = skill_report["missing_skills"]
     years_experience = (
         _get_profile_value(profile, "years_experience", 0)
         or 0
@@ -127,12 +126,6 @@ def skill_gap_analysis(
             "",
         )
         or "Not provided"
-    )
-
-    required_skills = _job_skills(jobs)
-    missing_skills = _prioritize_missing_skills(
-        required_skills,
-        current_skills,
     )
 
     current_skills_text = (
@@ -173,4 +166,24 @@ Return:
         "current_skills": current_skills,
         "missing_skills": missing_skills,
         "recommendation": recommendation,
+    }
+
+
+def calculate_skill_gap(
+    profile: Mapping[str, Any] | Any | None,
+    jobs: Any,
+) -> dict[str, list[str]]:
+    """Calculate profile skill metrics without invoking the AI provider."""
+    profile = profile or {}
+    current_skills = _normalize_skills(
+        _get_profile_value(profile, "technical_skills")
+    )
+    required_skills = _job_skills(jobs)
+
+    return {
+        "current_skills": current_skills,
+        "missing_skills": _prioritize_missing_skills(
+            required_skills,
+            current_skills,
+        ),
     }
