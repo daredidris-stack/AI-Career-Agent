@@ -31,6 +31,8 @@ export default function Login() {
 
   const [error, setError] =
     useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
 
 
   async function handleLogin(
@@ -40,6 +42,7 @@ export default function Login() {
     event.preventDefault();
 
     setError("");
+    setNeedsVerification(false);
     setLoading(true);
 
 
@@ -66,11 +69,17 @@ export default function Login() {
         },
       );
 
-    } catch {
+    } catch (requestError: any) {
 
-      setError(
-        "Invalid email or password.",
-      );
+      const status = requestError.response?.status;
+      if (status === 403) {
+        setNeedsVerification(true);
+        setError("Verify your email before signing in.");
+      } else if (status === 429) {
+        setError("Too many failed attempts. Try again in 15 minutes.");
+      } else {
+        setError("Invalid email or password.");
+      }
 
     } finally {
 
@@ -78,6 +87,16 @@ export default function Login() {
 
     }
 
+  }
+
+  async function resendVerification() {
+    setVerificationMessage("");
+    try {
+      await api.post("/auth/verification/request", { email });
+      setVerificationMessage("If the account exists, a verification email has been sent.");
+    } catch {
+      setVerificationMessage("Unable to send an email right now. Please try again.");
+    }
   }
 
 
@@ -178,6 +197,15 @@ export default function Login() {
                     {error}
                   </div>
 
+                )}
+
+                {needsVerification && (
+                  <div className="space-y-2 text-sm">
+                    <button type="button" onClick={resendVerification} className="font-medium text-blue-400 hover:text-blue-300">
+                      Resend verification email
+                    </button>
+                    {verificationMessage && <p className="text-gray-400">{verificationMessage}</p>}
+                  </div>
                 )}
 
 
