@@ -37,6 +37,10 @@ from backend.services.cover_letter_service import (
     CoverLetterService,
 )
 
+from backend.services.job_match_service import (
+    JobMatchService,
+)
+
 
 def get_auth_service(
     repo: UserRepository = Depends(
@@ -89,3 +93,11 @@ def get_cover_letter_service(
     ),
 ):
     return CoverLetterService(repo)
+
+
+def get_job_match_service(
+    repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+):
+    return JobMatchService(repo)
