@@ -135,6 +135,16 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
 
         file.close.assert_awaited_once()
 
+    async def test_rejects_empty_resume_file(self):
+        file = UploadFile(filename="resume.pdf", file=AsyncMock())
+        file.read = AsyncMock(return_value=b"")
+        file.close = AsyncMock()
+
+        with self.assertRaisesRegex(ValueError, "empty"):
+            await self.service.extract_text(file)
+
+        file.close.assert_awaited_once()
+
     @patch("backend.services.resume_service.MAX_RESUME_UPLOAD_BYTES", 8)
     async def test_rejects_oversized_file(self):
         file = UploadFile(filename="resume.pdf", file=AsyncMock())
