@@ -6,6 +6,7 @@ from backend.dependencies.repositories import (
     get_job_catalog_repository,
     get_resume_analysis_repository,
     get_career_document_repository,
+    get_job_application_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -26,12 +27,14 @@ from backend.repositories.resume_analysis_repository import (
 from backend.repositories.career_document_repository import (
     CareerDocumentRepository,
 )
+from backend.repositories.job_application_repository import JobApplicationRepository
 
 from backend.services.auth_service import (
     AuthService,
 )
 from backend.services.email_service import EmailService
 from backend.services.career_document_service import CareerDocumentService
+from backend.services.job_application_service import JobApplicationService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -94,6 +97,14 @@ def get_career_document_service(
     ),
 ):
     return CareerDocumentService(repo)
+
+
+def get_job_application_service(
+    repo: JobApplicationRepository = Depends(
+        get_job_application_repository
+    ),
+):
+    return JobApplicationService(repo)
 
 
 def get_resume_service(

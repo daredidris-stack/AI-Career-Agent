@@ -7,6 +7,7 @@ from backend.models.profile import Profile
 from backend.models.resume_analysis import ResumeAnalysis
 from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
+from backend.models.job_application import JobApplication
 
 
 print("Creating database...")

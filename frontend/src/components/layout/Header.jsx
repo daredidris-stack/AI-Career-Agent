@@ -41,6 +41,7 @@ function Header() {
     "/resume-tailor": "Resume Tailor",
     "/cover-letter": "Cover Letter",
     "/jobs": "Jobs",
+    "/applications": "Application Tracker",
     "/job-match": "Job Match",
     "/interview": "Interview Center",
     "/learning": "Learning",

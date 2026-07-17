@@ -13,6 +13,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.users import router as users_router
 from backend.routes.profile import router as profile_router
 from backend.routes.documents import router as documents_router
+from backend.routes.applications import router as applications_router
 
 
 app = FastAPI(
@@ -46,6 +47,9 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(profile_router)
 app.include_router(documents_router)
+app.include_router(applications_router)
+
+
 @app.get("/")
 def home():
 

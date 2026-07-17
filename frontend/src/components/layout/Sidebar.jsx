@@ -10,6 +10,7 @@ import {
   Sparkles,
   UserRound,
   SearchCheck,
+  ClipboardList,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -51,6 +52,12 @@ const menuItems = [
     name: "Jobs",
     path: "/jobs",
     icon: SearchCheck,
+  },
+
+  {
+    name: "Application Tracker",
+    path: "/applications",
+    icon: ClipboardList,
   },
 
   {

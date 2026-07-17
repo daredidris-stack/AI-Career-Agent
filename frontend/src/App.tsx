@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import JobMatch from "./pages/JobMatch";
 import ResumeTailor from "./pages/ResumeTailor";
 import CoverLetter from "./pages/CoverLetter";
+import Applications from "./pages/Applications";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -114,6 +115,11 @@ export default function App() {
         <Route
           path="/profile"
           element={<Profile />}
+        />
+
+        <Route
+          path="/applications"
+          element={<Applications />}
         />
 
       </Route>

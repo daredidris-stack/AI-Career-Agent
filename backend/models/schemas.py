@@ -76,6 +76,37 @@ class CareerDocumentRevisionResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class JobApplicationData(BaseModel):
+    company: str = Field(min_length=1, max_length=200)
+    role: str = Field(min_length=1, max_length=200)
+    job_url: str | None = None
+    location: str | None = None
+    status: str = "saved"
+    notes: str | None = None
+    contact_name: str | None = None
+    contact_email: EmailStr | None = None
+    deadline_at: datetime | None = None
+    follow_up_at: datetime | None = None
+    applied_at: datetime | None = None
+
+
+class JobApplicationCreate(JobApplicationData):
+    pass
+
+
+class JobApplicationUpdate(JobApplicationData):
+    pass
+
+
+class JobApplicationResponse(JobApplicationData):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

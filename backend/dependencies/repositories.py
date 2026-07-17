@@ -21,6 +21,9 @@ from backend.repositories.resume_analysis_repository import (
 from backend.repositories.career_document_repository import (
     CareerDocumentRepository,
 )
+from backend.repositories.job_application_repository import (
+    JobApplicationRepository,
+)
 
 
 def get_user_repository(
@@ -52,3 +55,9 @@ def get_career_document_repository(
     db: Session = Depends(get_db),
 ) -> CareerDocumentRepository:
     return CareerDocumentRepository(db)
+
+
+def get_job_application_repository(
+    db: Session = Depends(get_db),
+) -> JobApplicationRepository:
+    return JobApplicationRepository(db)
