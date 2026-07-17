@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Bell, Moon, Search } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../hooks/useAuth";
 import { getCurrentUser } from "../../services/api";
 import UserMenu from "../header/UserMenu";
 
 function Header() {
 
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [user, setUser] = useState(null);
 
@@ -102,8 +105,8 @@ function Header() {
             : "User"
           }
           onLogout={() => {
-            localStorage.removeItem("access_token");
-            window.location.href = "/";
+            logout();
+            navigate("/login", { replace: true });
           }}
         />
 
