@@ -12,6 +12,7 @@ from backend.services.candidate_skills import (
 )
 from backend.services.job_aggregator import aggregate_jobs
 from backend.services.job_ranking import rank_jobs
+from backend.core.settings import AI_JOB_RANKING_ENABLED
 
 
 class ProfileRequiredError(Exception):
@@ -29,11 +30,17 @@ class JobSearchService:
         resume_analysis_repository: ResumeAnalysisRepository,
         job_aggregator: Callable[..., list[dict]] = aggregate_jobs,
         job_ranker: Callable[..., list[dict]] = rank_jobs,
+        enable_ai_ranking: bool | None = None,
     ):
         self.profile_repository = profile_repository
         self.resume_analysis_repository = resume_analysis_repository
         self.job_aggregator = job_aggregator
         self.job_ranker = job_ranker
+        self.enable_ai_ranking = (
+            AI_JOB_RANKING_ENABLED
+            if enable_ai_ranking is None and job_ranker is rank_jobs
+            else True if enable_ai_ranking is None else enable_ai_ranking
+        )
 
     def search_for_user(
         self,
@@ -123,15 +130,25 @@ class JobSearchService:
                 effective_keyword,
             )
             provider_count = len(jobs)
-            ai_candidates = jobs[:5]
-            remaining_jobs = jobs[5:]
-            ranked_jobs = list(
-                self.job_ranker(candidate_profile, ai_candidates)
-            )
-            jobs = ranked_jobs + [
-                self._without_ai_score(job)
-                for job in remaining_jobs
-            ]
+            if self.enable_ai_ranking:
+                ai_candidates = jobs[:5]
+                remaining_jobs = jobs[5:]
+                ranked_jobs = list(
+                    self.job_ranker(candidate_profile, ai_candidates)
+                )
+                jobs = ranked_jobs + [
+                    self._without_ai_score(job)
+                    for job in remaining_jobs
+                ]
+            else:
+                jobs = [
+                    self._deterministic_analysis(
+                        job,
+                        candidate_profile["technical_skills"],
+                        effective_keyword,
+                    )
+                    for job in jobs
+                ]
         except Exception as error:
             raise JobSearchError(
                 "Job search is temporarily unavailable."
@@ -193,6 +210,33 @@ class JobSearchService:
             "strengths": [],
             "missing_skills": [],
             "recommendation": "Open the listing to review full details.",
+        }
+        return job
+
+    @staticmethod
+    def _deterministic_analysis(
+        job: dict[str, Any], skills: list[str], keyword: str
+    ) -> dict[str, Any]:
+        title = str(job.get("title") or "").casefold()
+        searchable = " ".join([
+            title,
+            str(job.get("description") or "").casefold(),
+            " ".join(str(value) for value in job.get("skills") or []).casefold(),
+        ])
+        role_terms = [term for term in keyword.casefold().split() if len(term) > 2]
+        role_hits = sum(term in title for term in role_terms)
+        matching_skills = [skill for skill in skills if skill.casefold() in searchable]
+        role_score = round(50 * role_hits / max(1, len(role_terms)))
+        skill_score = round(50 * len(matching_skills) / max(1, len(skills)))
+        score = max(0, min(100, role_score + skill_score))
+        job["analysis"] = {
+            "match_score": score,
+            "strengths": matching_skills,
+            "missing_skills": [],
+            "recommendation": (
+                "Profile-based score calculated instantly. Open the listing "
+                "to verify requirements and full details."
+            ),
         }
         return job
 

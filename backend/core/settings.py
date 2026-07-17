@@ -32,6 +32,9 @@ AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "1")))
 AI_MAX_PROMPT_CHARACTERS = max(
     1000, int(os.getenv("AI_MAX_PROMPT_CHARACTERS", "30000"))
 )
+AI_JOB_RANKING_ENABLED = (
+    os.getenv("AI_JOB_RANKING_ENABLED", "false").casefold() == "true"
+)
 AI_REQUESTS_PER_HOUR = max(
     1, int(os.getenv("AI_REQUESTS_PER_HOUR", "20"))
 )

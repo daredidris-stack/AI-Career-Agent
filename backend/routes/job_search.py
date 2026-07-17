@@ -4,6 +4,7 @@ from backend.dependencies.auth import get_current_user
 from backend.dependencies.services import get_ai_usage_service, get_job_search_service
 from backend.models.user import User
 from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
+from backend.core.settings import AI_JOB_RANKING_ENABLED
 from backend.services.job_search_service import (
     JobSearchError,
     JobSearchService,
@@ -36,7 +37,8 @@ def search_jobs(
     ),
     usage: AIUsageService = Depends(get_ai_usage_service),
 ):
-    reserve_ai_usage(usage, current_user.id, "job_search_ranking")
+    if AI_JOB_RANKING_ENABLED:
+        reserve_ai_usage(usage, current_user.id, "job_search_ranking")
     try:
         return service.search_for_user(
             user_id=current_user.id,

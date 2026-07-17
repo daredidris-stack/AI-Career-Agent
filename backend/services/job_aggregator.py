@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable
 from typing import Any
 
@@ -59,11 +60,8 @@ def aggregate_jobs(
         value for value in (keyword, industry) if value
     )
 
-    def collect(
-        name: str,
-        search: Callable[[], list[dict[str, Any]]],
-        configured: bool = True,
-    ) -> None:
+    def fetch(spec):
+        name, search, configured = spec
         try:
             jobs = search()
             disclosure = PROVIDER_DISCLOSURES[name]
@@ -71,8 +69,7 @@ def aggregate_jobs(
                 job["source"] = name
                 job["source_homepage"] = disclosure["homepage"]
                 job["source_api_page"] = disclosure["api_page"]
-            provider_batches.append(jobs)
-            provider_status.append({
+            return jobs, {
                 "name": name,
                 "status": (
                     "active" if jobs else
@@ -81,17 +78,17 @@ def aggregate_jobs(
                 ),
                 "count": len(jobs),
                 **disclosure,
-            })
+            }
         except Exception:
             logger.exception("%s job search failed", name)
-            provider_status.append({
+            return [], {
                 "name": name,
                 "status": "unavailable",
                 "count": 0,
                 **PROVIDER_DISCLOSURES[name],
-            })
+            }
 
-    collect(
+    provider_specs = [(
         "Jooble",
         lambda: jooble_search(
             search_term,
@@ -99,33 +96,39 @@ def aggregate_jobs(
             page,
             results,
         ),
-        configured=bool(JOOBLE_API_KEY),
-    )
-    collect(
+        bool(JOOBLE_API_KEY),
+    ), (
         "Himalayas",
         lambda: himalayas_search(
             search_term,
             location,
             page,
         ),
-    )
+        True,
+    )]
 
     # Free feeds supplement the first result page.
     if page == 1:
-        collect("RemoteOK", lambda: remoteok_search(keyword))
-        collect(
+        provider_specs.append(("RemoteOK", lambda: remoteok_search(keyword), True))
+        provider_specs.append((
             "Arbeitnow",
             lambda: arbeitnow_search(
                 keyword,
                 location,
                 industry,
             ),
-        )
-        collect(
+            True,
+        ))
+        provider_specs.append((
             "Adzuna",
             lambda: adzuna_search(search_term, location),
-            configured=bool(ADZUNA_APP_ID and ADZUNA_APP_KEY),
-        )
+            bool(ADZUNA_APP_ID and ADZUNA_APP_KEY),
+        ))
+
+    with ThreadPoolExecutor(max_workers=len(provider_specs)) as executor:
+        for jobs, status in executor.map(fetch, provider_specs):
+            provider_batches.append(jobs)
+            provider_status.append(status)
 
     unique_jobs = []
     seen = set()
