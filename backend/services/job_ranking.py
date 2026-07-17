@@ -91,15 +91,20 @@ Consider:
 """
 
 
-        response = chat(
-            model="qwen3:8b",
-            messages=[
-                {
-                    "role":"user",
-                    "content":prompt
-                }
-            ]
-        )
+        try:
+            response = chat(
+                model="qwen3:8b",
+                messages=[
+                    {
+                        "role":"user",
+                        "content":prompt
+                    }
+                ]
+            )
+        except Exception:
+            job["analysis"] = _unavailable_analysis()
+            ranked_jobs.append(job)
+            continue
 
 
         text = response.message.content
@@ -126,16 +131,31 @@ Consider:
 
 
             except (TypeError, ValueError):
+                job["analysis"] = _unavailable_analysis()
+                ranked_jobs.append(job)
 
-                pass
+        else:
+            job["analysis"] = _unavailable_analysis()
+            ranked_jobs.append(job)
 
 
 
     ranked_jobs.sort(
         key=lambda x:
-        x.get("analysis", {}).get("match_score", 0),
+        x.get("analysis", {}).get("match_score") or 0,
         reverse=True
     )
 
 
     return ranked_jobs
+
+
+def _unavailable_analysis():
+    return {
+        "match_score": None,
+        "strengths": [],
+        "missing_skills": [],
+        "recommendation": (
+            "AI ranking was unavailable for this listing."
+        ),
+    }

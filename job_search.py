@@ -9,7 +9,8 @@ def search_jobs(keyword):
         "User-Agent": "Mozilla/5.0"
     }
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=15)
+    response.raise_for_status()
 
     jobs = response.json()
 

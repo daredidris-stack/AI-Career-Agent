@@ -109,11 +109,9 @@ class JobSearchService:
             jobs = [
                 job
                 for job in jobs
-                if job.get("analysis", {}).get(
-                    "match_score",
-                    0,
-                )
-                >= min_score
+                if (
+                    job.get("analysis", {}).get("match_score") or 0
+                ) >= min_score
             ]
 
         return {
