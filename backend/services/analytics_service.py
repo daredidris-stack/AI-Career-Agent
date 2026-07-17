@@ -12,6 +12,11 @@ from backend.services.candidate_skills import (
     profile_with_skills,
 )
 from skill_gap import calculate_skill_gap
+from backend.repositories.career_document_repository import CareerDocumentRepository
+from backend.repositories.job_application_repository import JobApplicationRepository
+from backend.repositories.ai_usage_repository import AIUsageRepository
+from backend.core.time import utc_now
+from datetime import timedelta
 
 
 PROFILE_COMPLETION_FIELDS = (
@@ -48,11 +53,17 @@ class AnalyticsService:
         job_catalog_repository: JobCatalogRepository,
         resume_analysis_repository: ResumeAnalysisRepository,
         analyzer: Callable[..., dict[str, Any]] = calculate_skill_gap,
+        document_repository: CareerDocumentRepository | None = None,
+        application_repository: JobApplicationRepository | None = None,
+        ai_usage_repository: AIUsageRepository | None = None,
     ):
         self.profile_repository = profile_repository
         self.job_catalog_repository = job_catalog_repository
         self.resume_analysis_repository = resume_analysis_repository
         self.analyzer = analyzer
+        self.document_repository = document_repository
+        self.application_repository = application_repository
+        self.ai_usage_repository = ai_usage_repository
 
     def get_for_user(self, user_id: int) -> dict[str, Any]:
         profile = self.profile_repository.get_by_user_id(user_id)
@@ -101,8 +112,40 @@ class AnalyticsService:
             "jobs_available": len(jobs),
             "current_skills": current_skills,
             "missing_skills": missing_skills,
-            "weekly_progress": [],
+            "weekly_progress": self._resume_progress(user_id),
+            "document_counts": (
+                self.document_repository.counts_by_kind(user_id)
+                if self.document_repository and user_id is not None else {}
+            ),
+            "application_pipeline": (
+                self.application_repository.counts_by_status(user_id)
+                if self.application_repository and user_id is not None else {}
+            ),
+            "ai_requests_30d": (
+                self.ai_usage_repository.count_since(
+                    user_id, utc_now() - timedelta(days=30)
+                )
+                if self.ai_usage_repository and user_id is not None else 0
+            ),
         }
+
+    def _resume_progress(self, user_id: int | None) -> list[dict[str, Any]]:
+        if user_id is None:
+            return []
+        history = self.resume_analysis_repository.list_for_user(
+            user_id, limit=8
+        )
+        if not isinstance(history, list):
+            return []
+        analyses = reversed(history)
+        return [
+            {
+                "week": analysis.created_at.strftime("%b %d"),
+                "score": analysis.resume_score,
+                "ats_score": analysis.ats_score,
+            }
+            for analysis in analyses
+        ]
 
     @staticmethod
     def _profile_completion(profile: Any) -> int:

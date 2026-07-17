@@ -225,11 +225,21 @@ def get_analytics_service(
     analysis_repo: ResumeAnalysisRepository = Depends(
         get_resume_analysis_repository
     ),
+    document_repo: CareerDocumentRepository = Depends(
+        get_career_document_repository
+    ),
+    application_repo: JobApplicationRepository = Depends(
+        get_job_application_repository
+    ),
+    ai_usage_repo: AIUsageRepository = Depends(get_ai_usage_repository),
 ):
     return AnalyticsService(
         profile_repo,
         job_catalog_repo,
         analysis_repo,
+        document_repository=document_repo,
+        application_repository=application_repo,
+        ai_usage_repository=ai_usage_repo,
     )
 
 

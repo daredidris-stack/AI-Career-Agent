@@ -13,8 +13,9 @@ function CareerAnalytics({ progress }) {
 
 
   const formattedData = progress.map((item) => ({
-    week: item.week.replace("Week3", "Week 3"),
+    week: item.week,
     score: Number(item.score),
+    atsScore: Number(item.ats_score),
   }));
 
 
@@ -81,6 +82,7 @@ function CareerAnalytics({ progress }) {
               dot={{r:6}}
               activeDot={{r:8}}
             />
+            <Line type="monotone" dataKey="atsScore" name="ATS Score" stroke="#8B5CF6" strokeWidth={3} dot={{r:5}} />
 
 
           </LineChart>

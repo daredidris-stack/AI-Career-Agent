@@ -37,3 +37,10 @@ class JobApplicationRepository:
     def delete(self, application) -> None:
         self.db.delete(application)
         self.db.commit()
+
+    def counts_by_status(self, user_id: int) -> dict[str, int]:
+        applications = self.list_for_user(user_id)
+        counts: dict[str, int] = {}
+        for application in applications:
+            counts[application.status] = counts.get(application.status, 0) + 1
+        return counts

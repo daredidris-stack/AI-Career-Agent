@@ -60,3 +60,11 @@ class ResumeAnalysisRepository:
             )
             .first()
         )
+
+    def list_for_user(self, user_id: int, limit: int = 12):
+        return self.db.query(ResumeAnalysis).filter(
+            ResumeAnalysis.user_id == user_id
+        ).order_by(
+            ResumeAnalysis.created_at.desc(),
+            ResumeAnalysis.id.desc(),
+        ).limit(limit).all()

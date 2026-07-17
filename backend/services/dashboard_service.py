@@ -85,8 +85,26 @@ class DashboardService:
             "technical_skills": analytics["current_skills"],
             "missing_skills": missing_skills,
             "weekly_progress": analytics["weekly_progress"],
-            "recent_activity": [],
+            "document_counts": analytics.get("document_counts", {}),
+            "application_pipeline": analytics.get("application_pipeline", {}),
+            "ai_requests_30d": analytics.get("ai_requests_30d", 0),
+            "recent_activity": self._recent_activity(analytics),
         }
+
+    @staticmethod
+    def _recent_activity(analytics: dict[str, Any]) -> list[str]:
+        activity = []
+        document_total = sum(analytics.get("document_counts", {}).values())
+        application_total = sum(analytics.get("application_pipeline", {}).values())
+        if document_total:
+            activity.append(f"{document_total} career documents saved")
+        if application_total:
+            activity.append(f"{application_total} job applications tracked")
+        if analytics.get("ai_requests_30d"):
+            activity.append(
+                f"{analytics['ai_requests_30d']} AI requests in the last 30 days"
+            )
+        return activity
 
     @staticmethod
     def _value(instance: Any, field_name: str) -> Any:

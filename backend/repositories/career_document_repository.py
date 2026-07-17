@@ -78,3 +78,9 @@ class CareerDocumentRepository:
             CareerDocumentRevision.document_id == document_id,
             CareerDocumentRevision.user_id == user_id,
         ).first()
+
+    def counts_by_kind(self, user_id: int) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for document in self.list_for_user(user_id):
+            counts[document.kind] = counts.get(document.kind, 0) + 1
+        return counts

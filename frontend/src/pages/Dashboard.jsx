@@ -120,6 +120,23 @@ function Dashboard() {
       </div>
 
 
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+          <h2 className="text-xl font-bold text-white">Application pipeline</h2>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Object.entries(data.application_pipeline || {}).map(([status, count]) => <div key={status} className="rounded-xl bg-gray-950 p-4"><p className="text-xs capitalize text-gray-500">{status}</p><p className="mt-1 text-2xl font-bold text-white">{count}</p></div>)}
+          </div>
+          {Object.keys(data.application_pipeline || {}).length === 0 && <p className="mt-4 text-sm text-gray-400">No applications tracked yet.</p>}
+        </section>
+        <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+          <h2 className="text-xl font-bold text-white">Monthly activity</h2>
+          <p className="mt-5 text-4xl font-bold text-blue-400">{data.ai_requests_30d || 0}</p>
+          <p className="mt-1 text-sm text-gray-400">AI-assisted actions in the last 30 days</p>
+          <p className="mt-5 text-sm text-gray-400">{Object.values(data.document_counts || {}).reduce((total, count) => total + count, 0)} saved career documents</p>
+        </section>
+      </div>
+
+
 
 
 
