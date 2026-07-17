@@ -11,6 +11,7 @@ export default function Register() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -30,6 +31,7 @@ export default function Register() {
         {
           email,
           password,
+          accept_terms: acceptTerms,
         }
       );
 
@@ -146,6 +148,11 @@ export default function Register() {
           }
         />
 
+        <label className="mb-6 flex items-start gap-3 text-sm text-gray-700">
+          <input type="checkbox" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} required className="mt-1" />
+          <span>I agree to the <a href="/terms" target="_blank" className="font-semibold underline">Terms of Use</a> and acknowledge the <a href="/privacy" target="_blank" className="font-semibold underline">Privacy Notice</a>.</span>
+        </label>
+
 
         <input
           className="
@@ -165,6 +172,7 @@ export default function Register() {
 
 
         <button
+          disabled={!acceptTerms}
           className="
             bg-black
             text-white

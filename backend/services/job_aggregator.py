@@ -16,6 +16,29 @@ from backend.core.settings import (
 
 logger = logging.getLogger(__name__)
 
+PROVIDER_DISCLOSURES = {
+    "Jooble": {
+        "homepage": "https://jooble.org/",
+        "api_page": "https://jooble.org/api/about",
+    },
+    "Himalayas": {
+        "homepage": "https://himalayas.app/",
+        "api_page": "https://himalayas.app/jobs/api",
+    },
+    "RemoteOK": {
+        "homepage": "https://remoteok.com/",
+        "api_page": "https://remoteok.com/api",
+    },
+    "Arbeitnow": {
+        "homepage": "https://www.arbeitnow.com/",
+        "api_page": "https://www.arbeitnow.com/job-board-api",
+    },
+    "Adzuna": {
+        "homepage": "https://www.adzuna.com/",
+        "api_page": "https://developer.adzuna.com/",
+    },
+}
+
 
 class AggregatedJobs(list):
     def __init__(self, jobs, provider_status):
@@ -43,8 +66,11 @@ def aggregate_jobs(
     ) -> None:
         try:
             jobs = search()
+            disclosure = PROVIDER_DISCLOSURES[name]
             for job in jobs:
                 job["source"] = name
+                job["source_homepage"] = disclosure["homepage"]
+                job["source_api_page"] = disclosure["api_page"]
             provider_batches.append(jobs)
             provider_status.append({
                 "name": name,
@@ -54,6 +80,7 @@ def aggregate_jobs(
                     "not_configured"
                 ),
                 "count": len(jobs),
+                **disclosure,
             })
         except Exception:
             logger.exception("%s job search failed", name)
@@ -61,6 +88,7 @@ def aggregate_jobs(
                 "name": name,
                 "status": "unavailable",
                 "count": 0,
+                **PROVIDER_DISCLOSURES[name],
             })
 
     collect(

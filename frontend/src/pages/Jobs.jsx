@@ -313,9 +313,9 @@ function ProviderStatus({ provider }) {
   };
 
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-medium ${styles[provider.status] || styles.no_results}`}>
+    <a href={provider.homepage} target="_blank" rel="noreferrer" className={`rounded-full border px-3 py-1 text-xs font-medium ${styles[provider.status] || styles.no_results}`}>
       {provider.name}: {labels[provider.status] || "Unknown"}
-    </span>
+    </a>
   );
 }
 
@@ -379,6 +379,11 @@ function JobCard({ job }) {
           View job
           <ExternalLink size={17} />
         </a>
+      )}
+      {job.source_homepage && (
+        <p className="mt-4 text-xs text-gray-500">
+          Listing supplied by <a href={job.source_homepage} target="_blank" rel="noreferrer" className="underline hover:text-gray-300">{job.source}</a>. Verify details on the provider site before applying.
+        </p>
       )}
     </article>
   );

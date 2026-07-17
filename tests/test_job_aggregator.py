@@ -37,6 +37,8 @@ class JobAggregatorTests(unittest.TestCase):
         statuses = {item["name"]: item for item in jobs.provider_status}
         self.assertEqual(statuses["Jooble"]["status"], "active")
         self.assertEqual(statuses["Himalayas"]["count"], 20)
+        self.assertEqual(jobs[0]["source_homepage"], "https://jooble.org/")
+        self.assertIn("api_page", statuses["Jooble"])
 
     @patch("backend.services.job_aggregator.adzuna_search", return_value=[])
     @patch("backend.services.job_aggregator.arbeitnow_search", return_value=[])

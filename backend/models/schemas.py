@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -10,6 +11,7 @@ from pydantic import BaseModel, EmailStr, Field
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+    accept_terms: Literal[True]
 
 
 class LoginRequest(BaseModel):
@@ -123,6 +125,8 @@ class UserResponse(BaseModel):
     last_name: str | None = None
     created_at: datetime
     is_email_verified: bool = False
+    terms_accepted_at: datetime | None = None
+    terms_version: str | None = None
 
     model_config = {
         "from_attributes": True

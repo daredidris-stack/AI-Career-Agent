@@ -46,6 +46,7 @@ MAX_RESUME_UPLOAD_BYTES = max(
 APP_ENV = os.getenv("APP_ENV", "development")
 APP_RELEASE = os.getenv("APP_RELEASE", "development")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LEGAL_TERMS_VERSION = os.getenv("LEGAL_TERMS_VERSION", "2026-07-17")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()

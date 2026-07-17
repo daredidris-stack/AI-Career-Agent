@@ -20,6 +20,10 @@ class UserDataService:
                 "last_name": user.last_name,
                 "created_at": self._value(user.created_at),
                 "is_email_verified": user.is_email_verified,
+                "terms_accepted_at": self._value(
+                    getattr(user, "terms_accepted_at", None)
+                ),
+                "terms_version": getattr(user, "terms_version", None),
             },
             **{
                 key: self._serialize(value)

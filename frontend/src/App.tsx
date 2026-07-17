@@ -14,6 +14,8 @@ import JobMatch from "./pages/JobMatch";
 import ResumeTailor from "./pages/ResumeTailor";
 import CoverLetter from "./pages/CoverLetter";
 import Applications from "./pages/Applications";
+import Terms from "./pages/Terms";
+import PrivacyNotice from "./pages/PrivacyNotice";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -45,6 +47,8 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<PrivacyNotice />} />
 
 
       {/* Application routes */}

@@ -33,6 +33,8 @@ class User(Base):
     failed_login_attempts = Column(Integer, nullable=False, default=0)
     locked_until = Column(DateTime, nullable=True)
     is_email_verified = Column(Boolean, nullable=False, default=False)
+    terms_accepted_at = Column(DateTime, nullable=True)
+    terms_version = Column(String, nullable=True)
 
 
     first_name = Column(

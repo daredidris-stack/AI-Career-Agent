@@ -68,6 +68,17 @@ class AuthServiceTests(unittest.TestCase):
 
         self.repository.delete_user.assert_not_called()
 
+    @patch("backend.services.auth_service.hash_password", return_value="hash")
+    def test_registration_records_versioned_terms_acceptance(self, _hash):
+        self.repository.get_by_email.return_value = None
+        self.repository.create_user.return_value = self.user
+
+        self.service.register_user("user@example.com", "password")
+
+        values = self.repository.create_user.call_args.kwargs
+        self.assertIsNotNone(values["terms_accepted_at"])
+        self.assertTrue(values["terms_version"])
+
     @patch("backend.services.auth_service.create_action_token", return_value="verify-token")
     def test_verification_email_contains_frontend_link(self, _create_token):
         email_service = Mock()

@@ -10,7 +10,11 @@ from backend.auth.jwt_handler import (
     create_action_token,
     decode_action_token,
 )
-from backend.core.settings import FRONTEND_URL, REQUIRE_EMAIL_VERIFICATION
+from backend.core.settings import (
+    FRONTEND_URL,
+    LEGAL_TERMS_VERSION,
+    REQUIRE_EMAIL_VERIFICATION,
+)
 from backend.core.time import utc_now
 
 from backend.repositories.user_repository import UserRepository
@@ -54,6 +58,8 @@ class AuthService:
         user = self.repo.create_user(
             email=email,
             password_hash=hash_password(password),
+            terms_accepted_at=utc_now(),
+            terms_version=LEGAL_TERMS_VERSION,
         )
         self.send_verification(user.email)
         return user

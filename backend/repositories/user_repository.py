@@ -28,11 +28,15 @@ class UserRepository:
         self,
         email: str,
         password_hash: str,
+        terms_accepted_at=None,
+        terms_version: str | None = None,
     ):
 
         user = User(
             email=email,
             password_hash=password_hash,
+            terms_accepted_at=terms_accepted_at,
+            terms_version=terms_version,
         )
 
         self.db.add(user)
