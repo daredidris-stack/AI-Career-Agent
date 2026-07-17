@@ -54,6 +54,10 @@ from backend.services.analytics_service import (
     AnalyticsService,
 )
 
+from backend.services.dashboard_service import (
+    DashboardService,
+)
+
 
 def get_auth_service(
     repo: UserRepository = Depends(
@@ -141,4 +145,18 @@ def get_analytics_service(
     return AnalyticsService(
         profile_repo,
         job_catalog_repo,
+    )
+
+
+def get_dashboard_service(
+    profile_repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+    analytics_service: AnalyticsService = Depends(
+        get_analytics_service
+    ),
+):
+    return DashboardService(
+        profile_repo,
+        analytics_service,
     )

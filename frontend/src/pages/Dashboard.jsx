@@ -112,7 +112,11 @@ function Dashboard() {
 
           title="Resume Score"
 
-          value={`${data.resume_score}%`}
+          value={
+            data.resume_score == null
+              ? "Not scored"
+              : `${data.resume_score}%`
+          }
 
           icon={<FileText size={28}/>}
 
@@ -122,9 +126,9 @@ function Dashboard() {
 
         <DashboardCard
 
-          title="Job Matches"
+          title="Jobs Available"
 
-          value={data.job_matches}
+          value={data.jobs_available}
 
           icon={<Target size={28}/>}
 
@@ -146,7 +150,11 @@ function Dashboard() {
 
           title="ATS Score"
 
-          value={`${data.ats_score}%`}
+          value={
+            data.ats_score == null
+              ? "Not scored"
+              : `${data.ats_score}%`
+          }
 
           icon={<Award size={28}/>}
 
@@ -191,7 +199,7 @@ function Dashboard() {
 
           <p className="text-gray-400 mt-2">
 
-            Progress toward becoming a Cloud Engineer.
+            Progress toward becoming a {data.profile.target_role || "stronger candidate"}.
 
           </p>
 
@@ -293,7 +301,8 @@ function Dashboard() {
       {/* Activity */}
 
 
-      <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+      {data.recent_activity.length > 0 && (
+        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
 
 
         <h2 className="text-2xl font-bold text-white mb-6">
@@ -343,7 +352,8 @@ function Dashboard() {
         </div>
 
 
-      </div>
+        </div>
+      )}
 
 
 
@@ -353,11 +363,9 @@ function Dashboard() {
       {/* Analytics */}
 
 
-      <CareerAnalytics
-
-        progress={data.weekly_progress}
-
-      />
+      {data.weekly_progress.length > 0 && (
+        <CareerAnalytics progress={data.weekly_progress} />
+      )}
 
 
 

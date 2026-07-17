@@ -53,6 +53,9 @@ class AnalyticsService:
                 "Create your profile before viewing analytics."
             )
 
+        return self.get_for_profile(profile)
+
+    def get_for_profile(self, profile: Any) -> dict[str, Any]:
         try:
             jobs = self.job_catalog_repository.list_jobs()
             skill_report = self.analyzer(profile, jobs)
