@@ -15,6 +15,7 @@ const kindLabels = {
 export default function DocumentLibrary({ refreshToken }) {
   const [documents, setDocuments] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [structuredResume, setStructuredResume] = useState(null);
   const [versionDocument, setVersionDocument] = useState(null);
   const [versions, setVersions] = useState([]);
   const [error, setError] = useState("");
@@ -41,6 +42,48 @@ export default function DocumentLibrary({ refreshToken }) {
     });
     setEditing(null);
     await loadDocuments();
+  }
+
+  async function createResume() {
+    const content = JSON.stringify({
+      summary: "",
+      skills: [],
+      experience: [],
+      education: [],
+    }, null, 2);
+    const response = await api.post("/documents", {
+      kind: "resume",
+      title: "Untitled Resume",
+      content,
+    });
+    await loadDocuments();
+    beginEdit(response.data);
+  }
+
+  function beginEdit(document) {
+    const draft = { ...document };
+    setEditing(draft);
+    try {
+      const parsed = JSON.parse(document.content);
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.skills)) {
+        setStructuredResume({
+          summary: String(parsed.summary || ""),
+          skills: parsed.skills.map(String),
+          experience: Array.isArray(parsed.experience) ? parsed.experience.map(String) : [],
+          education: Array.isArray(parsed.education) ? parsed.education.map(String) : [],
+        });
+        return;
+      }
+    } catch {
+      // Imported resumes remain available in the raw text editor.
+    }
+    setStructuredResume(null);
+  }
+
+  function updateStructured(field, value) {
+    const next = { ...structuredResume, [field]: value };
+    setStructuredResume(next);
+    setEditing({ ...editing, content: JSON.stringify(next, null, 2) });
   }
 
   async function deleteDocument(document) {
@@ -80,9 +123,12 @@ export default function DocumentLibrary({ refreshToken }) {
 
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
         <h2 className="text-2xl font-bold text-white">Document library</h2>
         <p className="mt-1 text-sm text-gray-400">Your resumes and generated career documents are saved privately.</p>
+        </div>
+        <button onClick={createResume} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">New resume</button>
       </div>
 
       {error && <p role="alert" className="mt-4 text-red-300">{error}</p>}
@@ -101,7 +147,7 @@ export default function DocumentLibrary({ refreshToken }) {
             </div>
             <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{document.content}</p>
             <div className="mt-5 flex gap-4 text-sm">
-              <button onClick={() => setEditing({ ...document })} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
+              <button onClick={() => beginEdit(document)} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
               <button onClick={() => showVersions(document)} className="flex items-center gap-1 text-violet-400"><History size={15} /> History</button>
               <button onClick={() => downloadDocument(document, "pdf")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> PDF</button>
               <button onClick={() => downloadDocument(document, "docx")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> DOCX</button>
@@ -119,7 +165,16 @@ export default function DocumentLibrary({ refreshToken }) {
               <button type="button" onClick={() => setEditing(null)} aria-label="Close"><X className="text-gray-400" /></button>
             </div>
             <input value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} required className="mt-5 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" />
-            <textarea rows={18} value={editing.content} onChange={(event) => setEditing({ ...editing, content: event.target.value })} required className="mt-4 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 font-mono text-sm text-white" />
+            {structuredResume ? (
+              <div className="mt-4 grid max-h-[60vh] gap-4 overflow-y-auto pr-2">
+                <label><span className="mb-1 block text-sm text-gray-300">Professional summary</span><textarea rows={4} value={structuredResume.summary} onChange={(event) => updateStructured("summary", event.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Skills (comma separated)</span><input value={structuredResume.skills.join(", ")} onChange={(event) => updateStructured("skills", event.target.value.split(",").map((value) => value.trim()).filter(Boolean))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Experience (one entry per line)</span><textarea rows={7} value={structuredResume.experience.join("\n")} onChange={(event) => updateStructured("experience", event.target.value.split("\n"))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Education (one entry per line)</span><textarea rows={5} value={structuredResume.education.join("\n")} onChange={(event) => updateStructured("education", event.target.value.split("\n"))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+              </div>
+            ) : (
+              <textarea rows={18} value={editing.content} onChange={(event) => setEditing({ ...editing, content: event.target.value })} required className="mt-4 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 font-mono text-sm text-white" />
+            )}
             <div className="mt-4 flex justify-end gap-3"><button type="button" onClick={() => setEditing(null)} className="px-4 py-2 text-gray-300">Cancel</button><button className="rounded-xl bg-blue-600 px-5 py-2 font-semibold text-white">Save changes</button></div>
           </form>
         </div>

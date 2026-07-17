@@ -32,6 +32,18 @@ class DocumentExportServiceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export_document(self.document, "exe")
 
+    def test_structured_resume_exports_readable_sections(self):
+        self.document.content = (
+            '{"summary":"Cloud engineer","skills":["AWS","Linux"],'
+            '"experience":["Operated infrastructure"],"education":[]}'
+        )
+
+        content, _, _ = export_document(self.document, "txt")
+
+        text = content.decode()
+        self.assertIn("Professional Summary\nCloud engineer", text)
+        self.assertIn("Skills\nAWS\nLinux", text)
+
 
 if __name__ == "__main__":
     unittest.main()
