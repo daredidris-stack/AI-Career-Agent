@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -239,6 +240,30 @@ class JobSearchServiceTests(unittest.TestCase):
         result = service.search_for_user(42)
 
         self.assertEqual(result["providers"], jobs.provider_status)
+
+    def test_filters_listing_metadata_before_ai_ranking(self):
+        now = datetime.now(timezone.utc)
+        jobs = [
+            {"title": "Recent", "job_type": "Full Time", "salary_min": 90000, "updated": now.isoformat()},
+            {"title": "Old", "job_type": "Full Time", "salary_min": 90000, "updated": (now - timedelta(days=60)).isoformat()},
+            {"title": "Contract", "job_type": "Contract", "salary_min": 120000, "updated": now.isoformat()},
+        ]
+        ranker = Mock(side_effect=lambda _profile, candidates: candidates)
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            Mock(return_value=jobs),
+            ranker,
+        )
+
+        result = service.search_for_user(
+            42,
+            employment_type="Full Time",
+            posted_within_days=30,
+            min_salary=80000,
+        )
+
+        self.assertEqual([job["title"] for job in result["jobs"]], ["Recent"])
 
 
 if __name__ == "__main__":

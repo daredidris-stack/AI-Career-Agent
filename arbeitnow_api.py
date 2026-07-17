@@ -43,6 +43,8 @@ def search_jobs(
             "description": _plain_text(job.get("description") or ""),
             "skills": job.get("tags") or [],
             "url": job.get("url") or "",
+            "job_type": "Full Time" if job.get("job_types") == ["full_time"] else "",
+            "updated": job.get("created_at"),
         })
 
         if len(matches) >= results:

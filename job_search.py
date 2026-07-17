@@ -26,7 +26,11 @@ def search_jobs(keyword):
                 "title": title,
                 "company": job.get("company", ""),
                 "location": "Remote",
-                "url": job.get("url", "")
+                "url": job.get("url", ""),
+                "job_type": job.get("job_type") or "",
+                "salary_min": job.get("salary_min"),
+                "salary_max": job.get("salary_max"),
+                "updated": job.get("date"),
             })
 
     return results

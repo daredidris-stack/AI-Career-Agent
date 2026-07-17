@@ -54,6 +54,8 @@ def _normalize(job: dict[str, Any]) -> dict[str, Any]:
         "url": job.get("applicationLink") or "",
         "job_type": job.get("employmentType") or "",
         "salary": salary,
+        "salary_min": job.get("minSalary"),
+        "salary_max": job.get("maxSalary"),
         "updated": job.get("pubDate"),
     }
 

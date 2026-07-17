@@ -19,6 +19,9 @@ function Jobs() {
   const [city, setCity] = useState("");
   const [industry, setIndustry] = useState("");
   const [workMode, setWorkMode] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [postedWithinDays, setPostedWithinDays] = useState(0);
+  const [minimumSalary, setMinimumSalary] = useState(0);
   const [minimumScore, setMinimumScore] = useState(0);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -57,6 +60,9 @@ function Jobs() {
           ...(city.trim() && { city: city.trim() }),
           ...(industry.trim() && { industry: industry.trim() }),
           ...(workMode && { work_mode: workMode }),
+          ...(employmentType && { employment_type: employmentType }),
+          ...(postedWithinDays > 0 && { posted_within_days: postedWithinDays }),
+          ...(minimumSalary > 0 && { min_salary: minimumSalary }),
           ...(minimumScore > 0 && { min_score: minimumScore }),
           page: pageNumber,
           per_page: 20,
@@ -161,6 +167,32 @@ function Jobs() {
               <option value="Hybrid">Hybrid</option>
               <option value="On-site">On-site</option>
             </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">Employment type</span>
+            <select value={employmentType} onChange={(event) => setEmploymentType(event.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500">
+              <option value="">Any type</option>
+              <option value="Full Time">Full time</option>
+              <option value="Part Time">Part time</option>
+              <option value="Contract">Contract</option>
+              <option value="Intern">Internship</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">Date posted</span>
+            <select value={postedWithinDays} onChange={(event) => setPostedWithinDays(Number(event.target.value))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500">
+              <option value={0}>Any time</option>
+              <option value={1}>Past 24 hours</option>
+              <option value={7}>Past week</option>
+              <option value={30}>Past month</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-gray-300">Minimum disclosed salary</span>
+            <input type="number" min="0" step="5000" value={minimumSalary || ""} onChange={(event) => setMinimumSalary(Number(event.target.value))} placeholder="80000" className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500" />
           </label>
 
           <label className="block">
@@ -319,6 +351,16 @@ function JobCard({ job }) {
           <MapPin size={17} />
           {job.location || "Location not listed"}
         </span>
+        {job.job_type && (
+          <span className="rounded-full bg-gray-800 px-3 py-1 text-gray-300">
+            {job.job_type}
+          </span>
+        )}
+        {job.salary && (
+          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
+            {job.salary}
+          </span>
+        )}
       </div>
 
       {job.analysis?.recommendation && (

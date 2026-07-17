@@ -40,7 +40,11 @@ def search_jobs(keyword, location="Mexico", results=10):
             "location": job.get("location", {}).get("display_name", "Unknown"),
             "skills": [],
             "description": job.get("description", ""),
-            "redirect_url": job.get("redirect_url", "")
+            "redirect_url": job.get("redirect_url", ""),
+            "job_type": job.get("contract_type") or "",
+            "salary_min": job.get("salary_min"),
+            "salary_max": job.get("salary_max"),
+            "updated": job.get("created"),
 })
 
     return jobs

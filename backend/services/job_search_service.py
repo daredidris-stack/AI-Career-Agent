@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from backend.repositories.profile_repository import ProfileRepository
@@ -42,6 +43,9 @@ class JobSearchService:
         city: str | None = None,
         industry: str | None = None,
         work_mode: str | None = None,
+        employment_type: str | None = None,
+        posted_within_days: int = 0,
+        min_salary: int = 0,
         min_score: int = 0,
         page: int = 1,
         per_page: int = 20,
@@ -98,6 +102,12 @@ class JobSearchService:
                 per_page,
             )
             provider_status = getattr(jobs, "provider_status", [])
+            jobs = self._apply_listing_filters(
+                jobs,
+                employment_type,
+                posted_within_days,
+                min_salary,
+            )
             resume_skills = (
                 self.resume_analysis_repository
                 .get_latest_skills_by_user_id(user_id)
@@ -149,6 +159,9 @@ class JobSearchService:
                 "city": effective_city,
                 "industry": effective_industry,
                 "work_mode": effective_work_mode,
+                "employment_type": employment_type or "",
+                "posted_within_days": max(0, posted_within_days),
+                "minimum_salary": max(0, min_salary),
                 "minimum_score": min_score,
             },
             "jobs": jobs,
@@ -182,6 +195,51 @@ class JobSearchService:
             "recommendation": "Open the listing to review full details.",
         }
         return job
+
+    @classmethod
+    def _apply_listing_filters(
+        cls,
+        jobs: list[dict[str, Any]],
+        employment_type: str | None,
+        posted_within_days: int,
+        min_salary: int,
+    ) -> list[dict[str, Any]]:
+        filtered = jobs
+        if employment_type:
+            expected = employment_type.casefold().replace("-", " ")
+            filtered = [
+                job for job in filtered
+                if expected in str(job.get("job_type") or "")
+                .casefold().replace("-", " ")
+            ]
+        if min_salary > 0:
+            filtered = [
+                job for job in filtered
+                if (job.get("salary_min") or 0) >= min_salary
+            ]
+        if posted_within_days > 0:
+            cutoff = datetime.now(timezone.utc) - timedelta(
+                days=posted_within_days
+            )
+            filtered = [
+                job for job in filtered
+                if (posted := cls._posted_at(job.get("updated")))
+                and posted >= cutoff
+            ]
+        return filtered
+
+    @staticmethod
+    def _posted_at(value: Any) -> datetime | None:
+        if isinstance(value, (int, float)):
+            timestamp = value / 1000 if value > 10_000_000_000 else value
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        if isinstance(value, str) and value.strip():
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                return parsed.replace(tzinfo=parsed.tzinfo or timezone.utc)
+            except ValueError:
+                return None
+        return None
 
     @staticmethod
     def _search_location(
