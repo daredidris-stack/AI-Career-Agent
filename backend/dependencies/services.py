@@ -50,6 +50,10 @@ from backend.services.skill_gap_service import (
     SkillGapService,
 )
 
+from backend.services.analytics_service import (
+    AnalyticsService,
+)
+
 
 def get_auth_service(
     repo: UserRepository = Depends(
@@ -121,6 +125,20 @@ def get_skill_gap_service(
     ),
 ):
     return SkillGapService(
+        profile_repo,
+        job_catalog_repo,
+    )
+
+
+def get_analytics_service(
+    profile_repo: ProfileRepository = Depends(
+        get_profile_repository
+    ),
+    job_catalog_repo: JobCatalogRepository = Depends(
+        get_job_catalog_repository
+    ),
+):
+    return AnalyticsService(
         profile_repo,
         job_catalog_repo,
     )

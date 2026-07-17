@@ -1,33 +1,35 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+
+from backend.dependencies.auth import get_current_user
+from backend.dependencies.services import get_analytics_service
+from backend.models.user import User
+from backend.services.analytics_service import (
+    AnalyticsError,
+    AnalyticsService,
+    ProfileRequiredError,
+)
 
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/analytics",
+    tags=["Analytics"],
+)
 
 
-@router.get("/analytics")
-def get_analytics():
-
-    return {
-        "resume_score": 82,
-        "ats_score": 88,
-        "skills_completed": 7,
-
-        "weekly_progress": [
-            {
-                "week": "Week 1",
-                "score": 62
-            },
-            {
-                "week": "Week 2",
-                "score": 70
-            },
-            {
-                "week": "Week 3",
-                "score": 78
-            },
-            {
-                "week": "Week 4",
-                "score": 82
-            }
-        ]
-    }
+@router.get("")
+def get_analytics(
+    current_user: User = Depends(get_current_user),
+    service: AnalyticsService = Depends(get_analytics_service),
+):
+    try:
+        return service.get_for_user(current_user.id)
+    except ProfileRequiredError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+    except AnalyticsError as error:
+        raise HTTPException(
+            status_code=502,
+            detail=str(error),
+        ) from error
