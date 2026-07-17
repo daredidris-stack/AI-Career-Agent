@@ -35,6 +35,11 @@ class User(Base):
     is_email_verified = Column(Boolean, nullable=False, default=False)
     terms_accepted_at = Column(DateTime, nullable=True)
     terms_version = Column(String, nullable=True)
+    plan = Column(String, nullable=False, default="free")
+    stripe_customer_id = Column(String, nullable=True, unique=True)
+    stripe_subscription_id = Column(String, nullable=True, unique=True)
+    subscription_status = Column(String, nullable=True)
+    subscription_period_end = Column(DateTime, nullable=True)
 
 
     first_name = Column(

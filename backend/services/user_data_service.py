@@ -24,6 +24,13 @@ class UserDataService:
                     getattr(user, "terms_accepted_at", None)
                 ),
                 "terms_version": getattr(user, "terms_version", None),
+                "plan": getattr(user, "plan", "free") or "free",
+                "subscription_status": getattr(
+                    user, "subscription_status", None
+                ),
+                "subscription_period_end": self._value(
+                    getattr(user, "subscription_period_end", None)
+                ),
             },
             **{
                 key: self._serialize(value)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
@@ -13,6 +13,21 @@ function Settings() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [billing, setBilling] = useState(null);
+
+  useEffect(() => {
+    api.get("/billing/status").then((response) => setBilling(response.data)).catch(() => {});
+  }, []);
+
+  async function openBilling(endpoint) {
+    setError("");
+    try {
+      const response = await api.post(endpoint);
+      window.location.assign(response.data.url);
+    } catch (requestError) {
+      setError(requestError.response?.data?.detail || "Billing is temporarily unavailable.");
+    }
+  }
 
   async function exportAccountData() {
     setExporting(true);
@@ -65,6 +80,17 @@ function Settings() {
         <h1 className="text-4xl font-bold text-white">Settings</h1>
         <p className="mt-2 text-gray-400">Manage your account and security.</p>
       </div>
+
+      <section className="max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div><h2 className="text-xl font-bold text-white">Plan and billing</h2><p className="mt-2 text-sm text-gray-400">Current plan: <span className="font-semibold capitalize text-blue-300">{billing?.plan || "Free"}</span></p></div>
+          {billing?.subscription_status && <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold capitalize text-emerald-300">{billing.subscription_status}</span>}
+        </div>
+        <p className="mt-4 text-sm leading-6 text-gray-400">Free includes up to 20 AI requests per hour and 100 per day. Pro raises those safeguards to 100 per hour and 1,000 per day.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          {billing?.plan === "pro" ? <button type="button" onClick={() => openBilling("/billing/portal")} className="rounded-xl bg-gray-800 px-5 py-3 font-semibold text-white">Manage subscription</button> : <button type="button" disabled={!billing?.billing_enabled} onClick={() => openBilling("/billing/checkout")} className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{billing?.billing_enabled ? "Upgrade to Pro" : "Pro coming soon"}</button>}
+        </div>
+      </section>
 
       <section className="max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
         <h2 className="text-xl font-bold text-white">Your data</h2>

@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from backend.models.ai_usage_event import AIUsageEvent
+from backend.models.user import User
 
 
 class AIUsageRepository:
@@ -21,3 +22,7 @@ class AIUsageRepository:
         self.db.commit()
         self.db.refresh(event)
         return event
+
+    def get_plan(self, user_id: int) -> str:
+        value = self.db.query(User.plan).filter(User.id == user_id).scalar()
+        return value or "free"

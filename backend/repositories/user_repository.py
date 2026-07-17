@@ -54,6 +54,11 @@ class UserRepository:
             .first()
         )
 
+    def get_by_stripe_customer_id(self, customer_id: str):
+        return self.db.query(User).filter(
+            User.stripe_customer_id == customer_id
+        ).first()
+
     def save(self, user: User) -> User:
         self.db.add(user)
         self.db.commit()

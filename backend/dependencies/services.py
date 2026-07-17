@@ -41,6 +41,7 @@ from backend.services.career_document_service import CareerDocumentService
 from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
 from backend.services.user_data_service import UserDataService
+from backend.services.billing_service import BillingService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -123,6 +124,12 @@ def get_user_data_service(
     repo: UserDataRepository = Depends(get_user_data_repository),
 ):
     return UserDataService(repo)
+
+
+def get_billing_service(
+    repo: UserRepository = Depends(get_user_repository),
+):
+    return BillingService(repo)
 
 
 def get_resume_service(

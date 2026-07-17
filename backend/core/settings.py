@@ -39,6 +39,14 @@ AI_REQUESTS_PER_DAY = max(
     AI_REQUESTS_PER_HOUR,
     int(os.getenv("AI_REQUESTS_PER_DAY", "100")),
 )
+AI_PRO_REQUESTS_PER_HOUR = max(
+    AI_REQUESTS_PER_HOUR,
+    int(os.getenv("AI_PRO_REQUESTS_PER_HOUR", "100")),
+)
+AI_PRO_REQUESTS_PER_DAY = max(
+    AI_PRO_REQUESTS_PER_HOUR,
+    int(os.getenv("AI_PRO_REQUESTS_PER_DAY", "1000")),
+)
 MAX_RESUME_UPLOAD_BYTES = max(
     1024, int(os.getenv("MAX_RESUME_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 )
@@ -65,6 +73,9 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").casefold() == "true"
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+STRIPE_PRO_PRICE_ID = os.getenv("STRIPE_PRO_PRICE_ID")
 
 
 def require_jwt_secret() -> str:
