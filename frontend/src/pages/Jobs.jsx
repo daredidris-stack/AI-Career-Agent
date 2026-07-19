@@ -6,12 +6,12 @@ import {
   MapPin,
   Search,
   Sparkles,
+  X,
 } from "lucide-react";
 
 import api from "../services/api";
 import { getProfile } from "../services/api";
 import { countries } from "../data/countries";
-import { buildLinkedInJobSearchUrl } from "../utils/linkedinJobSearch";
 
 
 function Jobs() {
@@ -27,6 +27,7 @@ function Jobs() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     async function loadProfileDefaults() {
@@ -80,26 +81,6 @@ function Jobs() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function searchLinkedIn() {
-    const url = buildLinkedInJobSearchUrl({
-      targetRole,
-      country,
-      city,
-      industry,
-      workMode,
-      employmentType,
-      postedWithinDays,
-    });
-
-    if (!url) {
-      setError("Enter a target role before searching LinkedIn.");
-      return;
-    }
-
-    setError("");
-    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -235,34 +216,18 @@ function Jobs() {
 
         </div>
 
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm text-gray-500">
-              Profile values are prefilled and can be adjusted for this search.
-            </p>
-            <p className="mt-1 text-xs text-gray-400">
-              LinkedIn searches open on LinkedIn and are subject to its availability and terms.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={searchLinkedIn}
-              className="flex items-center justify-center gap-2 rounded-xl border border-blue-600 bg-white px-6 py-3 font-semibold text-blue-700 transition hover:bg-blue-50"
-            >
-              <BriefcaseBusiness size={19} />
-              Search LinkedIn
-              <ExternalLink size={16} />
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
-            >
-              <Search size={19} />
-              {loading ? "Matching..." : "Find My Jobs"}
-            </button>
-          </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">
+            Profile values are prefilled and can be adjusted for this search.
+          </p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+          >
+            <Search size={19} />
+            {loading ? "Matching..." : "Find My Jobs"}
+          </button>
         </div>
       </form>
 
@@ -303,7 +268,11 @@ function Jobs() {
           ) : (
             <div className="grid gap-5 xl:grid-cols-2">
               {result.jobs.map((job, index) => (
-                <JobCard key={`${job.source}-${job.title}-${index}`} job={job} />
+                <JobCard
+                  key={`${job.source}-${job.title}-${index}`}
+                  job={job}
+                  onViewDetails={() => setSelectedJob(job)}
+                />
               ))}
             </div>
           )}
@@ -330,6 +299,13 @@ function Jobs() {
             </button>
           </div>
         </section>
+      )}
+
+      {selectedJob && (
+        <JobDetailsDialog
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+        />
       )}
     </div>
   );
@@ -358,9 +334,8 @@ function ProviderStatus({ provider }) {
 }
 
 
-function JobCard({ job }) {
+function JobCard({ job, onViewDetails }) {
   const score = job.analysis?.match_score;
-  const url = job.listing_url;
 
   return (
     <article className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-lg">
@@ -407,23 +382,124 @@ function JobCard({ job }) {
         </p>
       )}
 
-      {url && (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-400 hover:text-blue-300"
-        >
-          View on {job.source || "provider"}
-          <ExternalLink size={17} />
-        </a>
-      )}
+      <button
+        type="button"
+        onClick={onViewDetails}
+        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
+      >
+        View details
+      </button>
       {job.source_homepage && (
         <p className="mt-4 text-xs text-gray-500">
           Listing supplied by <a href={job.source_homepage} target="_blank" rel="noreferrer" className="underline hover:text-gray-300">{job.source}</a>. Verify details on the provider site before applying.
         </p>
       )}
     </article>
+  );
+}
+
+
+function JobDetailsDialog({ job, onClose }) {
+  const score = job.analysis?.match_score;
+  const description = job.description?.trim()
+    || "This provider did not include a full description. Review the original listing before applying.";
+
+  useEffect(() => {
+    function closeOnEscape(event) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="job-details-title"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
+      >
+        <div className="sticky top-0 flex items-start justify-between gap-4 border-b border-slate-200 bg-white p-6">
+          <div>
+            <p className="text-sm font-semibold text-blue-700">{job.source || "Job listing"}</p>
+            <h2 id="job-details-title" className="mt-1 text-2xl font-bold text-slate-950">
+              {job.title || "Untitled role"}
+            </h2>
+            <p className="mt-2 text-slate-600">
+              {job.company || "Company not listed"} · {job.location || "Location not listed"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close job details"
+            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-7 p-6">
+          <div className="flex flex-wrap gap-3 text-sm">
+            {Number.isFinite(Number(score)) && (
+              <span className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-800">
+                {Number(score)}% match
+              </span>
+            )}
+            {job.job_type && (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{job.job_type}</span>
+            )}
+            {job.salary && (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">{job.salary}</span>
+            )}
+            {job.updated && (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Posted {job.updated}</span>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-slate-950">Job description</h3>
+            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{description}</p>
+          </div>
+
+          {job.analysis?.recommendation && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <h3 className="font-bold text-blue-950">Why this may fit you</h3>
+              <p className="mt-2 text-sm leading-6 text-blue-900">{job.analysis.recommendation}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
+            <p className="text-xs text-slate-500">
+              Supplied by {job.source || "the job provider"}. Confirm all details before applying.
+            </p>
+            {job.listing_url ? (
+              <a
+                href={job.listing_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+              >
+                Apply on {job.source || "provider"}
+                <ExternalLink size={17} />
+              </a>
+            ) : (
+              <span className="text-sm text-slate-500">Application link unavailable</span>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 
