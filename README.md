@@ -83,17 +83,15 @@ source .venv/bin/activate
 pip install -r backend/requirements.txt
 ```
 
-Set the required JWT secret and any optional integrations:
+Create a private local environment file:
 
 ```bash
-export JWT_SECRET_KEY="$(openssl rand -hex 32)"
-export DATABASE_URL="sqlite:///./career_agent.db"
-export ADZUNA_APP_ID=""
-export ADZUNA_APP_KEY=""
-export JOOBLE_API_KEY=""
-export FRONTEND_URL="http://localhost:5173"
-export REQUIRE_EMAIL_VERIFICATION="false"
+cp .env.example .env
 ```
+
+Open `.env`, replace `JWT_SECRET_KEY`, and add any optional Adzuna and Jooble credentials. The backend loads this file automatically for local development. Existing shell or deployment environment variables take precedence over `.env` values.
+
+Generate a strong local JWT secret with `openssl rand -hex 32`. Never commit `.env` or paste credentials into documentation, issues, or chat. If a credential has been shared publicly, rotate it before saving the replacement.
 
 Production databases use Alembic migrations. See [Database operations](docs/database-operations.md) for PostgreSQL setup, existing-database adoption, backups, and restore drills.
 
