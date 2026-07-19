@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Menu, Moon, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../hooks/useAuth";
@@ -55,7 +55,7 @@ function Header({ onMenuOpen }) {
 
   return (
 
-    <header className="flex min-h-16 items-center justify-between gap-3 border-b border-gray-800 bg-gray-900 px-3 sm:px-6">
+    <header className="flex min-h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 shadow-sm sm:px-6">
 
       {/* Left Side */}
 
@@ -65,28 +65,28 @@ function Header({ onMenuOpen }) {
           type="button"
           aria-label="Open navigation"
           onClick={onMenuOpen}
-          className="shrink-0 rounded-lg p-2 text-gray-300 hover:bg-gray-800 hover:text-white md:hidden"
+          className="shrink-0 rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 md:hidden"
         >
           <Menu size={22} />
         </button>
 
-        <h2 className="truncate text-base font-semibold text-white sm:text-xl">
+        <h2 className="truncate text-base font-semibold text-slate-900 sm:text-xl">
 
           {pageTitle}
 
         </h2>
 
-        <div className="hidden md:flex items-center bg-gray-800 rounded-lg px-3 py-2">
+        <div className="hidden items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
 
           <Search
             size={18}
-            className="text-gray-400"
+            className="text-slate-500"
           />
 
           <input
             type="text"
             placeholder="Search..."
-            className="bg-transparent outline-none text-white ml-2 placeholder-gray-500"
+            className="ml-2 bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
           />
 
         </div>
@@ -98,12 +98,7 @@ function Header({ onMenuOpen }) {
       <div className="flex shrink-0 items-center gap-1 sm:gap-4">
 
         <Bell
-          className="hidden cursor-pointer text-gray-300 sm:block"
-          size={20}
-        />
-
-        <Moon
-          className="hidden cursor-pointer text-gray-300 sm:block"
+          className="hidden cursor-pointer text-slate-500 sm:block"
           size={20}
         />
 

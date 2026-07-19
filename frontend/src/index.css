@@ -9,9 +9,127 @@ body,
 }
 
 body {
-  background-color: #030712;
+  background-color: #f8fafc;
+  color: #0f172a;
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/*
+ * NextHire's original components used a dark gray utility palette directly.
+ * These shared theme mappings make the product light-first while the feature
+ * components migrate toward dedicated design tokens over time.
+ */
+.bg-gray-50 {
+  background-color: #f8fafc;
+}
+
+.bg-gray-700 {
+  background-color: #e2e8f0;
+}
+
+.bg-gray-800 {
+  background-color: #f1f5f9;
+}
+
+.bg-gray-900,
+.bg-gray-900\/60 {
+  background-color: #ffffff;
+}
+
+.bg-gray-950,
+.bg-gray-950\/90 {
+  background-color: #f8fafc;
+}
+
+.border-gray-600,
+.border-gray-700 {
+  border-color: #cbd5e1;
+}
+
+.border-gray-800 {
+  border-color: #e2e8f0;
+}
+
+.text-white {
+  color: #0f172a;
+}
+
+.text-gray-200,
+.text-gray-300 {
+  color: #334155;
+}
+
+.text-gray-400 {
+  color: #475569;
+}
+
+.text-gray-500 {
+  color: #64748b;
+}
+
+.text-gray-600,
+.text-gray-700 {
+  color: #475569;
+}
+
+.placeholder-gray-500::placeholder,
+.placeholder\:text-gray-600::placeholder {
+  color: #94a3b8;
+}
+
+.text-red-300 {
+  color: #b91c1c;
+}
+
+.text-green-300,
+.text-green-400,
+.text-emerald-300,
+.text-emerald-400 {
+  color: #047857;
+}
+
+.text-amber-300,
+.text-yellow-400 {
+  color: #b45309;
+}
+
+/* Preserve high-contrast text on primary actions and branded hero panels. */
+.bg-blue-500.text-white,
+.bg-blue-600.text-white,
+.bg-blue-700.text-white,
+.bg-indigo-600.text-white,
+.bg-emerald-500.text-white,
+.bg-emerald-600.text-white,
+.bg-green-600.text-white,
+.bg-green-700.text-white,
+.bg-purple-600.text-white,
+.bg-red-600.text-white,
+.bg-red-700.text-white,
+.bg-gradient-to-r .text-white,
+.bg-gradient-to-br .text-white,
+.bg-gradient-to-r.text-white,
+.bg-gradient-to-br.text-white {
+  color: #ffffff;
+}
+
+.bg-gradient-to-r .text-gray-300,
+.bg-gradient-to-br .text-gray-300 {
+  color: #e2e8f0;
+}
+
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+::selection {
+  background: #bfdbfe;
+  color: #172554;
 }

@@ -51,9 +51,9 @@ export default function AppLayout() {
 
         </main>
 
-        <footer className="flex flex-wrap justify-center gap-5 border-t border-gray-800 bg-gray-950 px-6 py-4 text-xs text-gray-500">
-          <Link to="/terms" className="hover:text-gray-300">Terms</Link>
-          <Link to="/privacy" className="hover:text-gray-300">Privacy</Link>
+        <footer className="flex flex-wrap justify-center gap-5 border-t border-slate-200 bg-white px-6 py-4 text-xs text-slate-500">
+          <Link to="/terms" className="hover:text-slate-900">Terms</Link>
+          <Link to="/privacy" className="hover:text-slate-900">Privacy</Link>
           <span>Job listings are supplied by identified third-party providers.</span>
         </footer>
 

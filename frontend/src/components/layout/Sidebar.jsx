@@ -106,17 +106,17 @@ function Sidebar({ mobileOpen = false, onClose }) {
         className="fixed inset-0 z-40 bg-black/60 md:hidden"
       />
     )}
-    <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-r border-gray-800 bg-gray-900 text-white transition-transform duration-200 md:sticky md:top-0 md:z-auto md:block md:h-screen md:w-64 md:shrink-0 md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+    <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-r border-slate-200 bg-white text-slate-900 shadow-xl transition-transform duration-200 md:sticky md:top-0 md:z-auto md:block md:h-screen md:w-64 md:shrink-0 md:translate-x-0 md:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-      <div className="flex items-start justify-between border-b border-gray-800 p-6">
+      <div className="flex items-start justify-between border-b border-slate-200 p-6">
 
         <div>
 
         <h1 className="text-2xl font-bold text-blue-400">
-          CareerPilot AI
+          NextHire AI
         </h1>
 
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="mt-1 text-sm text-slate-500">
           AI Career Copilot
         </p>
 
@@ -126,7 +126,7 @@ function Sidebar({ mobileOpen = false, onClose }) {
           type="button"
           aria-label="Close navigation"
           onClick={onClose}
-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white md:hidden"
+          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 md:hidden"
         >
           <X size={20} />
         </button>
@@ -151,7 +151,7 @@ function Sidebar({ mobileOpen = false, onClose }) {
                 `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition ${
                   isActive
                     ? "bg-blue-600 text-white"
-                    : "text-gray-300 hover:bg-gray-800"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`
               }
             >
