@@ -1,6 +1,19 @@
 import requests
 
 
+ROLE_ALIASES = {
+    "sre": ("site reliability", "reliability engineer", "platform engineer"),
+    "site reliability engineer": (
+        "site reliability",
+        "reliability engineer",
+        "sre",
+        "platform engineer",
+        "devops engineer",
+        "infrastructure engineer",
+    ),
+}
+
+
 def search_jobs(keyword):
 
     url = "https://remoteok.com/api"
@@ -20,7 +33,7 @@ def search_jobs(keyword):
 
         title = job.get("position", "")
 
-        if keyword.lower() in title.lower():
+        if _matches_title(title, keyword):
 
             results.append({
                 "title": title,
@@ -34,6 +47,20 @@ def search_jobs(keyword):
             })
 
     return results
+
+
+def _matches_title(title, keyword):
+    normalized_title = str(title or "").casefold()
+    normalized_keyword = str(keyword or "").strip().casefold()
+    aliases = ROLE_ALIASES.get(normalized_keyword, ())
+    if normalized_keyword in normalized_title or any(
+        alias in normalized_title for alias in aliases
+    ):
+        return True
+
+    terms = [term for term in normalized_keyword.split() if len(term) > 2]
+    required_matches = max(1, round(len(terms) * 0.6))
+    return bool(terms) and sum(term in normalized_title for term in terms) >= required_matches
 
 
 if __name__ == "__main__":

@@ -12,6 +12,14 @@ ROLE_ALIASES = {
         "devops engineer",
         "platform engineer",
     ),
+    "site reliability engineer": (
+        "site reliability",
+        "reliability engineer",
+        "sre",
+        "platform engineer",
+        "devops engineer",
+        "infrastructure engineer",
+    ),
 }
 
 
@@ -57,7 +65,12 @@ def _matches_keyword(job: dict[str, Any], keyword: str) -> bool:
     normalized_keyword = keyword.strip().casefold()
     aliases = ROLE_ALIASES.get(normalized_keyword, (normalized_keyword,))
     title = str(job.get("title") or "").casefold()
-    return any(alias in title for alias in aliases)
+    if any(alias in title for alias in aliases):
+        return True
+
+    terms = [term for term in normalized_keyword.split() if len(term) > 2]
+    required_matches = max(1, round(len(terms) * 0.6))
+    return bool(terms) and sum(term in title for term in terms) >= required_matches
 
 
 def _matches_location(job: dict[str, Any], location: str) -> bool:

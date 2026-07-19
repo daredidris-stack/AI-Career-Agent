@@ -64,6 +64,14 @@ class ArbeitnowApiTests(unittest.TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertTrue(jobs[0]["title"].startswith("Site Reliability"))
 
+    @patch("arbeitnow_api.requests.get")
+    def test_full_sre_role_uses_related_title_aliases(self, mock_get):
+        mock_get.return_value = self.response
+
+        jobs = search_jobs("Site Reliability Engineer", "Worldwide")
+
+        self.assertEqual(len(jobs), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

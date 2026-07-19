@@ -481,7 +481,7 @@ function JobDetailsDialog({ job, onClose }) {
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
             <p className="text-xs text-slate-500">
-              Supplied by {job.source || "the job provider"}. Confirm all details before applying.
+              Supplied by {job.source || "the job provider"}. The provider may manage the application or redirect you to the employer.
             </p>
             {job.listing_url ? (
               <a
@@ -490,7 +490,7 @@ function JobDetailsDialog({ job, onClose }) {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
               >
-                Apply on {job.source || "provider"}
+                Continue to listing on {job.source || "provider"}
                 <ExternalLink size={17} />
               </a>
             ) : (
