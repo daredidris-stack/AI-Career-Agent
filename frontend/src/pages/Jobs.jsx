@@ -11,6 +11,7 @@ import {
 import api from "../services/api";
 import { getProfile } from "../services/api";
 import { countries } from "../data/countries";
+import { buildLinkedInJobSearchUrl } from "../utils/linkedinJobSearch";
 
 
 function Jobs() {
@@ -79,6 +80,26 @@ function Jobs() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function searchLinkedIn() {
+    const url = buildLinkedInJobSearchUrl({
+      targetRole,
+      country,
+      city,
+      industry,
+      workMode,
+      employmentType,
+      postedWithinDays,
+    });
+
+    if (!url) {
+      setError("Enter a target role before searching LinkedIn.");
+      return;
+    }
+
+    setError("");
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -214,18 +235,34 @@ function Jobs() {
 
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">
-            Profile values are prefilled and can be adjusted for this search.
-          </p>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
-          >
-            <Search size={19} />
-            {loading ? "Matching..." : "Find My Jobs"}
-          </button>
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-500">
+              Profile values are prefilled and can be adjusted for this search.
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              LinkedIn searches open on LinkedIn and are subject to its availability and terms.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={searchLinkedIn}
+              className="flex items-center justify-center gap-2 rounded-xl border border-blue-600 bg-white px-6 py-3 font-semibold text-blue-700 transition hover:bg-blue-50"
+            >
+              <BriefcaseBusiness size={19} />
+              Search LinkedIn
+              <ExternalLink size={16} />
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              <Search size={19} />
+              {loading ? "Matching..." : "Find My Jobs"}
+            </button>
+          </div>
         </div>
       </form>
 
