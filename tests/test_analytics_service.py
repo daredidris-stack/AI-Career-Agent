@@ -79,6 +79,17 @@ class AnalyticsServiceTests(unittest.TestCase):
 
         self.job_catalog_repository.list_jobs.assert_not_called()
 
+    def test_unpersonalized_dashboard_activity_does_not_require_profile(self):
+        self.profile_repository.get_by_user_id.return_value = None
+
+        result = self.service.get_unpersonalized(7)
+
+        self.assertEqual(result["jobs_available"], 2)
+        self.assertEqual(result["document_counts"], {})
+        self.assertEqual(result["application_pipeline"], {})
+        self.assertEqual(result["ai_requests_30d"], 0)
+        self.profile_repository.get_by_user_id.assert_not_called()
+
     def test_catalog_failure_returns_service_error(self):
         self.job_catalog_repository.list_jobs.side_effect = ValueError(
             "Invalid catalog"

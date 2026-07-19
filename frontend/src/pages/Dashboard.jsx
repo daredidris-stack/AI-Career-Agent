@@ -165,32 +165,6 @@ function Dashboard() {
 
       </div>
 
-      {data.profile_missing && (
-        <section className="rounded-2xl border border-blue-500/40 bg-blue-950/40 p-6 shadow-lg">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wider text-blue-300">
-                Start here
-              </p>
-              <h2 className="mt-2 text-2xl font-bold text-white">
-                Build your personalized career dashboard
-              </h2>
-              <p className="mt-2 max-w-2xl text-gray-300">
-                Add your experience, target role, and skills. NextHire AI will then personalize your resume insights, skill gaps, job matches, and recommendations.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/profile")}
-              className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500"
-            >
-              Create profile
-            </button>
-          </div>
-        </section>
-      )}
-
-
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
           <h2 className="text-xl font-bold text-white">Application pipeline</h2>

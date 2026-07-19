@@ -29,6 +29,13 @@ class DashboardServiceTests(unittest.TestCase):
         self.profile_repository = Mock()
         self.profile_repository.get_by_user_id.return_value = self.profile
         self.analytics_service = Mock()
+        self.analytics_service.get_unpersonalized.return_value = {
+            "jobs_available": 3,
+            "weekly_progress": [],
+            "document_counts": {},
+            "application_pipeline": {},
+            "ai_requests_30d": 0,
+        }
         self.analytics_service.get_for_profile.return_value = {
             "profile_completion": 60,
             "skills_completed": 2,
@@ -71,6 +78,8 @@ class DashboardServiceTests(unittest.TestCase):
         self.assertTrue(result["profile_missing"])
         self.assertEqual(result["career_progress"], 0)
         self.assertEqual(result["profile"]["target_role"], "")
+        self.assertEqual(result["jobs_available"], 3)
+        self.analytics_service.get_unpersonalized.assert_called_once_with(9)
         self.analytics_service.get_for_profile.assert_not_called()
         self.resume_analysis_repository.get_latest_by_user_id.assert_not_called()
 

@@ -75,6 +75,33 @@ class AnalyticsService:
 
         return self.get_for_profile(profile, user_id)
 
+    def get_unpersonalized(self, user_id: int) -> dict[str, Any]:
+        """Return dashboard activity that does not require a career profile."""
+        try:
+            jobs = self.job_catalog_repository.list_jobs()
+            return {
+                "jobs_available": len(jobs),
+                "weekly_progress": self._resume_progress(user_id),
+                "document_counts": (
+                    self.document_repository.counts_by_kind(user_id)
+                    if self.document_repository else {}
+                ),
+                "application_pipeline": (
+                    self.application_repository.counts_by_status(user_id)
+                    if self.application_repository else {}
+                ),
+                "ai_requests_30d": (
+                    self.ai_usage_repository.count_since(
+                        user_id, utc_now() - timedelta(days=30)
+                    )
+                    if self.ai_usage_repository else 0
+                ),
+            }
+        except Exception as error:
+            raise AnalyticsError(
+                "Career analytics are temporarily unavailable."
+            ) from error
+
     def get_for_profile(
         self,
         profile: Any,

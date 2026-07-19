@@ -33,7 +33,13 @@ class DashboardService:
         profile = self.profile_repository.get_by_user_id(user.id)
 
         if not profile:
-            return self._empty_dashboard(user)
+            try:
+                overview = self.analytics_service.get_unpersonalized(user.id)
+            except AnalyticsError as error:
+                raise DashboardError(
+                    "Dashboard insights are temporarily unavailable."
+                ) from error
+            return self._empty_dashboard(user, overview)
 
         try:
             analytics = self.analytics_service.get_for_profile(
@@ -91,7 +97,11 @@ class DashboardService:
         }
 
     @classmethod
-    def _empty_dashboard(cls, user: Any) -> dict[str, Any]:
+    def _empty_dashboard(
+        cls,
+        user: Any,
+        overview: dict[str, Any],
+    ) -> dict[str, Any]:
         return {
             "profile_missing": True,
             "user": {
@@ -109,24 +119,24 @@ class DashboardService:
             },
             "skill_gap": 0,
             "resume_score": None,
-            "jobs_available": 0,
+            "jobs_available": overview["jobs_available"],
             "ats_score": None,
             "skills_completed": 0,
             "career_progress": 0,
             "recommended_skill": {
-                "name": "Complete your career profile",
+                "name": "Explore your career tools",
                 "description": (
-                    "Add your target role and skills to unlock personalized "
-                    "career recommendations."
+                    "Upload a resume, search for jobs, or track an application "
+                    "to start building your career activity."
                 ),
             },
             "technical_skills": [],
             "missing_skills": [],
-            "weekly_progress": [],
-            "document_counts": {},
-            "application_pipeline": {},
-            "ai_requests_30d": 0,
-            "recent_activity": [],
+            "weekly_progress": overview["weekly_progress"],
+            "document_counts": overview["document_counts"],
+            "application_pipeline": overview["application_pipeline"],
+            "ai_requests_30d": overview["ai_requests_30d"],
+            "recent_activity": cls._recent_activity(overview),
         }
 
     @staticmethod
