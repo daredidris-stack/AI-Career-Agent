@@ -2,6 +2,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import urlparse
 
 from job_search import search_jobs as remoteok_search
 from adzuna_api import search_jobs as adzuna_search
@@ -69,6 +70,7 @@ def aggregate_jobs(
                 job["source"] = name
                 job["source_homepage"] = disclosure["homepage"]
                 job["source_api_page"] = disclosure["api_page"]
+                job["listing_url"] = _listing_url(job)
             return jobs, {
                 "name": name,
                 "status": (
@@ -148,3 +150,19 @@ def aggregate_jobs(
                 seen.add(key)
 
     return AggregatedJobs(unique_jobs[:results], provider_status)
+
+
+def _listing_url(job: dict[str, Any]) -> str:
+    """Return only a direct, browser-safe listing URL from a provider result."""
+    value = str(
+        job.get("redirect_url")
+        or job.get("url")
+        or ""
+    ).strip()
+    if not value:
+        return ""
+
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return value

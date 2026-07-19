@@ -323,7 +323,7 @@ function ProviderStatus({ provider }) {
 
 function JobCard({ job }) {
   const score = job.analysis?.match_score;
-  const url = job.redirect_url || job.url;
+  const url = job.listing_url;
 
   return (
     <article className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-lg">
@@ -377,7 +377,7 @@ function JobCard({ job }) {
           rel="noreferrer"
           className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-400 hover:text-blue-300"
         >
-          View job
+          View on {job.source || "provider"}
           <ExternalLink size={17} />
         </a>
       )}

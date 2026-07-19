@@ -1,10 +1,24 @@
 import unittest
 from unittest.mock import patch
 
-from backend.services.job_aggregator import aggregate_jobs
+from backend.services.job_aggregator import _listing_url, aggregate_jobs
 
 
 class JobAggregatorTests(unittest.TestCase):
+    def test_normalizes_direct_provider_listing_url(self):
+        self.assertEqual(
+            _listing_url({"url": "https://jobs.example.com/roles/123"}),
+            "https://jobs.example.com/roles/123",
+        )
+        self.assertEqual(
+            _listing_url({"redirect_url": "https://provider.example/job/456"}),
+            "https://provider.example/job/456",
+        )
+
+    def test_rejects_unsafe_or_relative_listing_url(self):
+        self.assertEqual(_listing_url({"url": "javascript:alert(1)"}), "")
+        self.assertEqual(_listing_url({"url": "/jobs/123"}), "")
+
     @patch("backend.services.job_aggregator.adzuna_search", return_value=[])
     @patch("backend.services.job_aggregator.arbeitnow_search", return_value=[])
     @patch("backend.services.job_aggregator.remoteok_search", return_value=[])
