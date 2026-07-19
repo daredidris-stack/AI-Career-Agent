@@ -82,22 +82,31 @@ function Resume() {
             PDF or DOCX files only
           </p>
 
-          <input
-            type="file"
-            accept=".pdf,.docx"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="mt-6 text-white"
-          />
-
-          {file && (
-            <p className="text-green-400 mt-4">
-              Selected: {file.name}
-            </p>
-          )}
+          <div className="mt-6 w-full max-w-xl">
+            <input
+              id="resume-upload"
+              type="file"
+              accept=".pdf,.docx"
+              onChange={(event) => setFile(event.target.files?.[0] || null)}
+              className="sr-only"
+            />
+            <label
+              htmlFor="resume-upload"
+              className="flex min-h-14 w-full cursor-pointer items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-950 transition hover:border-blue-500 focus-within:border-blue-500"
+            >
+              <span className="flex min-h-14 shrink-0 items-center bg-blue-600 px-5 font-semibold text-white">
+                Choose file
+              </span>
+              <span className={`min-w-0 flex-1 truncate px-4 text-left ${file ? "text-green-400" : "text-gray-400"}`}>
+                {file ? file.name : "No file selected"}
+              </span>
+            </label>
+          </div>
 
           <button
             onClick={analyze}
-            className="mt-8 bg-blue-600 hover:bg-blue-700 transition px-8 py-3 rounded-xl text-white font-semibold"
+            disabled={loading}
+            className="mt-8 rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Analyzing..." : "Analyze Resume"}
           </button>
