@@ -36,7 +36,7 @@ function Jobs() {
         setCity(response.data.city || "");
         setWorkMode(response.data.preferred_work_mode || "");
       } catch {
-        // The API will provide the actionable profile error on search.
+        // A profile is optional; the user can enter search filters directly.
       }
     }
 
@@ -89,7 +89,7 @@ function Jobs() {
           <h1 className="text-4xl font-bold">Matched Jobs</h1>
         </div>
         <p className="mt-3 max-w-3xl text-lg text-blue-100">
-          Search and rank opportunities using your profile and latest resume skills.
+          Search opportunities directly. Your profile and latest resume skills improve ranking when available.
         </p>
       </section>
 
@@ -106,6 +106,7 @@ function Jobs() {
               value={targetRole}
               onChange={(event) => setTargetRole(event.target.value)}
               placeholder="Site Reliability Engineer"
+              required
               className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
             />
           </label>

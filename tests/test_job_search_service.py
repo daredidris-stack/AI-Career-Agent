@@ -4,9 +4,9 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from backend.services.job_search_service import (
+    JobSearchInputError,
     JobSearchError,
     JobSearchService,
-    ProfileRequiredError,
 )
 from backend.services.job_aggregator import AggregatedJobs
 
@@ -72,7 +72,34 @@ class JobSearchServiceTests(unittest.TestCase):
         self.assertEqual(result["count"], 1)
         self.assertEqual(result["jobs"][0]["analysis"]["match_score"], 90)
 
-    def test_missing_profile_stops_job_search(self):
+    def test_missing_profile_can_search_with_entered_filters(self):
+        self.repository.get_by_user_id.return_value = None
+        aggregator = Mock(return_value=[{"title": "Cloud Engineer"}])
+        ranker = Mock(side_effect=lambda _profile, jobs: jobs)
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            aggregator,
+            ranker,
+        )
+
+        result = service.search_for_user(
+            42,
+            keyword="Cloud Engineer",
+            country="Canada",
+            city="Toronto",
+        )
+
+        aggregator.assert_called_once_with(
+            "Cloud Engineer", "Toronto, Canada", "", 1, 20
+        )
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(
+            ranker.call_args.args[0]["technical_skills"],
+            ["Linux", "Terraform"],
+        )
+
+    def test_missing_profile_and_keyword_returns_input_error(self):
         self.repository.get_by_user_id.return_value = None
         aggregator = Mock()
         service = JobSearchService(
@@ -82,8 +109,8 @@ class JobSearchServiceTests(unittest.TestCase):
             Mock(),
         )
 
-        with self.assertRaises(ProfileRequiredError):
-            service.search_for_user(42, "cloud")
+        with self.assertRaises(JobSearchInputError):
+            service.search_for_user(42)
 
         aggregator.assert_not_called()
 

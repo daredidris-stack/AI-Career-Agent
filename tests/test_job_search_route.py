@@ -6,8 +6,8 @@ from fastapi import HTTPException
 
 from backend.routes.job_search import search_jobs
 from backend.services.job_search_service import (
+    JobSearchInputError,
     JobSearchError,
-    ProfileRequiredError,
 )
 
 
@@ -42,10 +42,10 @@ class JobSearchRouteTests(unittest.TestCase):
             per_page=20,
         )
 
-    def test_missing_profile_returns_404(self):
+    def test_missing_search_role_returns_400(self):
         service = Mock()
         service.search_for_user.side_effect = (
-            ProfileRequiredError("Create your profile first.")
+            JobSearchInputError("Enter a target role.")
         )
 
         with self.assertRaises(HTTPException) as context:
@@ -55,7 +55,7 @@ class JobSearchRouteTests(unittest.TestCase):
                 service=service,
             )
 
-        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.status_code, 400)
 
     def test_service_failure_returns_502(self):
         service = Mock()

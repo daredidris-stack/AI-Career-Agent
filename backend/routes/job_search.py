@@ -6,9 +6,9 @@ from backend.models.user import User
 from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
 from backend.core.settings import AI_JOB_RANKING_ENABLED
 from backend.services.job_search_service import (
+    JobSearchInputError,
     JobSearchError,
     JobSearchService,
-    ProfileRequiredError,
 )
 
 
@@ -54,9 +54,9 @@ def search_jobs(
             page=page,
             per_page=per_page,
         )
-    except ProfileRequiredError as error:
+    except JobSearchInputError as error:
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail=str(error),
         ) from error
     except JobSearchError as error:

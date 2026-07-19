@@ -15,7 +15,7 @@ from backend.services.job_ranking import rank_jobs
 from backend.core.settings import AI_JOB_RANKING_ENABLED
 
 
-class ProfileRequiredError(Exception):
+class JobSearchInputError(Exception):
     pass
 
 
@@ -61,11 +61,6 @@ class JobSearchService:
             user_id
         )
 
-        if not profile:
-            raise ProfileRequiredError(
-                "Create your profile before searching for jobs."
-            )
-
         effective_keyword = (
             (keyword or "").strip()
             or (getattr(profile, "target_role", "") or "").strip()
@@ -93,8 +88,8 @@ class JobSearchService:
         )
 
         if not effective_keyword:
-            raise JobSearchError(
-                "Add a target role to your profile before searching."
+            raise JobSearchInputError(
+                "Enter a target role before searching for jobs."
             )
 
         page = max(1, page)
