@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   Briefcase,
@@ -16,25 +17,57 @@ import api from "../services/api";
 
 function Dashboard() {
 
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [requiresProfile, setRequiresProfile] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
 
   useEffect(() => {
+
+    let active = true;
 
     async function fetchDashboard() {
 
       try {
 
         setError("");
+        setRequiresProfile(false);
+        setData(null);
 
-        const response = await api.get("/dashboard");
+        const response = await api.get("/dashboard", {
+          timeout: 10000,
+        });
 
-        setData(response.data);
+        if (active) {
+          setData(response.data);
+        }
 
 
-      } catch {
+      } catch (requestError) {
+
+        if (!active) {
+          return;
+        }
+
+        const status = requestError.response?.status;
+
+        if (status === 404) {
+          setRequiresProfile(true);
+          setError("Create your profile before viewing the dashboard.");
+          return;
+        }
+
+        if (status === 401) {
+          setError("Your session has expired. Please sign in again.");
+          return;
+        }
+
+        if (requestError.code === "ECONNABORTED") {
+          setError("Dashboard loading timed out. Please retry.");
+          return;
+        }
 
         setError(
           "Dashboard could not be loaded. Please try again.",
@@ -47,6 +80,9 @@ function Dashboard() {
 
     fetchDashboard();
 
+    return () => {
+      active = false;
+    };
 
   }, [reloadKey]);
 
@@ -64,13 +100,23 @@ function Dashboard() {
             {error}
           </p>
 
-          <button
-            type="button"
-            onClick={() => setReloadKey((value) => value + 1)}
-            className="rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-700"
-          >
-            Retry
-          </button>
+          {requiresProfile ? (
+            <button
+              type="button"
+              onClick={() => navigate("/profile")}
+              className="rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-700"
+            >
+              Create profile
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setReloadKey((value) => value + 1)}
+              className="rounded-xl bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          )}
 
         </div>
 
@@ -118,6 +164,31 @@ function Dashboard() {
 
 
       </div>
+
+      {data.profile_missing && (
+        <section className="rounded-2xl border border-blue-500/40 bg-blue-950/40 p-6 shadow-lg">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-blue-300">
+                Start here
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-white">
+                Build your personalized career dashboard
+              </h2>
+              <p className="mt-2 max-w-2xl text-gray-300">
+                Add your experience, target role, and skills. NextHire AI will then personalize your resume insights, skill gaps, job matches, and recommendations.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/profile")}
+              className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500"
+            >
+              Create profile
+            </button>
+          </div>
+        </section>
+      )}
 
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -33,9 +33,7 @@ class DashboardService:
         profile = self.profile_repository.get_by_user_id(user.id)
 
         if not profile:
-            raise ProfileRequiredError(
-                "Create your profile before viewing the dashboard."
-            )
+            return self._empty_dashboard(user)
 
         try:
             analytics = self.analytics_service.get_for_profile(
@@ -54,6 +52,7 @@ class DashboardService:
         )
 
         return {
+            "profile_missing": False,
             "user": {
                 "name": self._user_name(user),
                 "email": getattr(user, "email", "") or "",
@@ -89,6 +88,45 @@ class DashboardService:
             "application_pipeline": analytics.get("application_pipeline", {}),
             "ai_requests_30d": analytics.get("ai_requests_30d", 0),
             "recent_activity": self._recent_activity(analytics),
+        }
+
+    @classmethod
+    def _empty_dashboard(cls, user: Any) -> dict[str, Any]:
+        return {
+            "profile_missing": True,
+            "user": {
+                "name": cls._user_name(user),
+                "email": getattr(user, "email", "") or "",
+            },
+            "profile": {
+                "current_role": "",
+                "target_role": "",
+                "city": "",
+                "country": "",
+                "preferred_job_type": "",
+                "preferred_work_mode": "",
+                "completion": 0,
+            },
+            "skill_gap": 0,
+            "resume_score": None,
+            "jobs_available": 0,
+            "ats_score": None,
+            "skills_completed": 0,
+            "career_progress": 0,
+            "recommended_skill": {
+                "name": "Complete your career profile",
+                "description": (
+                    "Add your target role and skills to unlock personalized "
+                    "career recommendations."
+                ),
+            },
+            "technical_skills": [],
+            "missing_skills": [],
+            "weekly_progress": [],
+            "document_counts": {},
+            "application_pipeline": {},
+            "ai_requests_30d": 0,
+            "recent_activity": [],
         }
 
     @staticmethod

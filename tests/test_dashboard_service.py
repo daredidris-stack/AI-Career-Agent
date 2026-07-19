@@ -63,12 +63,14 @@ class DashboardServiceTests(unittest.TestCase):
         self.assertEqual(result["ats_score"], 79)
         self.assertEqual(result["recent_activity"], [])
 
-    def test_missing_profile_stops_dashboard(self):
+    def test_missing_profile_returns_onboarding_dashboard(self):
         self.profile_repository.get_by_user_id.return_value = None
 
-        with self.assertRaises(ProfileRequiredError):
-            self.service.get_for_user(self.user)
+        result = self.service.get_for_user(self.user)
 
+        self.assertTrue(result["profile_missing"])
+        self.assertEqual(result["career_progress"], 0)
+        self.assertEqual(result["profile"]["target_role"], "")
         self.analytics_service.get_for_profile.assert_not_called()
         self.resume_analysis_repository.get_latest_by_user_id.assert_not_called()
 
