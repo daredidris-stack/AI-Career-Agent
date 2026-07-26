@@ -63,6 +63,26 @@ FANTASTIC_JOBS_TIME_FRAME = (
     if _fantastic_jobs_time_frame in {"1h", "24h", "7d", "6m"}
     else "6m"
 )
+JOB_INGESTION_QUERIES = [
+    value.strip()
+    for value in os.getenv("JOB_INGESTION_QUERIES", "").split(",")
+    if value.strip()
+]
+JOB_INGESTION_RESULTS_PER_TARGET = max(
+    1, min(100, int(os.getenv("JOB_INGESTION_RESULTS_PER_TARGET", "20")))
+)
+JOB_INGESTION_INTERVAL_SECONDS = max(
+    3600, int(os.getenv("JOB_INGESTION_INTERVAL_SECONDS", "86400"))
+)
+JOB_INGESTION_RETRY_SECONDS = max(
+    300, int(os.getenv("JOB_INGESTION_RETRY_SECONDS", "3600"))
+)
+JOB_INGESTION_POLL_SECONDS = max(
+    60, int(os.getenv("JOB_INGESTION_POLL_SECONDS", "900"))
+)
+JOB_LISTING_STALE_DAYS = max(
+    1, int(os.getenv("JOB_LISTING_STALE_DAYS", "45"))
+)
 USAJOBS_API_KEY = os.getenv("USAJOBS_API_KEY")
 USAJOBS_USER_AGENT = os.getenv("USAJOBS_USER_AGENT")
 GREENHOUSE_JOB_BOARDS = [

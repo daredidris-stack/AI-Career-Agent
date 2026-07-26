@@ -26,6 +26,7 @@ from backend.repositories.job_application_repository import (
 )
 from backend.repositories.ai_usage_repository import AIUsageRepository
 from backend.repositories.user_data_repository import UserDataRepository
+from backend.repositories.job_listing_repository import JobListingRepository
 
 
 def get_user_repository(
@@ -45,6 +46,12 @@ def get_profile_repository(
 
 def get_job_catalog_repository():
     return JobCatalogRepository()
+
+
+def get_job_listing_repository(
+    db: Session = Depends(get_db),
+) -> JobListingRepository:
+    return JobListingRepository(db)
 
 
 def get_resume_analysis_repository(

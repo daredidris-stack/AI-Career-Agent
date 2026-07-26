@@ -3,10 +3,11 @@
 ## Project 1 continuation snapshot — July 26, 2026
 
 This continuation began from `main` at `0418879` with an intentionally
-uncommitted feature batch. The combined worktree passes the complete automated
+uncommitted feature batch. The five feature groups are now separated into
+auditable commits, and the complete implementation passes the automated
 release gate:
 
-- 272 backend tests pass with `ResourceWarning` treated as an error.
+- 282 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260721_0006`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -15,16 +16,13 @@ release gate:
 The Alembic blocker was that `migrations/env.py` loads model metadata through
 `backend.models`, but `JobListing` and `JobSyncState` were not imported by that
 package. `backend/models/__init__.py` now imports and exports both models. This
-verifies the current combined worktree; it does not mean the uncommitted
-features have been individually reviewed, committed, or exercised with
-production credentials.
+verifies the repository implementation. Credentialed production services and
+the deployment-specific checks listed below remain separate release gates.
 
-### Unfinished feature batch
+### Completed feature batch
 
-Finish and review the dirty worktree in these bounded groups. Shared integration
-files such as `.env.example`, `README.md`, `backend/core/settings.py`,
-`backend/dependencies/services.py`, `frontend/src/services/api.ts`, and
-`docker-compose.yml` should be staged by hunk with the feature they support.
+The original dirty worktree was reviewed and separated into these bounded
+groups:
 
 1. **Login protection and Google identity — code verified**
    - Google ID-token verification, account linking, login UI, Turnstile
@@ -32,7 +30,7 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
    - 36 focused auth tests pass. An independently reconstructed staged
      snapshot passes 203 backend tests, its complete Alembic cycle with no
      drift, and frontend lint/build. The combined worktree passes the full
-   272-test release gate.
+     282-test release gate.
    - Google client IDs are configured on both sides and match. A local browser
      smoke test rendered Google sign-in, exercised the password-login error
      path against the API, and found no browser console errors.
@@ -77,7 +75,7 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
      errors are replaced with generic messages.
    - An independently reconstructed staged snapshot passes 264 backend tests,
      its complete Alembic cycle through `20260720_0005` with no schema drift,
-     and frontend lint/build. The combined worktree passes the 272-test release
+     and frontend lint/build. The combined worktree passes the 282-test release
      gate through migration `20260721_0006`.
    - A bounded live Worldwide search returned one job, direct listing URL, and
      description from each of Adzuna, Jooble, TheirStack, and Fantastic.jobs.
@@ -91,28 +89,42 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
      the required “Jobs by Adzuna” logo treatment.
    - Commercial-use approval remains an external deployment gate; details are
      recorded in the provider release review below.
-5. **Persistent job catalog and ingestion**
+5. **Persistent job catalog and ingestion — code, migration, and isolated live worker verified**
    - `JobListing`/`JobSyncState`, repository, migration `20260721_0006`,
      ingestion service, sync worker, cached-search integration, retention, and
      the optional Compose worker.
-   - Repository, ingestion, search, full migration-cycle, and schema-drift
-     coverage passes.
-   - Still requires a staging PostgreSQL migration, one-shot sync, scheduled
-     worker observation, retry observation, and stale-listing retention check.
+   - 31 focused repository, ingestion, worker, search, and profile-target tests
+     pass. An independently reconstructed staged snapshot passes 282 backend
+     tests, its complete Alembic cycle through `20260721_0006` with no schema
+     drift, frontend lint/build, and the staged diff whitespace check.
+   - A bounded one-shot Fantastic.jobs sync against an isolated, freshly
+     migrated SQLite database fetched and stored one listing and recorded a
+     successful sync state. Cached search then returned that stored listing.
+     A second watch-mode cycle skipped the target according to its next-run
+     schedule without another provider request, and the worker stopped cleanly
+     on interruption.
+   - Tests verify five-minute failure retry scheduling, generic persisted/logged
+     errors that do not expose provider credentials, stale and expired listing
+     exclusion, retention deactivation, safe listing URLs, normalized UTC
+     timestamps, duplicate-target suppression, cached provider status, and
+     live-search fallback when the cache is unavailable.
+   - The Compose definition parses successfully and gates the worker on API and
+     database health. Docker and PostgreSQL tooling are not available in this
+     workspace, so the staging PostgreSQL migration and deployed worker
+     observation remain external release checks.
 
 The untracked zero-byte file `env` is not referenced by the application or
 tests. Keep it out of feature commits unless its purpose is clarified.
 
 ### Recommended continuation order
 
-Groups 1 through 4 are complete; retain the live Turnstile and provider
-commercial-approval checks as deployment gates. Continue with group 5, then
-run its targeted tests before `./scripts/verify_release.sh`.
-After the five code groups are separately auditable, perform the remaining
-credentialed, browser, document-render, provider, and staging-worker checks and
-record their evidence here. Do not replace the July 17 beta assessment with
-this automated snapshot; its manual smoke-test evidence and external launch
-blockers remain separate.
+Groups 1 through 5 are complete and separately auditable. Retain live Turnstile,
+provider commercial approval, and staging PostgreSQL/worker checks as
+deployment gates. Next, either organize the unrelated residual worktree files
+into a separately scoped change or leave them untouched, then perform the
+remaining production credential, deployment, and launch-readiness checks.
+Do not replace the July 17 beta assessment with this engineering snapshot; its
+manual smoke-test evidence and external launch blockers remain separate.
 
 ### Provider release review — July 26, 2026
 
@@ -173,6 +185,8 @@ These cannot be completed honestly through repository code alone:
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
 - Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
+- Staging PostgreSQL migration plus one-shot and scheduled ingestion-worker
+  observation under the deployed Compose/runtime configuration.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
 - Malware scanning service for production resume uploads.

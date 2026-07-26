@@ -23,11 +23,37 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       TURNSTILE_ALLOWED_HOSTNAMES: ${TURNSTILE_ALLOWED_HOSTNAMES:-localhost,127.0.0.1}
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      ADZUNA_WORLDWIDE_MARKETS: ${ADZUNA_WORLDWIDE_MARKETS:-us,gb,ca,au,de,fr,in,mx}
+      JOOBLE_API_KEY: ${JOOBLE_API_KEY:-}
+      THEIRSTACK_API_KEY: ${THEIRSTACK_API_KEY:-}
+      SERPAPI_API_KEY: ${SERPAPI_API_KEY:-}
+      FANTASTIC_JOBS_API_KEY: ${FANTASTIC_JOBS_API_KEY:-}
+      FANTASTIC_JOBS_MAX_RESULTS: ${FANTASTIC_JOBS_MAX_RESULTS:-20}
+      FANTASTIC_JOBS_CACHE_SECONDS: ${FANTASTIC_JOBS_CACHE_SECONDS:-900}
+      FANTASTIC_JOBS_TIME_FRAME: ${FANTASTIC_JOBS_TIME_FRAME:-6m}
+      USAJOBS_API_KEY: ${USAJOBS_API_KEY:-}
+      USAJOBS_USER_AGENT: ${USAJOBS_USER_AGENT:-}
+      GREENHOUSE_JOB_BOARDS: ${GREENHOUSE_JOB_BOARDS:-}
+      LEVER_JOB_SITES: ${LEVER_JOB_SITES:-}
+      ASHBY_JOB_BOARDS: ${ASHBY_JOB_BOARDS:-}
+      DIRECT_EMPLOYER_JOB_SOURCES: ${DIRECT_EMPLOYER_JOB_SOURCES:-}
+      JOB_LISTING_STALE_DAYS: ${JOB_LISTING_STALE_DAYS:-45}
     ports:
       - "8000:8000"
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   frontend:
     build:
@@ -40,6 +66,30 @@ services:
       - "5173:80"
     depends_on:
       - api
+
+  job-worker:
+    build: .
+    profiles: ["ingestion"]
+    command: ["python", "-m", "backend.jobs.sync_job_catalog", "--watch"]
+    restart: unless-stopped
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://career_agent:local-only-password@database:5432/career_agent
+      FANTASTIC_JOBS_API_KEY: ${FANTASTIC_JOBS_API_KEY:-}
+      FANTASTIC_JOBS_MAX_RESULTS: ${FANTASTIC_JOBS_MAX_RESULTS:-20}
+      FANTASTIC_JOBS_CACHE_SECONDS: ${FANTASTIC_JOBS_CACHE_SECONDS:-900}
+      FANTASTIC_JOBS_TIME_FRAME: ${FANTASTIC_JOBS_TIME_FRAME:-6m}
+      JOB_INGESTION_QUERIES: ${JOB_INGESTION_QUERIES:-}
+      JOB_INGESTION_RESULTS_PER_TARGET: ${JOB_INGESTION_RESULTS_PER_TARGET:-20}
+      JOB_INGESTION_INTERVAL_SECONDS: ${JOB_INGESTION_INTERVAL_SECONDS:-86400}
+      JOB_INGESTION_RETRY_SECONDS: ${JOB_INGESTION_RETRY_SECONDS:-3600}
+      JOB_INGESTION_POLL_SECONDS: ${JOB_INGESTION_POLL_SECONDS:-900}
+      JOB_LISTING_STALE_DAYS: ${JOB_LISTING_STALE_DAYS:-45}
+    depends_on:
+      api:
+        condition: service_healthy
+      database:
+        condition: service_healthy
 
 volumes:
   postgres_data:

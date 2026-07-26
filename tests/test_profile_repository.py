@@ -55,6 +55,39 @@ class ProfileRepositoryTests(unittest.TestCase):
             original_timestamp,
         )
 
+    def test_job_targets_limit_counts_unique_roles(self):
+        now = utc_now()
+        first = self.repository.create_profile(
+            self.user_id,
+            {"target_role": "Cloud Engineer"},
+        )
+        first.updated_at = now
+
+        for index, (role, updated_at) in enumerate((
+            ("cloud engineer", now - timedelta(minutes=1)),
+            ("Registered Nurse", now - timedelta(minutes=2)),
+        )):
+            user = User(
+                email=f"profile-target-{index}@example.com",
+                password_hash="test-hash",
+            )
+            self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            profile = self.repository.create_profile(
+                user.id,
+                {"target_role": role},
+            )
+            profile.updated_at = updated_at
+        self.db.commit()
+
+        targets = self.repository.list_job_search_targets(limit=2)
+
+        self.assertEqual(targets, [
+            ("Cloud Engineer", "Worldwide"),
+            ("Registered Nurse", "Worldwide"),
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

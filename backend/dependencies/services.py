@@ -4,6 +4,7 @@ from backend.dependencies.repositories import (
     get_user_repository,
     get_profile_repository,
     get_job_catalog_repository,
+    get_job_listing_repository,
     get_resume_analysis_repository,
     get_career_document_repository,
     get_job_application_repository,
@@ -32,6 +33,7 @@ from backend.repositories.career_document_repository import (
 from backend.repositories.job_application_repository import JobApplicationRepository
 from backend.repositories.ai_usage_repository import AIUsageRepository
 from backend.repositories.user_data_repository import UserDataRepository
+from backend.repositories.job_listing_repository import JobListingRepository
 
 from backend.services.auth_service import (
     AuthService,
@@ -175,8 +177,15 @@ def get_job_search_service(
     analysis_repo: ResumeAnalysisRepository = Depends(
         get_resume_analysis_repository
     ),
+    listing_repo: JobListingRepository = Depends(
+        get_job_listing_repository
+    ),
 ):
-    return JobSearchService(repo, analysis_repo)
+    return JobSearchService(
+        repo,
+        analysis_repo,
+        job_listing_repository=listing_repo,
+    )
 
 
 def get_resume_tailor_service(

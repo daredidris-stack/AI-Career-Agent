@@ -9,6 +9,7 @@ from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
 from backend.models.ai_usage_event import AIUsageEvent
+from backend.models.job_listing import JobListing, JobSyncState
 
 
 print("Creating database...")

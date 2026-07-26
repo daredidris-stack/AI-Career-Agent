@@ -183,6 +183,12 @@ npm --prefix frontend run build
 | `FANTASTIC_JOBS_MAX_RESULTS` | No | Caps paid Fantastic.jobs results per search page; defaults to 20 |
 | `FANTASTIC_JOBS_CACHE_SECONDS` | No | Reuses identical Fantastic.jobs searches to protect credits; defaults to 900 seconds |
 | `FANTASTIC_JOBS_TIME_FRAME` | No | Fantastic.jobs active-job window: `1h`, `24h`, `7d`, or `6m`; defaults to `6m` for broad role coverage |
+| `JOB_INGESTION_QUERIES` | No | Extra comma-separated `Role|Location` targets for background synchronization |
+| `JOB_INGESTION_RESULTS_PER_TARGET` | No | Maximum jobs saved per target and sync; defaults to 20 |
+| `JOB_INGESTION_INTERVAL_SECONDS` | No | Successful target-sync interval; defaults to 24 hours |
+| `JOB_INGESTION_RETRY_SECONDS` | No | Retry delay after provider failure; defaults to one hour |
+| `JOB_INGESTION_POLL_SECONDS` | No | Worker polling interval; defaults to 15 minutes |
+| `JOB_LISTING_STALE_DAYS` | No | Deactivates unseen stored jobs after this many days; defaults to 45 |
 | `USAJOBS_API_KEY` | No | Enables U.S. federal job search through the official USAJOBS API |
 | `USAJOBS_USER_AGENT` | With USAJOBS | Email address registered with the USAJOBS API key |
 | `GREENHOUSE_JOB_BOARDS` | No | Comma-separated `Company|board-token` entries for direct Greenhouse employer feeds |
@@ -257,6 +263,47 @@ the approved sources:
 ```env
 DIRECT_EMPLOYER_JOB_SOURCES=microsoft,apple,crossover
 ```
+
+### Persistent job ingestion
+
+Job searches now check the SQL-backed `job_listings` catalog first. When no
+stored match exists, the existing live providers are queried and their results
+are saved for later searches. Records are deduplicated by normalized company,
+title, and location; richer descriptions and direct application links update
+the existing record instead of creating another card.
+
+Run a one-time profile-targeted Fantastic.jobs synchronization after applying
+database migrations:
+
+```bash
+.venv/bin/alembic upgrade head
+.venv/bin/python -m backend.jobs.sync_job_catalog
+```
+
+The first successful target sync backfills up to six months. Later syncs pull
+the latest 24 hours and are skipped until the configured interval is due. To
+run the scheduler continuously in a separate terminal:
+
+```bash
+.venv/bin/python -m backend.jobs.sync_job_catalog --watch
+```
+
+The worker derives targets from user profiles. Extra all-industry targets can
+be supplied without changing code:
+
+```env
+JOB_INGESTION_QUERIES=Registered Nurse|Worldwide,Accountant|Mexico,Warehouse Manager|Canada
+```
+
+Docker users can enable the separate worker service explicitly:
+
+```bash
+docker compose --profile ingestion up --build
+```
+
+Expired listings are deactivated using provider expiry dates, with a stale-job
+fallback for records that have not been seen within the configured retention
+window. Provider failures do not delete cached jobs or prevent local search.
 
 ## Development principles
 
