@@ -5,8 +5,10 @@ from unittest.mock import Mock, patch
 from backend.exceptions.auth_exceptions import (
     InvalidCredentialsError,
     LoginLockedError,
+    GoogleAccountConflictError,
 )
 from backend.services.auth_service import AuthService, MAX_FAILED_LOGINS
+from backend.services.google_identity_service import GoogleIdentity
 
 
 class AuthServiceTests(unittest.TestCase):
@@ -19,6 +21,11 @@ class AuthServiceTests(unittest.TestCase):
             failed_login_attempts=0,
             locked_until=None,
             is_email_verified=False,
+            google_subject=None,
+            first_name=None,
+            last_name=None,
+            terms_accepted_at=None,
+            terms_version=None,
         )
         self.repository = Mock()
         self.repository.get_by_email.return_value = self.user
@@ -128,6 +135,98 @@ class AuthServiceTests(unittest.TestCase):
 
         self.assertTrue(self.user.is_email_verified)
         self.repository.save.assert_called_with(self.user)
+
+    @patch("backend.services.auth_service.create_access_token", return_value="token")
+    @patch("backend.services.auth_service.hash_password", return_value="hash")
+    def test_google_login_creates_verified_account_with_terms(
+        self,
+        _hash,
+        _create_token,
+    ):
+        self.repository.get_by_google_subject.return_value = None
+        self.repository.get_by_email.return_value = None
+        self.repository.create_user.return_value = self.user
+        identity = GoogleIdentity(
+            subject="google-user-123",
+            email="user@gmail.com",
+            first_name="Dare",
+            last_name="Daniel",
+        )
+
+        token = self.service.authenticate_google(identity)
+
+        self.assertEqual(token, "token")
+        values = self.repository.create_user.call_args.kwargs
+        self.assertEqual(values["google_subject"], "google-user-123")
+        self.assertTrue(values["is_email_verified"])
+        self.assertEqual(values["first_name"], "Dare")
+        self.assertIsNotNone(values["terms_accepted_at"])
+        self.assertTrue(values["terms_version"])
+
+    @patch("backend.services.auth_service.create_access_token", return_value="token")
+    def test_google_login_links_existing_verified_email(
+        self,
+        _create_token,
+    ):
+        self.repository.get_by_google_subject.return_value = None
+        self.repository.get_by_email.return_value = self.user
+        identity = GoogleIdentity(
+            subject="google-user-123",
+            email=self.user.email,
+            first_name="Dare",
+            hosted_domain="example.com",
+        )
+
+        token = self.service.authenticate_google(identity)
+
+        self.assertEqual(token, "token")
+        self.assertEqual(self.user.google_subject, "google-user-123")
+        self.assertTrue(self.user.is_email_verified)
+        self.assertEqual(self.user.first_name, "Dare")
+        self.assertIsNotNone(self.user.terms_accepted_at)
+        self.assertTrue(self.user.terms_version)
+        self.repository.save.assert_called_with(self.user)
+
+    @patch("backend.services.auth_service.create_access_token", return_value="token")
+    def test_google_login_records_terms_for_already_linked_account(
+        self,
+        _create_token,
+    ):
+        self.user.google_subject = "google-user-123"
+        self.repository.get_by_google_subject.return_value = self.user
+
+        token = self.service.authenticate_google(GoogleIdentity(
+            subject="google-user-123",
+            email=self.user.email,
+        ))
+
+        self.assertEqual(token, "token")
+        self.assertIsNotNone(self.user.terms_accepted_at)
+        self.assertTrue(self.user.terms_version)
+        self.repository.save.assert_called_with(self.user)
+
+    def test_google_login_rejects_conflicting_link(self):
+        self.repository.get_by_google_subject.return_value = None
+        self.repository.get_by_email.return_value = self.user
+        self.user.google_subject = "different-google-user"
+
+        with self.assertRaises(GoogleAccountConflictError):
+            self.service.authenticate_google(GoogleIdentity(
+                subject="google-user-123",
+                email=self.user.email,
+                hosted_domain="example.com",
+            ))
+
+    def test_google_login_rejects_non_authoritative_email_link(self):
+        self.repository.get_by_google_subject.return_value = None
+
+        with self.assertRaises(GoogleAccountConflictError):
+            self.service.authenticate_google(GoogleIdentity(
+                subject="google-user-123",
+                email="user@example.com",
+            ))
+
+        self.repository.get_by_email.assert_not_called()
 
 
 if __name__ == "__main__":

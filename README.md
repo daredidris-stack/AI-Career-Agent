@@ -150,6 +150,11 @@ npm --prefix frontend run build
 | `JWT_ALGORITHM` | No | JWT algorithm; defaults to `HS256` |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | No | Token lifetime; defaults to 24 hours |
 | `DATABASE_URL` | No | SQLAlchemy database URL; defaults to local SQLite |
+| `GOOGLE_CLIENT_ID` | No | Verifies Google Identity Services ID tokens on the backend |
+| `TURNSTILE_SECRET_KEY` | Production | Enables server-side Cloudflare Turnstile validation for login |
+| `TURNSTILE_ALLOWED_HOSTNAMES` | Production | Comma-separated hostnames accepted from Turnstile validation |
+| `VITE_TURNSTILE_SITE_KEY` | Production | Public Turnstile site key embedded in the login page at frontend build time |
+| `VITE_GOOGLE_CLIENT_ID` | No | Public Google OAuth web client ID used to render Sign in with Google |
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
 | `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
@@ -175,6 +180,46 @@ npm --prefix frontend run build
 - Maintain one active implementation of each feature.
 - Preserve responsive behavior across desktop, tablet, and mobile.
 - Keep generated documents, databases, secrets, build output, and virtual environments out of Git.
+
+## Authentication setup
+
+### Cloudflare Turnstile login protection
+
+Create a Turnstile widget in Cloudflare and configure its allowed hostnames. Then set:
+
+- `TURNSTILE_SECRET_KEY` and `TURNSTILE_ALLOWED_HOSTNAMES` in the backend environment.
+- `VITE_TURNSTILE_SITE_KEY` in `frontend/.env.local`, or in the root `.env` when building with Docker Compose.
+
+Turnstile enforcement is disabled when `TURNSTILE_SECRET_KEY` is empty, which keeps local development available without Cloudflare credentials. In production, configure both keys together; the secret key must never be exposed to the frontend.
+
+When Turnstile is enabled, server-side validation requires the expected
+`login` action and a hostname in `TURNSTILE_ALLOWED_HOSTNAMES`; an empty
+hostname allowlist fails closed. For local end-to-end testing, Cloudflare's
+public dummy keys are supported when `APP_ENV` is not `production`. The
+published dummy secret keys are deliberately rejected in production.
+
+### Google sign-in
+
+Create an OAuth 2.0 client in Google Cloud Console with application type
+**Web application**. Add the frontend origin, such as
+`http://localhost:5173`, under **Authorized JavaScript origins**. The popup
+credential flow used by this app does not require a redirect URI or client
+secret.
+
+Set the same client ID in both places:
+
+```env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
+
+Run `python -m backend.database.init_db` for local SQLite or
+`alembic upgrade head` for a migrated database, then restart both the API and
+frontend. Google-created accounts use Google's verified email and stable
+account identifier; an existing account with the same verified email is linked
+instead of duplicated only when Google is authoritative for that address
+(Gmail or Google Workspace). A Google Account using a third-party email must
+use the password flow until an explicit account-linking challenge is added.
 
 ## Current roadmap
 

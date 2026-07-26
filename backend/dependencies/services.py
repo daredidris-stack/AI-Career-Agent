@@ -37,6 +37,8 @@ from backend.services.auth_service import (
     AuthService,
 )
 from backend.services.email_service import EmailService
+from backend.services.turnstile_service import TurnstileService
+from backend.services.google_identity_service import GoogleIdentityService
 from backend.services.career_document_service import CareerDocumentService
 from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
@@ -86,6 +88,14 @@ def get_auth_service(
     ),
 ):
     return AuthService(repo, EmailService())
+
+
+def get_turnstile_service():
+    return TurnstileService()
+
+
+def get_google_identity_service():
+    return GoogleIdentityService()
 
 
 

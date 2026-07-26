@@ -17,6 +17,12 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    turnstile_token: str | None = Field(default=None, max_length=2048)
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str = Field(min_length=100, max_length=8192)
+    accept_terms: Literal[True]
 
 
 class DeleteAccountRequest(BaseModel):

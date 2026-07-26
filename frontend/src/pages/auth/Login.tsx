@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -10,6 +10,16 @@ import {
 
 import api from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import TurnstileWidget from "../../components/auth/TurnstileWidget";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
+
+
+const turnstileSiteKey = (
+  import.meta.env.VITE_TURNSTILE_SITE_KEY || ""
+).trim();
+const googleClientId = (
+  import.meta.env.VITE_GOOGLE_CLIENT_ID || ""
+).trim();
 
 
 export default function Login() {
@@ -28,11 +38,14 @@ export default function Login() {
 
   const [loading, setLoading] =
     useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [error, setError] =
     useState("");
   const [needsVerification, setNeedsVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
 
   async function handleLogin(
@@ -43,6 +56,12 @@ export default function Login() {
 
     setError("");
     setNeedsVerification(false);
+
+    if (turnstileSiteKey && !turnstileToken) {
+      setError("Complete the security check before signing in.");
+      return;
+    }
+
     setLoading(true);
 
 
@@ -53,6 +72,7 @@ export default function Login() {
         {
           email,
           password,
+          turnstile_token: turnstileToken || undefined,
         },
       );
 
@@ -72,11 +92,21 @@ export default function Login() {
     } catch (requestError: any) {
 
       const status = requestError.response?.status;
+      if (turnstileSiteKey) {
+        setTurnstileToken("");
+        setTurnstileResetKey((currentValue) => currentValue + 1);
+      }
+
       if (status === 403) {
         setNeedsVerification(true);
         setError("Verify your email before signing in.");
       } else if (status === 429) {
         setError("Too many failed attempts. Try again in 15 minutes.");
+      } else if (status === 400 || status === 503) {
+        setError(
+          requestError.response?.data?.detail
+            || "Security verification failed. Please try again.",
+        );
       } else {
         setError("Invalid email or password.");
       }
@@ -98,6 +128,36 @@ export default function Login() {
       setVerificationMessage("Unable to send an email right now. Please try again.");
     }
   }
+
+  const handleGoogleCredential = useCallback(async (
+    credential: string,
+  ) => {
+    setError("");
+    setNeedsVerification(false);
+    setGoogleLoading(true);
+
+    try {
+      const response = await api.post("/auth/google", {
+        credential,
+        accept_terms: true,
+      });
+      login(response.data.access_token);
+      navigate("/dashboard", { replace: true });
+    } catch (requestError: any) {
+      setError(
+        requestError.response?.data?.detail
+          || "Google sign-in failed. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [login, navigate]);
+
+  const handleGoogleError = useCallback(() => {
+    setError(
+      "Google sign-in could not be loaded. Refresh the page and try again.",
+    );
+  }, []);
 
 
   return (
@@ -208,6 +268,36 @@ export default function Login() {
                   </div>
                 )}
 
+                {googleClientId && (
+                  <>
+                    <GoogleSignInButton
+                      clientId={googleClientId}
+                      disabled={googleLoading}
+                      onCredential={handleGoogleCredential}
+                      onError={handleGoogleError}
+                    />
+
+                    <p className="text-center text-xs leading-5 text-gray-500">
+                      By continuing with Google, you agree to the{" "}
+                      <Link to="/terms" className="text-gray-300 hover:text-white">
+                        Terms of Use
+                      </Link>{" "}
+                      and acknowledge the{" "}
+                      <Link to="/privacy" className="text-gray-300 hover:text-white">
+                        Privacy Notice
+                      </Link>.
+                    </p>
+
+                    <div className="flex items-center gap-3" aria-hidden="true">
+                      <span className="h-px flex-1 bg-gray-800" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Or use email
+                      </span>
+                      <span className="h-px flex-1 bg-gray-800" />
+                    </div>
+                  </>
+                )}
+
 
                 <label className="block">
 
@@ -308,6 +398,19 @@ export default function Login() {
                 </label>
 
 
+                {turnstileSiteKey && (
+                  <TurnstileWidget
+                    key={turnstileResetKey}
+                    siteKey={turnstileSiteKey}
+                    onTokenChange={setTurnstileToken}
+                    onError={() => {
+                      setTurnstileToken("");
+                      setError("Security verification could not be completed. Refresh the page and try again.");
+                    }}
+                  />
+                )}
+
+
                 <label className="flex items-center gap-3 text-sm text-gray-400">
 
                   <input
@@ -322,7 +425,7 @@ export default function Login() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || Boolean(turnstileSiteKey && !turnstileToken)}
                   className="
                     inline-flex
                     min-h-12

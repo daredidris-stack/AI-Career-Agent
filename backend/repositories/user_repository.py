@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.models.user import User
@@ -19,7 +20,14 @@ class UserRepository:
 
         return (
             self.db.query(User)
-            .filter(User.email == email)
+            .filter(func.lower(User.email) == email.strip().casefold())
+            .first()
+        )
+
+    def get_by_google_subject(self, subject: str):
+        return (
+            self.db.query(User)
+            .filter(User.google_subject == subject)
             .first()
         )
 
@@ -30,13 +38,21 @@ class UserRepository:
         password_hash: str,
         terms_accepted_at=None,
         terms_version: str | None = None,
+        google_subject: str | None = None,
+        is_email_verified: bool = False,
+        first_name: str | None = None,
+        last_name: str | None = None,
     ):
 
         user = User(
-            email=email,
+            email=email.strip().casefold(),
             password_hash=password_hash,
             terms_accepted_at=terms_accepted_at,
             terms_version=terms_version,
+            google_subject=google_subject,
+            is_email_verified=is_email_verified,
+            first_name=first_name,
+            last_name=last_name,
         )
 
         self.db.add(user)

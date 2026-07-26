@@ -18,5 +18,9 @@ class InvalidActionTokenError(Exception):
     """Raised when a verification or reset token is invalid or expired."""
 
 
+class GoogleAccountConflictError(Exception):
+    """Raised when an email is linked to a different Google identity."""
+
+
 class UserNotFoundError(Exception):
     """Raised when a user cannot be found."""

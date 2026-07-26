@@ -27,6 +27,14 @@ ACCESS_TOKEN_EXPIRE_HOURS = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24")
 )
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY")
+TURNSTILE_ALLOWED_HOSTNAMES = [
+    hostname.strip().casefold()
+    for hostname in os.getenv("TURNSTILE_ALLOWED_HOSTNAMES", "").split(",")
+    if hostname.strip()
+]
+
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 JOOBLE_API_KEY = os.getenv("JOOBLE_API_KEY")

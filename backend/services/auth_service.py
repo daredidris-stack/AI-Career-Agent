@@ -1,4 +1,5 @@
 from datetime import timedelta
+import secrets
 
 from backend.auth.hashing import (
     hash_password,
@@ -25,8 +26,10 @@ from backend.exceptions.auth_exceptions import (
     LoginLockedError,
     EmailNotVerifiedError,
     InvalidActionTokenError,
+    GoogleAccountConflictError,
 )
 from backend.services.email_service import EmailService
+from backend.services.google_identity_service import GoogleIdentity
 
 
 MAX_FAILED_LOGINS = 5
@@ -104,6 +107,66 @@ class AuthService:
         if user.failed_login_attempts or user.locked_until:
             user.failed_login_attempts = 0
             user.locked_until = None
+            self.repo.save(user)
+
+        return create_access_token(
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "token_version": user.token_version or 0,
+            }
+        )
+
+    def authenticate_google(self, identity: GoogleIdentity) -> str:
+        user = self.repo.get_by_google_subject(identity.subject)
+        needs_save = False
+        if not user:
+            if not identity.email_authoritative:
+                raise GoogleAccountConflictError()
+
+            user = self.repo.get_by_email(identity.email)
+            if user and getattr(user, "google_subject", None) not in {
+                None,
+                identity.subject,
+            }:
+                raise GoogleAccountConflictError()
+
+            if user:
+                user.google_subject = identity.subject
+                user.is_email_verified = True
+                if not getattr(user, "first_name", None):
+                    user.first_name = identity.first_name or None
+                if not getattr(user, "last_name", None):
+                    user.last_name = identity.last_name or None
+                needs_save = True
+            else:
+                user = self.repo.create_user(
+                    email=identity.email,
+                    password_hash=hash_password(
+                        secrets.token_urlsafe(48)
+                    ),
+                    terms_accepted_at=utc_now(),
+                    terms_version=LEGAL_TERMS_VERSION,
+                    google_subject=identity.subject,
+                    is_email_verified=True,
+                    first_name=identity.first_name or None,
+                    last_name=identity.last_name or None,
+                )
+
+        if (
+            getattr(user, "terms_accepted_at", None) is None
+            or getattr(user, "terms_version", None) != LEGAL_TERMS_VERSION
+        ):
+            user.terms_accepted_at = utc_now()
+            user.terms_version = LEGAL_TERMS_VERSION
+            needs_save = True
+
+        if user.failed_login_attempts or user.locked_until:
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            needs_save = True
+
+        if needs_save:
             self.repo.save(user)
 
         return create_access_token(
