@@ -6,7 +6,7 @@ This continuation began from `main` at `0418879` with an intentionally
 uncommitted feature batch. The combined worktree passes the complete automated
 release gate:
 
-- 269 backend tests pass with `ResourceWarning` treated as an error.
+- 272 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260721_0006`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -32,7 +32,7 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
    - 36 focused auth tests pass. An independently reconstructed staged
      snapshot passes 203 backend tests, its complete Alembic cycle with no
      drift, and frontend lint/build. The combined worktree passes the full
-     269-test release gate.
+   272-test release gate.
    - Google client IDs are configured on both sides and match. A local browser
      smoke test rendered Google sign-in, exercised the password-login error
      path against the API, and found no browser console errors.
@@ -67,14 +67,30 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
      overlap, missing glyphs, placeholders, or broken layout.
    - Regenerating the three source templates produced identical unpacked OOXML
      package contents; only ZIP container metadata differed.
-4. **Worldwide provider and job-detail expansion**
+4. **Worldwide provider and job-detail expansion — code and bounded live verified**
    - Adzuna multi-market search, Jooble updates, TheirStack, SerpApi,
      Fantastic.jobs, USAJOBS, direct ATS feeds, direct employer feeds,
      job-title expansion, provider status reporting, and description
-     enrichment.
-   - Adapter, aggregation, route, and search-service coverage passes.
-   - Still requires live configured-provider checks, result-count/status
-     recording, cost/rate-limit review, and commercial-use approval.
+   enrichment.
+   - 59 focused adapter, aggregation, route, search-service, and description
+     tests pass. Provider failures are isolated and credential-bearing request
+     errors are replaced with generic messages.
+   - An independently reconstructed staged snapshot passes 264 backend tests,
+     its complete Alembic cycle through `20260720_0005` with no schema drift,
+     and frontend lint/build. The combined worktree passes the 272-test release
+     gate through migration `20260721_0006`.
+   - A bounded live Worldwide search returned one job, direct listing URL, and
+     description from each of Adzuna, Jooble, TheirStack, and Fantastic.jobs.
+     SerpApi completed successfully with `no_results`, not `unavailable`.
+     USAJOBS and the Greenhouse, Lever, Ashby, Microsoft, Apple, and Crossover
+     sources correctly reported `not_configured`.
+   - A separate live Amazon Jobs lookup returned a complete description through
+     the authenticated in-app enrichment route.
+   - Provider attribution and the final “Continue to listing on [provider]”
+     action remain in the job-details dialog. Adzuna cards and details render
+     the required “Jobs by Adzuna” logo treatment.
+   - Commercial-use approval remains an external deployment gate; details are
+     recorded in the provider release review below.
 5. **Persistent job catalog and ingestion**
    - `JobListing`/`JobSyncState`, repository, migration `20260721_0006`,
      ingestion service, sync worker, cached-search integration, retention, and
@@ -89,14 +105,55 @@ tests. Keep it out of feature commits unless its purpose is clarified.
 
 ### Recommended continuation order
 
-Groups 1 through 3 are complete; retain the live Turnstile check as a deployment
-gate. Continue with group 4, then review and commit one group at a time in the
-order above, running its targeted tests before `./scripts/verify_release.sh`.
+Groups 1 through 4 are complete; retain the live Turnstile and provider
+commercial-approval checks as deployment gates. Continue with group 5, then
+run its targeted tests before `./scripts/verify_release.sh`.
 After the five code groups are separately auditable, perform the remaining
 credentialed, browser, document-render, provider, and staging-worker checks and
 record their evidence here. Do not replace the July 17 beta assessment with
 this automated snapshot; its manual smoke-test evidence and external launch
 blockers remain separate.
+
+### Provider release review — July 26, 2026
+
+- **Adzuna:** Worldwide search fans out across eight configured markets, so one
+  user search can consume eight API requests. The default limits are 25
+  requests/minute, 250/day, 1,000/week, and 2,500/month. Commercial evaluation
+  is limited to 14 days unless Adzuna grants written consent or a licence.
+  Production remains blocked on that approval and confirmation of the final
+  logo asset. See the [Adzuna API terms](https://developer.adzuna.com/docs/terms_of_service).
+- **Jooble:** The registered REST API is expressly designed to display Jooble
+  search results in a site’s own UI, but the public documentation does not
+  publish a quota or clearly grant this product’s ongoing commercial use.
+  Confirm both with Jooble for the registered key before production. See the
+  [Jooble REST API documentation](https://help.jooble.org/en/support/solutions/articles/60001448238-rest-api-documentation).
+- **TheirStack:** Each returned job costs one API credit, including repeated
+  requests. The adapter caps free-plan pages at 25 results; the free plan
+  includes 200 API credits/month and has additional per-second, per-minute,
+  hourly, and daily limits. Confirm that the selected subscription and licence
+  permit the intended display and retention. See [credits](https://theirstack.com/en/docs/pricing/credits),
+  [plans](https://theirstack.com/en/docs/pricing/plans), and
+  [terms](https://theirstack.com/en/docs/legal/terms-and-conditions).
+- **SerpApi:** One successful Google Jobs request consumes one search regardless
+  of result count; up to ten jobs are returned per page and identical cached
+  requests are free. The current free plan includes 250 searches/month. See the
+  [Google Jobs API](https://serpapi.com/google-jobs-api) and
+  [current pricing](https://serpapi.com/pricing).
+- **Fantastic.jobs:** Active ATS responses consume one Jobs credit per returned
+  record. The adapter caps responses at 20 and caches identical searches for 15
+  minutes. Production requires an account plan and licence matching expected
+  display, retention, and request volume. See the
+  [endpoint documentation](https://developer.fantastic.jobs/documentation/endpoints/new-jobs).
+- **USAJOBS:** API data is restricted to the requesting company and purpose on
+  the registration form; other use requires prior written approval. Keep it
+  disabled until a NextHire-specific key and approval exist. See the
+  [USAJOBS terms](https://developer.usajobs.gov/guides/).
+- **Employer ATS feeds:** Greenhouse GET job-board data is public, and Lever and
+  Ashby document their postings feeds for organization career sites. Keep board
+  identifiers empty until the relevant employer or account owner has approved
+  aggregation. Microsoft, Apple, and Crossover use undocumented public
+  career-site interfaces and are disabled unless explicitly opted in with
+  `DIRECT_EMPLOYER_JOB_SOURCES`.
 
 ## Completed engineering foundation
 

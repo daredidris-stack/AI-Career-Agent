@@ -58,7 +58,7 @@ class JobSearchServiceTests(unittest.TestCase):
 
         self.repository.get_by_user_id.assert_called_once_with(42)
         aggregator.assert_called_once_with(
-            "cloud", "Remote", "", 1, 20
+            "cloud", "Worldwide", "", 1, 50
         )
         candidate_profile = ranker.call_args.args[0]
         self.assertEqual(
@@ -91,7 +91,7 @@ class JobSearchServiceTests(unittest.TestCase):
         )
 
         aggregator.assert_called_once_with(
-            "Cloud Engineer", "Toronto, Canada", "", 1, 20
+            "Cloud Engineer", "Toronto, Canada", "", 1, 50
         )
         self.assertEqual(result["count"], 1)
         self.assertEqual(
@@ -139,7 +139,7 @@ class JobSearchServiceTests(unittest.TestCase):
         with self.assertRaises(JobSearchError):
             service.search_for_user(42, "cloud")
 
-    def test_defaults_search_to_profile_role_and_preferences(self):
+    def test_defaults_search_to_profile_role_worldwide(self):
         aggregator = Mock(return_value=[])
         ranker = Mock(return_value=[])
         service = JobSearchService(
@@ -153,15 +153,17 @@ class JobSearchServiceTests(unittest.TestCase):
 
         aggregator.assert_called_once_with(
             "Cloud Engineer",
-            "Remote",
+            "Worldwide",
             "",
             1,
-            20,
+            50,
         )
         self.assertEqual(result["filters"]["keyword"], "Cloud Engineer")
-        self.assertEqual(result["filters"]["location"], "Remote")
+        self.assertEqual(result["filters"]["location"], "Worldwide")
+        self.assertEqual(result["filters"]["country"], "Worldwide")
+        self.assertEqual(result["filters"]["city"], "")
 
-    def test_uses_profile_city_when_remote_is_not_preferred(self):
+    def test_does_not_limit_default_search_to_profile_location(self):
         self.profile.preferred_work_mode = "Hybrid"
         aggregator = Mock(return_value=[])
         service = JobSearchService(
@@ -175,10 +177,10 @@ class JobSearchServiceTests(unittest.TestCase):
 
         aggregator.assert_called_once_with(
             "Cloud Engineer",
-            "Mexico City, Mexico",
+            "Worldwide",
             "",
             1,
-            20,
+            50,
         )
 
     def test_search_filters_override_profile_defaults(self):
@@ -204,7 +206,7 @@ class JobSearchServiceTests(unittest.TestCase):
             "Toronto, Canada",
             "Finance",
             1,
-            20,
+            50,
         )
         self.assertEqual(result["filters"]["industry"], "Finance")
 
@@ -228,7 +230,7 @@ class JobSearchServiceTests(unittest.TestCase):
             "Worldwide",
             "",
             1,
-            20,
+            50,
         )
 
     def test_only_top_five_candidates_are_ai_ranked(self):

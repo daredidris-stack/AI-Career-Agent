@@ -40,6 +40,7 @@ from backend.services.email_service import EmailService
 from backend.services.turnstile_service import TurnstileService
 from backend.services.google_identity_service import GoogleIdentityService
 from backend.services.career_document_service import CareerDocumentService
+from backend.services.job_description_service import JobDescriptionService
 from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
 from backend.services.user_data_service import UserDataService
@@ -107,6 +108,10 @@ def get_profile_service(
 ):
 
     return ProfileService(repo)
+
+
+def get_job_description_service():
+    return JobDescriptionService()
 
 
 def get_career_document_service(

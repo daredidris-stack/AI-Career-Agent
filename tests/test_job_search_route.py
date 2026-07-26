@@ -5,6 +5,8 @@ from unittest.mock import Mock
 from fastapi import HTTPException
 
 from backend.routes.job_search import search_jobs
+from backend.routes.job_search import enrich_job_description
+from backend.models.schemas import JobDescriptionRequest
 from backend.services.job_search_service import (
     JobSearchInputError,
     JobSearchError,
@@ -12,6 +14,30 @@ from backend.services.job_search_service import (
 
 
 class JobSearchRouteTests(unittest.TestCase):
+    def test_enriches_job_description_for_authenticated_user(self):
+        service = Mock()
+        service.enrich.return_value = "Complete description"
+
+        result = enrich_job_description(
+            JobDescriptionRequest(
+                title="Platform Engineer",
+                company="Example",
+                location="Remote",
+                listing_url="https://jobs.example.com/123",
+            ),
+            SimpleNamespace(id=7),
+            service,
+        )
+
+        self.assertTrue(result.enriched)
+        self.assertEqual(result.description, "Complete description")
+        service.enrich.assert_called_once_with(
+            title="Platform Engineer",
+            company="Example",
+            location="Remote",
+            listing_url="https://jobs.example.com/123",
+        )
+
     def test_authenticated_user_id_is_passed_to_service(self):
         service = Mock()
         service.search_for_user.return_value = {
@@ -39,7 +65,7 @@ class JobSearchRouteTests(unittest.TestCase):
             min_salary=0,
             min_score=0,
             page=1,
-            per_page=20,
+            per_page=50,
         )
 
     def test_missing_search_role_returns_400(self):

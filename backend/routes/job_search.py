@@ -1,7 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.dependencies.auth import get_current_user
-from backend.dependencies.services import get_ai_usage_service, get_job_search_service
+from backend.dependencies.services import (
+    get_ai_usage_service,
+    get_job_description_service,
+    get_job_search_service,
+)
+from backend.models.schemas import (
+    JobDescriptionRequest,
+    JobDescriptionResponse,
+)
 from backend.models.user import User
 from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
 from backend.core.settings import AI_JOB_RANKING_ENABLED
@@ -10,12 +18,33 @@ from backend.services.job_search_service import (
     JobSearchError,
     JobSearchService,
 )
+from backend.services.job_description_service import JobDescriptionService
 
 
 router = APIRouter(
     prefix="/jobs",
     tags=["Jobs"],
 )
+
+
+@router.post("/description", response_model=JobDescriptionResponse)
+def enrich_job_description(
+    request: JobDescriptionRequest,
+    _current_user: User = Depends(get_current_user),
+    service: JobDescriptionService = Depends(
+        get_job_description_service
+    ),
+):
+    description = service.enrich(
+        title=request.title,
+        company=request.company,
+        location=request.location,
+        listing_url=request.listing_url,
+    )
+    return JobDescriptionResponse(
+        description=description,
+        enriched=bool(description),
+    )
 
 
 @router.get("/search")
@@ -30,7 +59,7 @@ def search_jobs(
     min_salary: int = 0,
     min_score: int = 0,
     page: int = 1,
-    per_page: int = 20,
+    per_page: int = 50,
     current_user: User = Depends(get_current_user),
     service: JobSearchService = Depends(
         get_job_search_service

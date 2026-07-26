@@ -175,7 +175,20 @@ npm --prefix frontend run build
 | `VITE_GOOGLE_CLIENT_ID` | No | Public Google OAuth web client ID used to render Sign in with Google |
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
+| `ADZUNA_WORLDWIDE_MARKETS` | No | Comma-separated Adzuna country markets searched for Worldwide queries; defaults to `us,gb,ca,au,de,fr,in,mx` |
 | `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
+| `THEIRSTACK_API_KEY` | No | Enables worldwide search across Indeed, Glassdoor, employer sites, and other indexed sources |
+| `SERPAPI_API_KEY` | No | Enables Google Jobs results through SerpApi; each uncached result page consumes a SerpApi search credit |
+| `FANTASTIC_JOBS_API_KEY` | No | Enables the Fantastic.jobs direct-employer ATS index |
+| `FANTASTIC_JOBS_MAX_RESULTS` | No | Caps paid Fantastic.jobs results per search page; defaults to 20 |
+| `FANTASTIC_JOBS_CACHE_SECONDS` | No | Reuses identical Fantastic.jobs searches to protect credits; defaults to 900 seconds |
+| `FANTASTIC_JOBS_TIME_FRAME` | No | Fantastic.jobs active-job window: `1h`, `24h`, `7d`, or `6m`; defaults to `6m` for broad role coverage |
+| `USAJOBS_API_KEY` | No | Enables U.S. federal job search through the official USAJOBS API |
+| `USAJOBS_USER_AGENT` | With USAJOBS | Email address registered with the USAJOBS API key |
+| `GREENHOUSE_JOB_BOARDS` | No | Comma-separated `Company|board-token` entries for direct Greenhouse employer feeds |
+| `LEVER_JOB_SITES` | No | Comma-separated `Company|site-name` entries for direct Lever employer feeds |
+| `ASHBY_JOB_BOARDS` | No | Comma-separated `Company|board-name` entries for direct Ashby employer feeds |
+| `DIRECT_EMPLOYER_JOB_SOURCES` | No | Opt-in comma-separated direct employer sources: `microsoft`, `apple`, and/or `crossover`; confirm production use with each employer first |
 | `AI_MODEL` | No | Local Ollama model; defaults to `qwen3:8b` |
 | `AI_REQUEST_TIMEOUT_SECONDS` | No | Maximum time for one model attempt; defaults to 45 seconds |
 | `AI_MAX_RETRIES` | No | Retry count for transient model failures; defaults to 1 |
@@ -190,6 +203,60 @@ npm --prefix frontend run build
 | `SMTP_PASSWORD` | Production | SMTP login password |
 | `SMTP_FROM_EMAIL` | Production | Sender address for account emails |
 | `SMTP_USE_TLS` | No | Enables SMTP STARTTLS; defaults to `true` |
+
+### Direct job feeds and Google Jobs
+
+SerpApi uses its Google Jobs engine and requires only `SERPAPI_API_KEY`. Google
+Jobs currently returns up to ten results per page. The app reuses SerpApi's
+next-page token when the user loads another page and does not make a page
+request when no token is available.
+
+Fantastic.jobs uses its current `/v1/active-ats` endpoint to search direct
+employer career systems, including Workday, SmartRecruiters, iCIMS,
+Greenhouse, Lever, Ashby, and many others. Configure the private server-side
+key with:
+
+```env
+FANTASTIC_JOBS_API_KEY=your-key
+```
+
+Fantastic.jobs charges for each returned job. The adapter therefore defaults
+to at most 20 results per page, searches active jobs from the last six months,
+and caches identical searches for 15 minutes.
+Its separate LinkedIn/Wellfound/Y Combinator endpoint is intentionally not
+queried, avoiding an extra paid request and duplicates of direct employer
+listings. The key must never be placed in a frontend environment file.
+
+USAJOBS requires both the API key and the email address used when requesting
+that key:
+
+```env
+USAJOBS_API_KEY=your-key
+USAJOBS_USER_AGENT=you@example.com
+```
+
+Greenhouse, Lever, and Ashby publish jobs per employer rather than through one
+global search endpoint. Configure the employer display name and public board
+identifier using `Company|identifier` entries:
+
+```env
+GREENHOUSE_JOB_BOARDS=Example Corp|example,Another Corp|another
+LEVER_JOB_SITES=Example Labs|examplelabs
+ASHBY_JOB_BOARDS=Example AI|example-ai
+```
+
+These direct employer feeds provide canonical listing or application URLs and
+full descriptions when present. A failing or stale employer identifier is
+isolated so it cannot break the other job sources.
+
+Microsoft, Apple, and Crossover career-site interfaces are available only as
+explicit opt-ins because they are not documented as general public job APIs.
+After confirming the intended production use with each employer, enable only
+the approved sources:
+
+```env
+DIRECT_EMPLOYER_JOB_SOURCES=microsoft,apple,crossover
+```
 
 ## Development principles
 

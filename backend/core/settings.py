@@ -37,7 +37,54 @@ TURNSTILE_ALLOWED_HOSTNAMES = [
 
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
+ADZUNA_WORLDWIDE_MARKETS = [
+    country.strip().casefold()
+    for country in os.getenv(
+        "ADZUNA_WORLDWIDE_MARKETS",
+        "us,gb,ca,au,de,fr,in,mx",
+    ).split(",")
+    if country.strip()
+]
 JOOBLE_API_KEY = os.getenv("JOOBLE_API_KEY")
+THEIRSTACK_API_KEY = os.getenv("THEIRSTACK_API_KEY")
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+FANTASTIC_JOBS_API_KEY = os.getenv("FANTASTIC_JOBS_API_KEY")
+FANTASTIC_JOBS_MAX_RESULTS = max(
+    1, min(100, int(os.getenv("FANTASTIC_JOBS_MAX_RESULTS", "20")))
+)
+FANTASTIC_JOBS_CACHE_SECONDS = max(
+    60, int(os.getenv("FANTASTIC_JOBS_CACHE_SECONDS", "900"))
+)
+_fantastic_jobs_time_frame = os.getenv(
+    "FANTASTIC_JOBS_TIME_FRAME", "6m"
+)
+FANTASTIC_JOBS_TIME_FRAME = (
+    _fantastic_jobs_time_frame
+    if _fantastic_jobs_time_frame in {"1h", "24h", "7d", "6m"}
+    else "6m"
+)
+USAJOBS_API_KEY = os.getenv("USAJOBS_API_KEY")
+USAJOBS_USER_AGENT = os.getenv("USAJOBS_USER_AGENT")
+GREENHOUSE_JOB_BOARDS = [
+    value.strip()
+    for value in os.getenv("GREENHOUSE_JOB_BOARDS", "").split(",")
+    if value.strip()
+]
+LEVER_JOB_SITES = [
+    value.strip()
+    for value in os.getenv("LEVER_JOB_SITES", "").split(",")
+    if value.strip()
+]
+ASHBY_JOB_BOARDS = [
+    value.strip()
+    for value in os.getenv("ASHBY_JOB_BOARDS", "").split(",")
+    if value.strip()
+]
+DIRECT_EMPLOYER_JOB_SOURCES = {
+    value.strip().casefold()
+    for value in os.getenv("DIRECT_EMPLOYER_JOB_SOURCES", "").split(",")
+    if value.strip()
+}
 
 AI_MODEL = os.getenv("AI_MODEL", "qwen3:8b")
 AI_REQUEST_TIMEOUT_SECONDS = float(

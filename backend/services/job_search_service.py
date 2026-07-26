@@ -55,7 +55,7 @@ class JobSearchService:
         min_salary: int = 0,
         min_score: int = 0,
         page: int = 1,
-        per_page: int = 20,
+        per_page: int = 50,
     ) -> dict[str, Any]:
         profile = self.profile_repository.get_by_user_id(
             user_id
@@ -66,14 +66,8 @@ class JobSearchService:
             or (getattr(profile, "target_role", "") or "").strip()
             or (getattr(profile, "current_role", "") or "").strip()
         )
-        effective_country = (
-            (country or "").strip()
-            or (getattr(profile, "country", "") or "").strip()
-        )
-        effective_city = (
-            (city or "").strip()
-            or (getattr(profile, "city", "") or "").strip()
-        )
+        effective_country = (country or "").strip() or "Worldwide"
+        effective_city = (city or "").strip()
         effective_work_mode = (
             (work_mode or "").strip()
             or (
@@ -293,4 +287,4 @@ class JobSearchService:
             return "Remote"
 
         return ", ".join(value for value in (city, country) if value) \
-            or "Remote"
+            or "Worldwide"

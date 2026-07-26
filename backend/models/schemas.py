@@ -45,6 +45,18 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class JobDescriptionRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    company: str = Field(default="", max_length=300)
+    location: str = Field(default="", max_length=500)
+    listing_url: str | None = Field(default=None, max_length=2048)
+
+
+class JobDescriptionResponse(BaseModel):
+    description: str | None = None
+    enriched: bool = False
+
+
 class CareerDocumentCreate(BaseModel):
     kind: str
     title: str = Field(min_length=1, max_length=200)
