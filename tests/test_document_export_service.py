@@ -3,6 +3,8 @@ from io import BytesIO
 from types import SimpleNamespace
 from zipfile import ZipFile
 
+from docx import Document
+
 from backend.services.document_export_service import export_document
 
 
@@ -43,6 +45,76 @@ class DocumentExportServiceTests(unittest.TestCase):
         text = content.decode()
         self.assertIn("Professional Summary\nCloud engineer", text)
         self.assertIn("Skills\nAWS\nLinux", text)
+
+    def test_structured_resume_uses_tailored_word_template(self):
+        self.document.content = (
+            '{"full_name":"Dare Daniel Idris",'
+            '"target_role":"Cloud Engineer",'
+            '"contact_line":"dare@example.test | Mexico",'
+            '"summary":"Cloud engineer",'
+            '"skills":["AWS","Linux"],'
+            '"experience":[{"role":"Technician",'
+            '"company":"Example Co", "dates":"2022 - Present",'
+            '"bullets":["Operated infrastructure"]}],'
+            '"education":["Information Technology"],'
+            '"certifications":[],"projects":[]}'
+        )
+
+        content, _, _ = export_document(self.document, "docx")
+        word_document = Document(BytesIO(content))
+        rendered_text = "\n".join(
+            paragraph.text for paragraph in word_document.paragraphs
+        )
+
+        self.assertIn("Dare Daniel Idris", rendered_text)
+        self.assertIn("Cloud Engineer", rendered_text)
+        self.assertIn("AWS • Linux", rendered_text)
+        self.assertIn(
+            "Technician | Example Co | 2022 - Present",
+            rendered_text,
+        )
+        self.assertIn("Operated infrastructure", rendered_text)
+        self.assertNotIn("{{", rendered_text)
+        self.assertNotIn("CERTIFICATIONS", rendered_text)
+        self.assertNotIn("PROJECTS", rendered_text)
+
+    def test_structured_resume_uses_selected_template(self):
+        for template_id, expected_font in (
+            ("ats-professional", "Calibri"),
+            ("ats-modern", "Arial"),
+            ("ats-classic", "Georgia"),
+        ):
+            with self.subTest(template_id=template_id):
+                self.document.content = (
+                    f'{{"template_id":"{template_id}",'
+                    '"full_name":"Dare Daniel Idris",'
+                    '"target_role":"Operations Leader",'
+                    '"contact_line":"Mexico",'
+                    '"summary":"Operations professional",'
+                    '"skills":["Leadership"],'
+                    '"experience":[],"education":[]}'
+                )
+
+                content, _, _ = export_document(self.document, "docx")
+                word_document = Document(BytesIO(content))
+
+                self.assertEqual(
+                    word_document.styles["Resume Name"].font.name,
+                    expected_font,
+                )
+
+    def test_structured_resume_ignores_null_list_values(self):
+        self.document.content = (
+            '{"summary":"Cloud engineer",'
+            '"skills":["AWS",null,"Linux"],'
+            '"experience":[],"education":[]}'
+        )
+
+        content, _, _ = export_document(self.document, "txt")
+
+        text = content.decode()
+        self.assertIn("Skills\nAWS\nLinux", text)
+        self.assertNotIn("None", text)
 
 
 if __name__ == "__main__":

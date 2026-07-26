@@ -14,6 +14,7 @@ The project is evolving toward a production SaaS architecture. The current imple
 - Skill-gap analysis
 - Job aggregation and profile-based ranking
 - Resume tailoring, job matching, and cover-letter prototypes
+- AI-assisted resume template selection with three ATS-safe Word exports
 
 ## Architecture
 
@@ -126,6 +127,23 @@ ollama serve
 ```
 
 Features that call Ollama require the local model service to be running.
+
+### Resume template agent
+
+The Resume Tailor page loads its template catalog from the authenticated
+`GET /resume/templates` endpoint. Users can select **ATS Professional**,
+**ATS Modern**, or **ATS Classic**, or leave the choice on **AI recommended**.
+The tailoring agent returns structured, factual resume content and recommends
+a template when automatic selection is enabled. The deterministic Word
+renderer applies the selected design and keeps layout generation separate from
+AI-written content.
+
+No third-party template API key is required. Template source files live in
+`backend/templates/`, and the catalog can be regenerated with:
+
+```bash
+python scripts/build_resume_template_catalog.py --directory backend/templates
+```
 
 ## Verification
 

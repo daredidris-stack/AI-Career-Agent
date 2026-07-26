@@ -6,7 +6,7 @@ This continuation began from `main` at `0418879` with an intentionally
 uncommitted feature batch. The combined worktree passes the complete automated
 release gate:
 
-- 268 backend tests pass with `ResourceWarning` treated as an error.
+- 269 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260721_0006`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -32,7 +32,7 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
    - 36 focused auth tests pass. An independently reconstructed staged
      snapshot passes 203 backend tests, its complete Alembic cycle with no
      drift, and frontend lint/build. The combined worktree passes the full
-     268-test release gate.
+     269-test release gate.
    - Google client IDs are configured on both sides and match. A local browser
      smoke test rendered Google sign-in, exercised the password-login error
      path against the API, and found no browser console errors.
@@ -53,12 +53,20 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
      fields were populated, a manually entered current role was preserved,
      target-role choices updated the form, and reloading confirmed that autofill
      does not save before the user presses the profile save button.
-3. **ATS resume templates and deterministic Word export**
+3. **ATS resume templates and deterministic Word export — code and render verified**
    - Three bundled templates, catalog/selection service, structured tailoring,
      export rendering, and the Resume Tailor/Document Library UI changes.
-   - Automated template, tailoring, and export coverage passes.
-   - Still requires render inspection of representative exports from every
-     template before calling the visual output release-ready.
+   - 23 focused template, tailoring, route, and export tests pass. An
+     independently reconstructed staged snapshot passes 229 backend tests, its
+     complete Alembic cycle with no drift, frontend lint/build, and the staged
+     diff whitespace check.
+   - Representative one-page exports were generated through the production
+     export service for ATS Professional, ATS Modern, and ATS Classic. Every
+     rendered page was inspected at full resolution and showed clean margins,
+     typography, bullets, section flow, and page boundaries with no clipping,
+     overlap, missing glyphs, placeholders, or broken layout.
+   - Regenerating the three source templates produced identical unpacked OOXML
+     package contents; only ZIP container metadata differed.
 4. **Worldwide provider and job-detail expansion**
    - Adzuna multi-market search, Jooble updates, TheirStack, SerpApi,
      Fantastic.jobs, USAJOBS, direct ATS feeds, direct employer feeds,
@@ -81,8 +89,8 @@ tests. Keep it out of feature commits unless its purpose is clarified.
 
 ### Recommended continuation order
 
-Groups 1 and 2 are complete; retain the live Turnstile check as a deployment
-gate. Continue with group 3, then review and commit one group at a time in the
+Groups 1 through 3 are complete; retain the live Turnstile check as a deployment
+gate. Continue with group 4, then review and commit one group at a time in the
 order above, running its targeted tests before `./scripts/verify_release.sh`.
 After the five code groups are separately auditable, perform the remaining
 credentialed, browser, document-render, provider, and staging-worker checks and

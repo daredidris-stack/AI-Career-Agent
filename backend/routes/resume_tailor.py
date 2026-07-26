@@ -9,6 +9,7 @@ from backend.services.resume_tailor_service import (
     ResumeTailorError,
     ResumeTailorService,
 )
+from backend.services.resume_template_service import list_resume_templates
 
 
 router = APIRouter(
@@ -17,10 +18,18 @@ router = APIRouter(
 )
 
 
+@router.get("/templates")
+def get_resume_templates(
+    _current_user: User = Depends(get_current_user),
+):
+    return list_resume_templates()
+
+
 @router.post("/tailor-upload")
 async def tailor_resume_upload(
     file: UploadFile | None = File(None),
     job_description: str = Form(...),
+    template_id: str = Form("auto"),
     current_user: User = Depends(get_current_user),
     service: ResumeTailorService = Depends(
         get_resume_tailor_service
@@ -33,6 +42,7 @@ async def tailor_resume_upload(
             user_id=current_user.id,
             file=file,
             job_description=job_description,
+            template_id=template_id,
         )
     except ProfileRequiredError as error:
         raise HTTPException(
