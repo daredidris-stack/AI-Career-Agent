@@ -29,6 +29,13 @@ class User(Base):
         nullable=False
     )
 
+    google_subject = Column(
+        String,
+        unique=True,
+        index=True,
+        nullable=True,
+    )
+
     token_version = Column(Integer, nullable=False, default=0)
     failed_login_attempts = Column(Integer, nullable=False, default=0)
     locked_until = Column(DateTime, nullable=True)

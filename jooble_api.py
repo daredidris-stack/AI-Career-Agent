@@ -17,18 +17,22 @@ def search_jobs(
     if not JOOBLE_API_KEY:
         return []
 
-    response = requests.post(
-        API_URL.format(api_key=JOOBLE_API_KEY),
-        json={
-            "keywords": keyword,
-            "location": "" if location == "Worldwide" else location,
-            "page": page,
-            "ResultOnPage": results,
-            "companysearch": False,
-        },
-        timeout=15,
-    )
-    response.raise_for_status()
+    try:
+        response = requests.post(
+            API_URL.format(api_key=JOOBLE_API_KEY),
+            json={
+                "keywords": keyword,
+                "location": "" if location == "Worldwide" else location,
+                "page": page,
+                "ResultOnPage": results,
+                "companysearch": False,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError, AttributeError):
+        raise RuntimeError("Jooble request failed.") from None
 
     return [
         {
@@ -42,5 +46,6 @@ def search_jobs(
             "salary": job.get("salary") or "",
             "updated": job.get("updated") or "",
         }
-        for job in response.json().get("jobs", [])
+        for job in data.get("jobs", [])
+        if isinstance(job, dict)
     ]

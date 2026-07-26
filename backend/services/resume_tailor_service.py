@@ -8,8 +8,15 @@ from ollama import chat
 from services.ollama_service import reliable_chat
 
 from backend.repositories.profile_repository import ProfileRepository
+from backend.services.candidate_skills import normalize_explicit_skills
 from backend.services.resume_service import ResumeService
 from backend.services.career_document_service import CareerDocumentService
+from backend.services.resume_template_service import (
+    resolve_resume_template_id,
+    template_prompt_options,
+    validate_template_request,
+)
+from resume_text_cleaner import clean_resume_text
 
 
 class ProfileRequiredError(Exception):
@@ -47,11 +54,13 @@ class ResumeTailorService:
         user_id: int,
         file: UploadFile | None,
         job_description: str,
+        template_id: str = "auto",
     ) -> dict[str, Any]:
         if not job_description.strip():
             raise ValueError(
                 "Job description cannot be empty."
             )
+        requested_template_id = validate_template_request(template_id)
 
         profile = self.profile_repository.get_by_user_id(
             user_id
@@ -79,6 +88,7 @@ class ResumeTailorService:
             resume_text,
             job_description,
             profile,
+            requested_template_id,
         )
 
         try:
@@ -90,6 +100,10 @@ class ResumeTailorService:
             )
             result = self._parse_response(
                 response.message.content
+            )
+            result["template_id"] = resolve_resume_template_id(
+                requested_template_id,
+                result.pop("template_id", None),
             )
         except ResumeTailorError:
             raise
@@ -128,6 +142,7 @@ class ResumeTailorService:
         resume_text: str,
         job_description: str,
         profile: Any,
+        requested_template_id: str = "auto",
     ) -> str:
         return f"""
 You are a professional ATS resume writer.
@@ -151,12 +166,33 @@ Rules:
 - Never invent experience, skills, employers, dates, certifications, or projects.
 - Only improve and reorganize facts present in the resume.
 - Keep all output truthful.
+- Do not copy literal Markdown, template instructions, example.com addresses,
+  North American 555 phone numbers, or generator commentary.
+- Use concise, ATS-friendly language and preserve the candidate's real role,
+  employer, dates, education, and contact details when present.
+- The requested template is: {requested_template_id}.
+- When the requested template is auto, select the best template_id from:
+{template_prompt_options()}
 - Return only valid JSON using this shape:
 
 {{
+    "template_id": "ats-professional",
+    "full_name": "",
+    "contact_line": "",
+    "target_role": "",
     "summary": "",
     "skills": [],
-    "experience": []
+    "experience": [
+        {{
+            "role": "",
+            "company": "",
+            "dates": "",
+            "bullets": []
+        }}
+    ],
+    "education": [],
+    "certifications": [],
+    "projects": []
 }}
 """.strip()
 
@@ -181,7 +217,78 @@ Rules:
             ) from error
 
         return {
-            "summary": str(result.get("summary", "")),
-            "skills": list(result.get("skills") or []),
-            "experience": list(result.get("experience") or []),
+            "template_id": _clean_value(result.get("template_id")),
+            "full_name": _clean_value(result.get("full_name")),
+            "contact_line": _clean_contact(result.get("contact_line")),
+            "target_role": _clean_value(result.get("target_role")),
+            "summary": _clean_value(result.get("summary")),
+            "skills": normalize_explicit_skills(result.get("skills")),
+            "experience": _normalize_experience(result.get("experience")),
+            "education": _normalize_string_list(result.get("education")),
+            "certifications": _normalize_string_list(
+                result.get("certifications")
+            ),
+            "projects": _normalize_string_list(result.get("projects")),
         }
+
+
+def _clean_value(value: Any) -> str:
+    return clean_resume_text(str(value or "")).strip()
+
+
+def _clean_contact(value: Any) -> str:
+    contact = _clean_value(value)
+    folded = contact.casefold()
+    if "example.com" in folded:
+        return ""
+    digits = re.sub(r"\D", "", contact)
+    if (
+        (len(digits) == 10 and digits.startswith("555"))
+        or (len(digits) == 11 and digits.startswith("1555"))
+    ):
+        return ""
+    return contact
+
+
+def _normalize_string_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        values = [value]
+    elif isinstance(value, list):
+        values = value
+    else:
+        return []
+
+    normalized = []
+    seen = set()
+    for item in values:
+        text = _clean_value(item)
+        key = text.casefold()
+        if text and key not in seen:
+            normalized.append(text)
+            seen.add(key)
+    return normalized
+
+
+def _normalize_experience(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+
+    experience = []
+    for item in value:
+        if isinstance(item, dict):
+            entry = {
+                "role": _clean_value(item.get("role")),
+                "company": _clean_value(item.get("company")),
+                "dates": _clean_value(item.get("dates")),
+                "bullets": _normalize_string_list(item.get("bullets")),
+            }
+        else:
+            entry = {
+                "role": "",
+                "company": "",
+                "dates": "",
+                "bullets": _normalize_string_list([item]),
+            }
+        if any(entry.values()):
+            experience.append(entry)
+    return experience

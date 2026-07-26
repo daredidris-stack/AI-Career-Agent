@@ -38,8 +38,13 @@ function Resume() {
       );
 
       setResult(response.data);
-    } catch {
-      alert("Resume analysis failed.");
+    } catch (requestError) {
+      const detail = requestError.response?.data?.detail;
+      alert(
+        typeof detail === "string"
+          ? detail
+          : "Resume analysis failed."
+      );
     }
 
     setLoading(false);

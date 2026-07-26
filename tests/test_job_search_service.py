@@ -58,7 +58,7 @@ class JobSearchServiceTests(unittest.TestCase):
 
         self.repository.get_by_user_id.assert_called_once_with(42)
         aggregator.assert_called_once_with(
-            "cloud", "Remote", "", 1, 20
+            "cloud", "Worldwide", "", 1, 50
         )
         candidate_profile = ranker.call_args.args[0]
         self.assertEqual(
@@ -91,7 +91,7 @@ class JobSearchServiceTests(unittest.TestCase):
         )
 
         aggregator.assert_called_once_with(
-            "Cloud Engineer", "Toronto, Canada", "", 1, 20
+            "Cloud Engineer", "Toronto, Canada", "", 1, 50
         )
         self.assertEqual(result["count"], 1)
         self.assertEqual(
@@ -139,7 +139,7 @@ class JobSearchServiceTests(unittest.TestCase):
         with self.assertRaises(JobSearchError):
             service.search_for_user(42, "cloud")
 
-    def test_defaults_search_to_profile_role_and_preferences(self):
+    def test_defaults_search_to_profile_role_worldwide(self):
         aggregator = Mock(return_value=[])
         ranker = Mock(return_value=[])
         service = JobSearchService(
@@ -153,15 +153,17 @@ class JobSearchServiceTests(unittest.TestCase):
 
         aggregator.assert_called_once_with(
             "Cloud Engineer",
-            "Remote",
+            "Worldwide",
             "",
             1,
-            20,
+            50,
         )
         self.assertEqual(result["filters"]["keyword"], "Cloud Engineer")
-        self.assertEqual(result["filters"]["location"], "Remote")
+        self.assertEqual(result["filters"]["location"], "Worldwide")
+        self.assertEqual(result["filters"]["country"], "Worldwide")
+        self.assertEqual(result["filters"]["city"], "")
 
-    def test_uses_profile_city_when_remote_is_not_preferred(self):
+    def test_does_not_limit_default_search_to_profile_location(self):
         self.profile.preferred_work_mode = "Hybrid"
         aggregator = Mock(return_value=[])
         service = JobSearchService(
@@ -175,10 +177,10 @@ class JobSearchServiceTests(unittest.TestCase):
 
         aggregator.assert_called_once_with(
             "Cloud Engineer",
-            "Mexico City, Mexico",
+            "Worldwide",
             "",
             1,
-            20,
+            50,
         )
 
     def test_search_filters_override_profile_defaults(self):
@@ -204,7 +206,7 @@ class JobSearchServiceTests(unittest.TestCase):
             "Toronto, Canada",
             "Finance",
             1,
-            20,
+            50,
         )
         self.assertEqual(result["filters"]["industry"], "Finance")
 
@@ -228,7 +230,7 @@ class JobSearchServiceTests(unittest.TestCase):
             "Worldwide",
             "",
             1,
-            20,
+            50,
         )
 
     def test_only_top_five_candidates_are_ai_ranked(self):
@@ -291,6 +293,94 @@ class JobSearchServiceTests(unittest.TestCase):
         )
 
         self.assertEqual([job["title"] for job in result["jobs"]], ["Recent"])
+
+    def test_stored_jobs_prevent_repeat_live_provider_calls(self):
+        aggregator = Mock()
+        listing_repository = Mock()
+        listing_repository.search.return_value = [{
+            "title": "Registered Nurse",
+            "company": "Example Health",
+            "source": "Employer index",
+            "source_homepage": "https://fantastic.jobs/",
+            "source_api_page": "https://developer.fantastic.jobs/",
+            "cached": True,
+        }]
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            aggregator,
+            Mock(side_effect=lambda _profile, jobs: jobs),
+            job_listing_repository=listing_repository,
+        )
+
+        result = service.search_for_user(42, keyword="Registered Nurse")
+
+        aggregator.assert_not_called()
+        listing_repository.upsert_many.assert_not_called()
+        self.assertTrue(result["jobs"][0]["cached"])
+        self.assertEqual(result["providers"], [{
+            "name": "Employer index",
+            "status": "active",
+            "count": 1,
+            "homepage": "https://fantastic.jobs/",
+            "api_page": "https://developer.fantastic.jobs/",
+            "cached": True,
+        }])
+
+    def test_live_fallback_populates_persistent_listing_store(self):
+        live_jobs = AggregatedJobs(
+            [{
+                "title": "Accountant",
+                "company": "Example Finance",
+                "apply_url": "https://example.com/accountant",
+            }],
+            [],
+        )
+        listing_repository = Mock()
+        listing_repository.search.return_value = []
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            Mock(return_value=live_jobs),
+            Mock(side_effect=lambda _profile, jobs: jobs),
+            job_listing_repository=listing_repository,
+        )
+
+        service.search_for_user(42, keyword="Accountant")
+
+        listing_repository.upsert_many.assert_called_once_with(list(live_jobs))
+
+    def test_stored_search_failure_rolls_back_and_uses_live_providers(self):
+        live_jobs = AggregatedJobs(
+            [{
+                "title": "Accountant",
+                "company": "Example Finance",
+                "apply_url": "https://example.com/accountant",
+            }],
+            [{
+                "name": "Example provider",
+                "status": "active",
+                "count": 1,
+            }],
+        )
+        listing_repository = Mock()
+        listing_repository.search.side_effect = RuntimeError(
+            "database unavailable"
+        )
+        aggregator = Mock(return_value=live_jobs)
+        service = JobSearchService(
+            self.repository,
+            self.resume_repository,
+            aggregator,
+            Mock(side_effect=lambda _profile, jobs: jobs),
+            job_listing_repository=listing_repository,
+        )
+
+        result = service.search_for_user(42, keyword="Accountant")
+
+        listing_repository.rollback.assert_called_once()
+        aggregator.assert_called_once()
+        self.assertEqual(result["providers"], live_jobs.provider_status)
 
 
 if __name__ == "__main__":

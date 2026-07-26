@@ -46,10 +46,16 @@ export default function DocumentLibrary({ refreshToken }) {
 
   async function createResume() {
     const content = JSON.stringify({
+      template_id: "ats-professional",
+      full_name: "",
+      contact_line: "",
+      target_role: "",
       summary: "",
       skills: [],
       experience: [],
       education: [],
+      certifications: [],
+      projects: [],
     }, null, 2);
     const response = await api.post("/documents", {
       kind: "resume",
@@ -67,10 +73,16 @@ export default function DocumentLibrary({ refreshToken }) {
       const parsed = JSON.parse(document.content);
       if (parsed && typeof parsed === "object" && Array.isArray(parsed.skills)) {
         setStructuredResume({
+          template_id: String(parsed.template_id || "ats-professional"),
+          full_name: String(parsed.full_name || ""),
+          contact_line: String(parsed.contact_line || ""),
+          target_role: String(parsed.target_role || ""),
           summary: String(parsed.summary || ""),
           skills: parsed.skills.map(String),
-          experience: Array.isArray(parsed.experience) ? parsed.experience.map(String) : [],
+          experience: Array.isArray(parsed.experience) ? parsed.experience : [],
           education: Array.isArray(parsed.education) ? parsed.education.map(String) : [],
+          certifications: Array.isArray(parsed.certifications) ? parsed.certifications.map(String) : [],
+          projects: Array.isArray(parsed.projects) ? parsed.projects.map(String) : [],
         });
         return;
       }
@@ -84,6 +96,35 @@ export default function DocumentLibrary({ refreshToken }) {
     const next = { ...structuredResume, [field]: value };
     setStructuredResume(next);
     setEditing({ ...editing, content: JSON.stringify(next, null, 2) });
+  }
+
+  function experienceToText(experience) {
+    return experience.map((entry) => {
+      if (entry && typeof entry === "object") {
+        const heading = [entry.role, entry.company, entry.dates]
+          .filter(Boolean)
+          .join(" | ");
+        const bullets = Array.isArray(entry.bullets)
+          ? entry.bullets.map((value) => `- ${value}`).join("\n")
+          : "";
+        return [heading, bullets].filter(Boolean).join("\n");
+      }
+      return String(entry || "");
+    }).filter(Boolean).join("\n\n");
+  }
+
+  function textToExperience(value) {
+    return value.split(/\n\s*\n/).map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      const heading = lines[0] || "";
+      const parts = heading.split("|").map((part) => part.trim());
+      return {
+        role: parts[0] || "",
+        company: parts[1] || "",
+        dates: parts[2] || "",
+        bullets: lines.slice(1).map((line) => line.replace(/^-\s*/, "")),
+      };
+    }).filter((entry) => entry.role || entry.company || entry.dates || entry.bullets.length);
   }
 
   async function deleteDocument(document) {
@@ -167,10 +208,15 @@ export default function DocumentLibrary({ refreshToken }) {
             <input value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} required className="mt-5 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" />
             {structuredResume ? (
               <div className="mt-4 grid max-h-[60vh] gap-4 overflow-y-auto pr-2">
+                <label><span className="mb-1 block text-sm text-gray-300">Full name</span><input value={structuredResume.full_name} onChange={(event) => updateStructured("full_name", event.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Contact line</span><input value={structuredResume.contact_line} onChange={(event) => updateStructured("contact_line", event.target.value)} placeholder="Email | Phone | Location | LinkedIn" className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Target role</span><input value={structuredResume.target_role} onChange={(event) => updateStructured("target_role", event.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
                 <label><span className="mb-1 block text-sm text-gray-300">Professional summary</span><textarea rows={4} value={structuredResume.summary} onChange={(event) => updateStructured("summary", event.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
                 <label><span className="mb-1 block text-sm text-gray-300">Skills (comma separated)</span><input value={structuredResume.skills.join(", ")} onChange={(event) => updateStructured("skills", event.target.value.split(",").map((value) => value.trim()).filter(Boolean))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
-                <label><span className="mb-1 block text-sm text-gray-300">Experience (one entry per line)</span><textarea rows={7} value={structuredResume.experience.join("\n")} onChange={(event) => updateStructured("experience", event.target.value.split("\n"))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Experience (role | company | dates, then bullets)</span><textarea rows={9} value={experienceToText(structuredResume.experience)} onChange={(event) => updateStructured("experience", textToExperience(event.target.value))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
                 <label><span className="mb-1 block text-sm text-gray-300">Education (one entry per line)</span><textarea rows={5} value={structuredResume.education.join("\n")} onChange={(event) => updateStructured("education", event.target.value.split("\n"))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Certifications (one entry per line)</span><textarea rows={4} value={structuredResume.certifications.join("\n")} onChange={(event) => updateStructured("certifications", event.target.value.split("\n").filter(Boolean))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
+                <label><span className="mb-1 block text-sm text-gray-300">Projects (one entry per line)</span><textarea rows={4} value={structuredResume.projects.join("\n")} onChange={(event) => updateStructured("projects", event.target.value.split("\n").filter(Boolean))} className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" /></label>
               </div>
             ) : (
               <textarea rows={18} value={editing.content} onChange={(event) => setEditing({ ...editing, content: event.target.value })} required className="mt-4 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 font-mono text-sm text-white" />

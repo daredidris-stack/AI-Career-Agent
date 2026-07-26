@@ -9,6 +9,7 @@ from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
 from backend.models.ai_usage_event import AIUsageEvent
+from backend.models.job_listing import JobListing, JobSyncState
 
 
 print("Creating database...")
@@ -41,6 +42,7 @@ user_migrations = {
     "failed_login_attempts": "INTEGER NOT NULL DEFAULT 0",
     "locked_until": "DATETIME",
     "is_email_verified": "BOOLEAN NOT NULL DEFAULT 0",
+    "google_subject": "VARCHAR",
 }
 for name, definition in user_migrations.items():
     if name not in user_columns:
@@ -48,6 +50,12 @@ for name, definition in user_migrations.items():
             connection.execute(text(
                 f"ALTER TABLE users ADD COLUMN {name} {definition}"
             ))
+
+with engine.begin() as connection:
+    connection.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS "
+        "ix_users_google_subject ON users (google_subject)"
+    ))
 
 
 print("Database created successfully")

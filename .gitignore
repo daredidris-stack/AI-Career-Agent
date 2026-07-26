@@ -21,6 +21,9 @@ env/
 uploads/
 *.docx
 *.pdf
+!backend/templates/ats_tailored_resume_template.docx
+!backend/templates/ats_modern_resume_template.docx
+!backend/templates/ats_classic_resume_template.docx
 
 # Frontend dependencies and builds
 node_modules/

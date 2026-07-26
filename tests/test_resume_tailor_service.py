@@ -32,9 +32,21 @@ class ResumeTailorServiceTests(unittest.IsolatedAsyncioTestCase):
     ):
         mock_chat.return_value.message.content = """
         {
+            "template_id": "ats-modern",
+            "full_name": "Dare Daniel Idris",
+            "contact_line": "dare@example.com | +1 (555) 123-4567",
+            "target_role": "Cloud Engineer",
             "summary": "Cloud professional",
             "skills": ["AWS"],
-            "experience": ["Supported infrastructure"]
+            "experience": [{
+                "role": "Technician",
+                "company": "Example Co",
+                "dates": "2022 - Present",
+                "bullets": ["Supported infrastructure"]
+            }],
+            "education": ["Information Technology"],
+            "certifications": [],
+            "projects": []
         }
         """
         service = ResumeTailorService(
@@ -50,9 +62,17 @@ class ResumeTailorServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.repository.get_by_user_id.assert_called_once_with(8)
         self.assertEqual(result["skills"], ["AWS"])
+        self.assertEqual(result["template_id"], "ats-modern")
+        self.assertEqual(result["full_name"], "Dare Daniel Idris")
+        self.assertEqual(result["contact_line"], "")
+        self.assertEqual(
+            result["experience"][0]["role"],
+            "Technician",
+        )
         prompt = mock_chat.call_args.kwargs["messages"][0]["content"]
         self.assertIn("Target role: Cloud Engineer", prompt)
         self.assertIn("Resume text", prompt)
+        self.assertIn("ats-modern", prompt)
 
     async def test_missing_profile_stops_processing(self):
         self.repository.get_by_user_id.return_value = None

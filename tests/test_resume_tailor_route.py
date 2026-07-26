@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from fastapi import HTTPException
 
-from backend.routes.resume_tailor import tailor_resume_upload
+from backend.routes.resume_tailor import get_resume_templates, tailor_resume_upload
 from backend.services.resume_tailor_service import (
     ProfileRequiredError,
     ResumeTailorError,
@@ -27,6 +27,7 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
         result = await tailor_resume_upload(
             file=file,
             job_description="Cloud role",
+            template_id="ats-modern",
             current_user=SimpleNamespace(id=12),
             service=service,
         )
@@ -36,7 +37,17 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
             user_id=12,
             file=file,
             job_description="Cloud role",
+            template_id="ats-modern",
         )
+
+    async def test_lists_available_resume_templates(self):
+        templates = get_resume_templates(
+            _current_user=SimpleNamespace(id=12),
+        )
+
+        self.assertEqual(len(templates), 3)
+        self.assertEqual(templates[0]["id"], "ats-professional")
+        self.assertNotIn("filename", templates[0])
 
     async def test_missing_profile_returns_404(self):
         service = SimpleNamespace(
@@ -51,6 +62,7 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
             await tailor_resume_upload(
                 file=object(),
                 job_description="Cloud role",
+                template_id="auto",
                 current_user=SimpleNamespace(id=12),
                 service=service,
             )
@@ -68,6 +80,7 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
             await tailor_resume_upload(
                 file=object(),
                 job_description="Cloud role",
+                template_id="auto",
                 current_user=SimpleNamespace(id=12),
                 service=service,
             )
@@ -87,6 +100,7 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
             await tailor_resume_upload(
                 file=object(),
                 job_description="Cloud role",
+                template_id="auto",
                 current_user=SimpleNamespace(id=12),
                 service=service,
             )

@@ -17,6 +17,12 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    turnstile_token: str | None = Field(default=None, max_length=2048)
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str = Field(min_length=100, max_length=8192)
+    accept_terms: Literal[True]
 
 
 class DeleteAccountRequest(BaseModel):
@@ -37,6 +43,18 @@ class PasswordResetRequest(TokenConfirmationRequest):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class JobDescriptionRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    company: str = Field(default="", max_length=300)
+    location: str = Field(default="", max_length=500)
+    listing_url: str | None = Field(default=None, max_length=2048)
+
+
+class JobDescriptionResponse(BaseModel):
+    description: str | None = None
+    enriched: bool = False
 
 
 class CareerDocumentCreate(BaseModel):
@@ -173,3 +191,9 @@ class ProfileResponse(ProfileCreate):
     model_config = {
         "from_attributes": True
     }
+
+
+class ProfileAutofillResponse(ProfileCreate):
+    extracted_fields: list[str] = Field(default_factory=list)
+    target_role_options: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)

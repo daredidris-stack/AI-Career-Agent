@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  BriefcaseBusiness,
   Building2,
   ExternalLink,
   MapPin,
@@ -16,7 +15,7 @@ import { countries } from "../data/countries";
 
 function Jobs() {
   const [targetRole, setTargetRole] = useState("");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState("Worldwide");
   const [city, setCity] = useState("");
   const [industry, setIndustry] = useState("");
   const [workMode, setWorkMode] = useState("");
@@ -34,8 +33,6 @@ function Jobs() {
       try {
         const response = await getProfile();
         setTargetRole(response.data.target_role || "");
-        setCountry(response.data.country || "");
-        setCity(response.data.city || "");
         setWorkMode(response.data.preferred_work_mode || "");
       } catch {
         // A profile is optional; the user can enter search filters directly.
@@ -67,7 +64,7 @@ function Jobs() {
           ...(minimumSalary > 0 && { min_salary: minimumSalary }),
           ...(minimumScore > 0 && { min_score: minimumScore }),
           page: pageNumber,
-          per_page: 20,
+          per_page: 50,
         },
       });
 
@@ -91,7 +88,7 @@ function Jobs() {
           <h1 className="text-4xl font-bold">Matched Jobs</h1>
         </div>
         <p className="mt-3 max-w-3xl text-lg text-blue-100">
-          Search opportunities directly. Your profile and latest resume skills improve ranking when available.
+          Search opportunities worldwide. Your profile and latest resume skills improve ranking when available.
         </p>
       </section>
 
@@ -119,10 +116,13 @@ function Jobs() {
             </span>
             <select
               value={country}
-              onChange={(event) => setCountry(event.target.value)}
+              onChange={(event) => {
+                const nextCountry = event.target.value;
+                setCountry(nextCountry);
+                if (nextCountry === "Worldwide") setCity("");
+              }}
               className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
             >
-              <option value="">Any country</option>
               <option value="Worldwide">Worldwide</option>
               {countries.map((countryName) => (
                 <option key={countryName} value={countryName}>
@@ -139,8 +139,9 @@ function Jobs() {
             <input
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              placeholder="Queretaro"
-              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+              placeholder={country === "Worldwide" ? "All cities" : "Queretaro"}
+              disabled={country === "Worldwide"}
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </label>
 
@@ -218,7 +219,7 @@ function Jobs() {
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            Profile values are prefilled and can be adjusted for this search.
+            Searches cover worldwide opportunities by default. Choose a country and optional city to narrow the results.
           </p>
           <button
             type="submit"
@@ -242,7 +243,7 @@ function Jobs() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-bold text-white">
-                {result.count} matched {result.count === 1 ? "job" : "jobs"}
+                {result.count} {result.count === 1 ? "job" : "jobs"} shown
               </h2>
               <p className="mt-1 text-gray-400">
                 {result.filters.keyword} - {result.filters.location}
@@ -341,11 +342,7 @@ function JobCard({ job, onViewDetails }) {
     <article className="rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-lg">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-blue-400">
-            <BriefcaseBusiness size={20} />
-            <span className="text-sm font-semibold">{job.source || "Job listing"}</span>
-          </div>
-          <h3 className="mt-3 text-xl font-bold text-white">{job.title || "Untitled role"}</h3>
+          <h3 className="text-xl font-bold text-white">{job.title || "Untitled role"}</h3>
         </div>
 
         {Number.isFinite(Number(score)) && (
@@ -389,11 +386,9 @@ function JobCard({ job, onViewDetails }) {
       >
         View details
       </button>
-      {job.source_homepage && (
-        <p className="mt-4 text-xs text-gray-500">
-          Listing supplied by <a href={job.source_homepage} target="_blank" rel="noreferrer" className="underline hover:text-gray-300">{job.source}</a>. Verify details on the provider site before applying.
-        </p>
-      )}
+      <div className="mt-4">
+        <ProviderAttribution job={job} />
+      </div>
     </article>
   );
 }
@@ -401,8 +396,47 @@ function JobCard({ job, onViewDetails }) {
 
 function JobDetailsDialog({ job, onClose }) {
   const score = job.analysis?.match_score;
-  const description = job.description?.trim()
+  const fallbackDescription = job.description?.trim()
     || "This provider did not include a full description. Review the original listing before applying.";
+  const [description, setDescription] = useState(fallbackDescription);
+  const [descriptionLoading, setDescriptionLoading] = useState(false);
+  const [descriptionEnriched, setDescriptionEnriched] = useState(false);
+  const descriptionLooksPartial = (
+    !job.description?.trim()
+    || /(?:\.\.\.|…)$/.test(job.description.trim())
+    || ["Jooble", "Adzuna"].includes(job.source)
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setDescription(fallbackDescription);
+    setDescriptionEnriched(false);
+
+    if (!job.title || !descriptionLooksPartial) {
+      setDescriptionLoading(false);
+      return undefined;
+    }
+
+    setDescriptionLoading(true);
+    api.post("/jobs/description", {
+      title: job.title,
+      company: job.company || "",
+      location: job.location || "",
+      listing_url: job.listing_url || null,
+    }).then((response) => {
+      if (cancelled || !response.data.enriched || !response.data.description) return;
+      setDescription(response.data.description);
+      setDescriptionEnriched(true);
+    }).catch(() => {
+      // Keep the provider excerpt when no trusted enrichment source is available.
+    }).finally(() => {
+      if (!cancelled) setDescriptionLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [descriptionLooksPartial, fallbackDescription, job]);
 
   useEffect(() => {
     function closeOnEscape(event) {
@@ -431,8 +465,7 @@ function JobDetailsDialog({ job, onClose }) {
       >
         <div className="sticky top-0 flex items-start justify-between gap-4 border-b border-slate-200 bg-white p-6">
           <div>
-            <p className="text-sm font-semibold text-blue-700">{job.source || "Job listing"}</p>
-            <h2 id="job-details-title" className="mt-1 text-2xl font-bold text-slate-950">
+            <h2 id="job-details-title" className="text-2xl font-bold text-slate-950">
               {job.title || "Untitled role"}
             </h2>
             <p className="mt-2 text-slate-600">
@@ -468,8 +501,24 @@ function JobDetailsDialog({ job, onClose }) {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-950">Job description</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-lg font-bold text-slate-950">
+                {descriptionLooksPartial && !descriptionEnriched
+                  ? "Job description preview"
+                  : "Job description"}
+              </h3>
+              {descriptionLoading && (
+                <span className="text-xs font-medium text-blue-700" aria-live="polite">
+                  Loading complete description...
+                </span>
+              )}
+            </div>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{description}</p>
+            {!descriptionLoading && descriptionLooksPartial && !descriptionEnriched && (
+              <p className="mt-3 text-xs text-amber-700">
+                A complete description is not available from a supported employer source.
+              </p>
+            )}
           </div>
 
           {job.analysis?.recommendation && (
@@ -480,9 +529,7 @@ function JobDetailsDialog({ job, onClose }) {
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
-            <p className="text-xs text-slate-500">
-              Supplied by {job.source || "the job provider"}. The provider may manage the application or redirect you to the employer.
-            </p>
+            <ProviderAttribution job={job} />
             {job.listing_url ? (
               <a
                 href={job.listing_url}
@@ -500,6 +547,46 @@ function JobDetailsDialog({ job, onClose }) {
         </div>
       </section>
     </div>
+  );
+}
+
+function ProviderAttribution({ job }) {
+  if (job.source === "Adzuna") {
+    return (
+      <a
+        href={job.source_homepage || "https://www.adzuna.com/"}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex min-h-[23px] min-w-[116px] items-center gap-1 text-xs text-slate-500"
+        aria-label="Jobs by Adzuna"
+      >
+        <span>Jobs by</span>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/5/51/Adzuna_Logo.png"
+          alt="Adzuna"
+          className="h-[23px] w-auto"
+        />
+      </a>
+    );
+  }
+
+  return (
+    <p className="text-xs text-slate-500">
+      Supplied by{" "}
+      {job.source_homepage ? (
+        <a
+          href={job.source_homepage}
+          target="_blank"
+          rel="noreferrer"
+          className="underline hover:text-slate-700"
+        >
+          {job.source || "the job provider"}
+        </a>
+      ) : (
+        job.source || "the job provider"
+      )}
+      . Verify details with the provider before applying.
+    </p>
   );
 }
 

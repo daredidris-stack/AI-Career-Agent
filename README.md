@@ -14,6 +14,7 @@ The project is evolving toward a production SaaS architecture. The current imple
 - Skill-gap analysis
 - Job aggregation and profile-based ranking
 - Resume tailoring, job matching, and cover-letter prototypes
+- AI-assisted resume template selection with three ATS-safe Word exports
 
 ## Architecture
 
@@ -127,6 +128,23 @@ ollama serve
 
 Features that call Ollama require the local model service to be running.
 
+### Resume template agent
+
+The Resume Tailor page loads its template catalog from the authenticated
+`GET /resume/templates` endpoint. Users can select **ATS Professional**,
+**ATS Modern**, or **ATS Classic**, or leave the choice on **AI recommended**.
+The tailoring agent returns structured, factual resume content and recommends
+a template when automatic selection is enabled. The deterministic Word
+renderer applies the selected design and keeps layout generation separate from
+AI-written content.
+
+No third-party template API key is required. Template source files live in
+`backend/templates/`, and the catalog can be regenerated with:
+
+```bash
+python scripts/build_resume_template_catalog.py --directory backend/templates
+```
+
 ## Verification
 
 Run backend tests from the repository root:
@@ -150,9 +168,33 @@ npm --prefix frontend run build
 | `JWT_ALGORITHM` | No | JWT algorithm; defaults to `HS256` |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | No | Token lifetime; defaults to 24 hours |
 | `DATABASE_URL` | No | SQLAlchemy database URL; defaults to local SQLite |
+| `GOOGLE_CLIENT_ID` | No | Verifies Google Identity Services ID tokens on the backend |
+| `TURNSTILE_SECRET_KEY` | Production | Enables server-side Cloudflare Turnstile validation for login |
+| `TURNSTILE_ALLOWED_HOSTNAMES` | Production | Comma-separated hostnames accepted from Turnstile validation |
+| `VITE_TURNSTILE_SITE_KEY` | Production | Public Turnstile site key embedded in the login page at frontend build time |
+| `VITE_GOOGLE_CLIENT_ID` | No | Public Google OAuth web client ID used to render Sign in with Google |
 | `ADZUNA_APP_ID` | No | Enables Adzuna job search |
 | `ADZUNA_APP_KEY` | No | Enables Adzuna job search |
+| `ADZUNA_WORLDWIDE_MARKETS` | No | Comma-separated Adzuna country markets searched for Worldwide queries; defaults to `us,gb,ca,au,de,fr,in,mx` |
 | `JOOBLE_API_KEY` | No | Enables paginated global Jooble job search |
+| `THEIRSTACK_API_KEY` | No | Enables worldwide search across Indeed, Glassdoor, employer sites, and other indexed sources |
+| `SERPAPI_API_KEY` | No | Enables Google Jobs results through SerpApi; each uncached result page consumes a SerpApi search credit |
+| `FANTASTIC_JOBS_API_KEY` | No | Enables the Fantastic.jobs direct-employer ATS index |
+| `FANTASTIC_JOBS_MAX_RESULTS` | No | Caps paid Fantastic.jobs results per search page; defaults to 20 |
+| `FANTASTIC_JOBS_CACHE_SECONDS` | No | Reuses identical Fantastic.jobs searches to protect credits; defaults to 900 seconds |
+| `FANTASTIC_JOBS_TIME_FRAME` | No | Fantastic.jobs active-job window: `1h`, `24h`, `7d`, or `6m`; defaults to `6m` for broad role coverage |
+| `JOB_INGESTION_QUERIES` | No | Extra comma-separated `Role|Location` targets for background synchronization |
+| `JOB_INGESTION_RESULTS_PER_TARGET` | No | Maximum jobs saved per target and sync; defaults to 20 |
+| `JOB_INGESTION_INTERVAL_SECONDS` | No | Successful target-sync interval; defaults to 24 hours |
+| `JOB_INGESTION_RETRY_SECONDS` | No | Retry delay after provider failure; defaults to one hour |
+| `JOB_INGESTION_POLL_SECONDS` | No | Worker polling interval; defaults to 15 minutes |
+| `JOB_LISTING_STALE_DAYS` | No | Deactivates unseen stored jobs after this many days; defaults to 45 |
+| `USAJOBS_API_KEY` | No | Enables U.S. federal job search through the official USAJOBS API |
+| `USAJOBS_USER_AGENT` | With USAJOBS | Email address registered with the USAJOBS API key |
+| `GREENHOUSE_JOB_BOARDS` | No | Comma-separated `Company|board-token` entries for direct Greenhouse employer feeds |
+| `LEVER_JOB_SITES` | No | Comma-separated `Company|site-name` entries for direct Lever employer feeds |
+| `ASHBY_JOB_BOARDS` | No | Comma-separated `Company|board-name` entries for direct Ashby employer feeds |
+| `DIRECT_EMPLOYER_JOB_SOURCES` | No | Opt-in comma-separated direct employer sources: `microsoft`, `apple`, and/or `crossover`; confirm production use with each employer first |
 | `AI_MODEL` | No | Local Ollama model; defaults to `qwen3:8b` |
 | `AI_REQUEST_TIMEOUT_SECONDS` | No | Maximum time for one model attempt; defaults to 45 seconds |
 | `AI_MAX_RETRIES` | No | Retry count for transient model failures; defaults to 1 |
@@ -168,6 +210,101 @@ npm --prefix frontend run build
 | `SMTP_FROM_EMAIL` | Production | Sender address for account emails |
 | `SMTP_USE_TLS` | No | Enables SMTP STARTTLS; defaults to `true` |
 
+### Direct job feeds and Google Jobs
+
+SerpApi uses its Google Jobs engine and requires only `SERPAPI_API_KEY`. Google
+Jobs currently returns up to ten results per page. The app reuses SerpApi's
+next-page token when the user loads another page and does not make a page
+request when no token is available.
+
+Fantastic.jobs uses its current `/v1/active-ats` endpoint to search direct
+employer career systems, including Workday, SmartRecruiters, iCIMS,
+Greenhouse, Lever, Ashby, and many others. Configure the private server-side
+key with:
+
+```env
+FANTASTIC_JOBS_API_KEY=your-key
+```
+
+Fantastic.jobs charges for each returned job. The adapter therefore defaults
+to at most 20 results per page, searches active jobs from the last six months,
+and caches identical searches for 15 minutes.
+Its separate LinkedIn/Wellfound/Y Combinator endpoint is intentionally not
+queried, avoiding an extra paid request and duplicates of direct employer
+listings. The key must never be placed in a frontend environment file.
+
+USAJOBS requires both the API key and the email address used when requesting
+that key:
+
+```env
+USAJOBS_API_KEY=your-key
+USAJOBS_USER_AGENT=you@example.com
+```
+
+Greenhouse, Lever, and Ashby publish jobs per employer rather than through one
+global search endpoint. Configure the employer display name and public board
+identifier using `Company|identifier` entries:
+
+```env
+GREENHOUSE_JOB_BOARDS=Example Corp|example,Another Corp|another
+LEVER_JOB_SITES=Example Labs|examplelabs
+ASHBY_JOB_BOARDS=Example AI|example-ai
+```
+
+These direct employer feeds provide canonical listing or application URLs and
+full descriptions when present. A failing or stale employer identifier is
+isolated so it cannot break the other job sources.
+
+Microsoft, Apple, and Crossover career-site interfaces are available only as
+explicit opt-ins because they are not documented as general public job APIs.
+After confirming the intended production use with each employer, enable only
+the approved sources:
+
+```env
+DIRECT_EMPLOYER_JOB_SOURCES=microsoft,apple,crossover
+```
+
+### Persistent job ingestion
+
+Job searches now check the SQL-backed `job_listings` catalog first. When no
+stored match exists, the existing live providers are queried and their results
+are saved for later searches. Records are deduplicated by normalized company,
+title, and location; richer descriptions and direct application links update
+the existing record instead of creating another card.
+
+Run a one-time profile-targeted Fantastic.jobs synchronization after applying
+database migrations:
+
+```bash
+.venv/bin/alembic upgrade head
+.venv/bin/python -m backend.jobs.sync_job_catalog
+```
+
+The first successful target sync backfills up to six months. Later syncs pull
+the latest 24 hours and are skipped until the configured interval is due. To
+run the scheduler continuously in a separate terminal:
+
+```bash
+.venv/bin/python -m backend.jobs.sync_job_catalog --watch
+```
+
+The worker derives targets from user profiles. Extra all-industry targets can
+be supplied without changing code:
+
+```env
+JOB_INGESTION_QUERIES=Registered Nurse|Worldwide,Accountant|Mexico,Warehouse Manager|Canada
+```
+
+Docker users can enable the separate worker service explicitly:
+
+```bash
+docker compose --profile ingestion up --build
+```
+
+Expired listings are deactivated using provider expiry dates, with a stale-job
+fallback for records that have not been seen within the configured retention
+window. Provider failures do not delete cached jobs or prevent local search.
+
 ## Development principles
 
 - Work on one verified milestone at a time.
@@ -175,6 +312,46 @@ npm --prefix frontend run build
 - Maintain one active implementation of each feature.
 - Preserve responsive behavior across desktop, tablet, and mobile.
 - Keep generated documents, databases, secrets, build output, and virtual environments out of Git.
+
+## Authentication setup
+
+### Cloudflare Turnstile login protection
+
+Create a Turnstile widget in Cloudflare and configure its allowed hostnames. Then set:
+
+- `TURNSTILE_SECRET_KEY` and `TURNSTILE_ALLOWED_HOSTNAMES` in the backend environment.
+- `VITE_TURNSTILE_SITE_KEY` in `frontend/.env.local`, or in the root `.env` when building with Docker Compose.
+
+Turnstile enforcement is disabled when `TURNSTILE_SECRET_KEY` is empty, which keeps local development available without Cloudflare credentials. In production, configure both keys together; the secret key must never be exposed to the frontend.
+
+When Turnstile is enabled, server-side validation requires the expected
+`login` action and a hostname in `TURNSTILE_ALLOWED_HOSTNAMES`; an empty
+hostname allowlist fails closed. For local end-to-end testing, Cloudflare's
+public dummy keys are supported when `APP_ENV` is not `production`. The
+published dummy secret keys are deliberately rejected in production.
+
+### Google sign-in
+
+Create an OAuth 2.0 client in Google Cloud Console with application type
+**Web application**. Add the frontend origin, such as
+`http://localhost:5173`, under **Authorized JavaScript origins**. The popup
+credential flow used by this app does not require a redirect URI or client
+secret.
+
+Set the same client ID in both places:
+
+```env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
+
+Run `python -m backend.database.init_db` for local SQLite or
+`alembic upgrade head` for a migrated database, then restart both the API and
+frontend. Google-created accounts use Google's verified email and stable
+account identifier; an existing account with the same verified email is linked
+instead of duplicated only when Google is authoritative for that address
+(Gmail or Google Workspace). A Google Account using a third-party email must
+use the password flow until an explicit account-linking challenge is added.
 
 ## Current roadmap
 

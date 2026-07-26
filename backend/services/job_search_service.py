@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -13,6 +14,10 @@ from backend.services.candidate_skills import (
 from backend.services.job_aggregator import aggregate_jobs
 from backend.services.job_ranking import rank_jobs
 from backend.core.settings import AI_JOB_RANKING_ENABLED
+from backend.repositories.job_listing_repository import JobListingRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 class JobSearchInputError(Exception):
@@ -31,11 +36,13 @@ class JobSearchService:
         job_aggregator: Callable[..., list[dict]] = aggregate_jobs,
         job_ranker: Callable[..., list[dict]] = rank_jobs,
         enable_ai_ranking: bool | None = None,
+        job_listing_repository: JobListingRepository | None = None,
     ):
         self.profile_repository = profile_repository
         self.resume_analysis_repository = resume_analysis_repository
         self.job_aggregator = job_aggregator
         self.job_ranker = job_ranker
+        self.job_listing_repository = job_listing_repository
         self.enable_ai_ranking = (
             AI_JOB_RANKING_ENABLED
             if enable_ai_ranking is None and job_ranker is rank_jobs
@@ -55,7 +62,7 @@ class JobSearchService:
         min_salary: int = 0,
         min_score: int = 0,
         page: int = 1,
-        per_page: int = 20,
+        per_page: int = 50,
     ) -> dict[str, Any]:
         profile = self.profile_repository.get_by_user_id(
             user_id
@@ -66,14 +73,8 @@ class JobSearchService:
             or (getattr(profile, "target_role", "") or "").strip()
             or (getattr(profile, "current_role", "") or "").strip()
         )
-        effective_country = (
-            (country or "").strip()
-            or (getattr(profile, "country", "") or "").strip()
-        )
-        effective_city = (
-            (city or "").strip()
-            or (getattr(profile, "city", "") or "").strip()
-        )
+        effective_country = (country or "").strip() or "Worldwide"
+        effective_city = (city or "").strip()
         effective_work_mode = (
             (work_mode or "").strip()
             or (
@@ -96,14 +97,24 @@ class JobSearchService:
         per_page = max(5, min(50, per_page))
 
         try:
-            jobs = self.job_aggregator(
+            jobs = self._stored_jobs(
                 effective_keyword,
                 effective_location,
-                effective_industry,
                 page,
                 per_page,
             )
-            provider_status = getattr(jobs, "provider_status", [])
+            if jobs:
+                provider_status = self._stored_provider_status(jobs)
+            else:
+                jobs = self.job_aggregator(
+                    effective_keyword,
+                    effective_location,
+                    effective_industry,
+                    page,
+                    per_page,
+                )
+                provider_status = getattr(jobs, "provider_status", [])
+                self._store_live_jobs(jobs)
             jobs = self._apply_listing_filters(
                 jobs,
                 employment_type,
@@ -178,6 +189,54 @@ class JobSearchService:
             },
             "jobs": jobs,
         }
+
+    def _stored_jobs(
+        self,
+        keyword: str,
+        location: str,
+        page: int,
+        per_page: int,
+    ) -> list[dict[str, Any]]:
+        if self.job_listing_repository is None:
+            return []
+        try:
+            return self.job_listing_repository.search(
+                keyword,
+                location,
+                page,
+                per_page,
+            )
+        except Exception:
+            logger.warning("Stored job search failed; using live providers")
+            self.job_listing_repository.rollback()
+            return []
+
+    def _store_live_jobs(self, jobs: list[dict[str, Any]]) -> None:
+        if self.job_listing_repository is None or not jobs:
+            return
+        try:
+            self.job_listing_repository.upsert_many(list(jobs))
+        except Exception:
+            logger.warning("Could not persist live job results")
+            self.job_listing_repository.rollback()
+
+    @staticmethod
+    def _stored_provider_status(
+        jobs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        providers: dict[str, dict[str, Any]] = {}
+        for job in jobs:
+            name = str(job.get("source") or "Stored catalog")
+            status = providers.setdefault(name, {
+                "name": name,
+                "status": "active",
+                "count": 0,
+                "homepage": str(job.get("source_homepage") or ""),
+                "api_page": str(job.get("source_api_page") or ""),
+                "cached": True,
+            })
+            status["count"] += 1
+        return list(providers.values())
 
     @staticmethod
     def _pre_rank(
@@ -293,4 +352,4 @@ class JobSearchService:
             return "Remote"
 
         return ", ".join(value for value in (city, country) if value) \
-            or "Remote"
+            or "Worldwide"

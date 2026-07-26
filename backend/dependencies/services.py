@@ -4,6 +4,7 @@ from backend.dependencies.repositories import (
     get_user_repository,
     get_profile_repository,
     get_job_catalog_repository,
+    get_job_listing_repository,
     get_resume_analysis_repository,
     get_career_document_repository,
     get_job_application_repository,
@@ -32,12 +33,16 @@ from backend.repositories.career_document_repository import (
 from backend.repositories.job_application_repository import JobApplicationRepository
 from backend.repositories.ai_usage_repository import AIUsageRepository
 from backend.repositories.user_data_repository import UserDataRepository
+from backend.repositories.job_listing_repository import JobListingRepository
 
 from backend.services.auth_service import (
     AuthService,
 )
 from backend.services.email_service import EmailService
+from backend.services.turnstile_service import TurnstileService
+from backend.services.google_identity_service import GoogleIdentityService
 from backend.services.career_document_service import CareerDocumentService
+from backend.services.job_description_service import JobDescriptionService
 from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
 from backend.services.user_data_service import UserDataService
@@ -46,6 +51,7 @@ from backend.services.billing_service import BillingService
 from backend.services.profile_service import (
     ProfileService,
 )
+from backend.services.profile_autofill_service import ProfileAutofillService
 
 from backend.services.resume_service import (
     ResumeService,
@@ -88,6 +94,14 @@ def get_auth_service(
     return AuthService(repo, EmailService())
 
 
+def get_turnstile_service():
+    return TurnstileService()
+
+
+def get_google_identity_service():
+    return GoogleIdentityService()
+
+
 
 def get_profile_service(
     repo: ProfileRepository = Depends(
@@ -96,6 +110,10 @@ def get_profile_service(
 ):
 
     return ProfileService(repo)
+
+
+def get_job_description_service():
+    return JobDescriptionService()
 
 
 def get_career_document_service(
@@ -146,6 +164,12 @@ def get_resume_service(
     return ResumeService(profile_repo, analysis_repo, document_service)
 
 
+def get_profile_autofill_service(
+    resume_service: ResumeService = Depends(get_resume_service),
+):
+    return ProfileAutofillService(resume_service)
+
+
 def get_job_search_service(
     repo: ProfileRepository = Depends(
         get_profile_repository
@@ -153,8 +177,15 @@ def get_job_search_service(
     analysis_repo: ResumeAnalysisRepository = Depends(
         get_resume_analysis_repository
     ),
+    listing_repo: JobListingRepository = Depends(
+        get_job_listing_repository
+    ),
 ):
-    return JobSearchService(repo, analysis_repo)
+    return JobSearchService(
+        repo,
+        analysis_repo,
+        job_listing_repository=listing_repo,
+    )
 
 
 def get_resume_tailor_service(
