@@ -6,7 +6,7 @@ This continuation began from `main` at `0418879` with an intentionally
 uncommitted feature batch. The combined worktree passes the complete automated
 release gate:
 
-- 267 backend tests pass with `ResourceWarning` treated as an error.
+- 268 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260721_0006`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -32,7 +32,7 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
    - 36 focused auth tests pass. An independently reconstructed staged
      snapshot passes 203 backend tests, its complete Alembic cycle with no
      drift, and frontend lint/build. The combined worktree passes the full
-     267-test release gate.
+     268-test release gate.
    - Google client IDs are configured on both sides and match. A local browser
      smoke test rendered Google sign-in, exercised the password-login error
      path against the API, and found no browser console errors.
@@ -41,11 +41,18 @@ files such as `.env.example`, `README.md`, `backend/core/settings.py`,
      fails closed without an allowed hostname.
    - Live Turnstile remains a deployment check because no local site key,
      secret, or hostname allowlist is currently configured.
-2. **Profile intake and resume cleanup**
+2. **Profile intake and resume cleanup — code and browser verified**
    - Resume-driven profile autofill, normalized target-role suggestions, and
      removal of markdown/template artifacts from uploaded resume text.
-   - Automated service and route coverage passes.
-   - Still requires browser testing with representative PDF and DOCX resumes.
+   - 27 focused route, service, resume-reader, and cleanup tests pass. An
+     independently reconstructed staged snapshot passes 219 backend tests, its
+     complete Alembic cycle with no drift, frontend lint/build, and the staged
+     diff whitespace check.
+   - An authenticated local browser smoke test completed real PDF and DOCX
+     uploads against `qwen3:8b`. Both requests returned 200, empty profile
+     fields were populated, a manually entered current role was preserved,
+     target-role choices updated the form, and reloading confirmed that autofill
+     does not save before the user presses the profile save button.
 3. **ATS resume templates and deterministic Word export**
    - Three bundled templates, catalog/selection service, structured tailoring,
      export rendering, and the Resume Tailor/Document Library UI changes.
@@ -74,8 +81,8 @@ tests. Keep it out of feature commits unless its purpose is clarified.
 
 ### Recommended continuation order
 
-Group 1 is complete in code; retain its live Turnstile check as a deployment
-gate. Continue with group 2, then review and commit one group at a time in the
+Groups 1 and 2 are complete; retain the live Turnstile check as a deployment
+gate. Continue with group 3, then review and commit one group at a time in the
 order above, running its targeted tests before `./scripts/verify_release.sh`.
 After the five code groups are separately auditable, perform the remaining
 credentialed, browser, document-render, provider, and staging-worker checks and

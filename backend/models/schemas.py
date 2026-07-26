@@ -179,3 +179,9 @@ class ProfileResponse(ProfileCreate):
     model_config = {
         "from_attributes": True
     }
+
+
+class ProfileAutofillResponse(ProfileCreate):
+    extracted_fields: list[str] = Field(default_factory=list)
+    target_role_options: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)

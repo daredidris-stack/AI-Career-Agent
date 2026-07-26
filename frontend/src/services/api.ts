@@ -42,6 +42,13 @@ export const updateProfile = (profileData: unknown) => {
   return api.put("/profile", profileData);
 };
 
+export const autofillProfile = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return api.post("/profile/autofill", formData);
+};
+
 export const deleteProfile = () => {
   return api.delete("/profile");
 };

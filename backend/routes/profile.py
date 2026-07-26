@@ -1,12 +1,15 @@
 from fastapi import (
     APIRouter,
     Depends,
+    File,
     HTTPException,
+    UploadFile,
 )
 
 from backend.models.user import User
 
 from backend.models.schemas import (
+    ProfileAutofillResponse,
     ProfileCreate,
     ProfileResponse,
 )
@@ -16,11 +19,18 @@ from backend.services.profile_service import (
 )
 
 from backend.dependencies.services import (
+    get_ai_usage_service,
+    get_profile_autofill_service,
     get_profile_service,
 )
 
 from backend.dependencies.auth import (
     get_current_user,
+)
+from backend.services.ai_usage_service import AIUsageService, reserve_ai_usage
+from backend.services.profile_autofill_service import (
+    ProfileAutofillError,
+    ProfileAutofillService,
 )
 
 
@@ -28,6 +38,25 @@ router = APIRouter(
     prefix="/profile",
     tags=["Profile"],
 )
+
+
+@router.post(
+    "/autofill",
+    response_model=ProfileAutofillResponse,
+)
+async def autofill_profile(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    service: ProfileAutofillService = Depends(get_profile_autofill_service),
+    usage: AIUsageService = Depends(get_ai_usage_service),
+):
+    reserve_ai_usage(usage, current_user.id, "profile_autofill")
+    try:
+        return await service.autofill_upload(file)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except ProfileAutofillError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
 
 
 

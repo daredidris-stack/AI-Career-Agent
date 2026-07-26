@@ -9,10 +9,12 @@ import {
   Phone,
   Save,
   Sparkles,
+  Upload,
   UserRound,
 } from "lucide-react";
 
 import {
+  autofillProfile,
   createProfile,
   getProfile,
   updateProfile,
@@ -36,11 +38,32 @@ const initialProfile = {
   preferred_work_mode: "",
 };
 
+const profileFieldLabels = {
+  phone: "Phone",
+  country: "Country",
+  state: "State",
+  city: "City",
+  current_role: "Current role",
+  target_role: "Target role",
+  years_experience: "Years of experience",
+  professional_summary: "Professional summary",
+  technical_skills: "Technical skills",
+  soft_skills: "Soft skills",
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  portfolio: "Portfolio",
+  preferred_job_type: "Preferred job type",
+  preferred_work_mode: "Preferred work mode",
+};
+
 function Profile() {
   const [formData, setFormData] = useState(initialProfile);
   const [profileExists, setProfileExists] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [autofillFile, setAutofillFile] = useState(null);
+  const [autofilling, setAutofilling] = useState(false);
+  const [autofillReview, setAutofillReview] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -118,6 +141,65 @@ function Profile() {
     }
   }
 
+  async function handleAutofill() {
+    if (!autofillFile) {
+      setError("Choose a PDF or DOCX résumé first.");
+      return;
+    }
+
+    setAutofilling(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await autofillProfile(autofillFile);
+      const {
+        extracted_fields: extractedFields = [],
+        target_role_options: targetRoleOptions = [],
+        warnings = [],
+        ...profileData
+      } = response.data;
+
+      setFormData((currentData) => {
+        const proposedData = Object.fromEntries(
+          Object.entries(profileData).filter(
+            ([field, value]) =>
+              Object.hasOwn(initialProfile, field)
+              && value !== null
+              && value !== ""
+              && (
+                currentData[field] === ""
+                || currentData[field] === null
+                || (field === "years_experience" && currentData[field] === 0)
+              )
+          )
+        );
+
+        return {
+          ...currentData,
+          ...proposedData,
+        };
+      });
+
+      setAutofillReview({
+        extractedFields,
+        targetRoleOptions,
+        warnings,
+      });
+
+      setMessage("Résumé details added to empty fields. Review them, choose your target role, then save your profile.");
+    } catch (requestError) {
+      const detail = requestError.response?.data?.detail;
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "We could not autofill your profile from that résumé."
+      );
+    } finally {
+      setAutofilling(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -154,6 +236,127 @@ function Profile() {
             <UserRound size={28} />
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-5 sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-400">
+              <Sparkles size={16} />
+              AI profile autofill
+            </div>
+
+            <h2 className="text-xl font-semibold text-white">
+              Build your profile from your résumé
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-gray-400">
+              Upload a PDF or DOCX. NextHire AI will fill supported fields for
+              you; nothing is saved until you review the form and press save.
+            </p>
+          </div>
+
+          <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+            <input
+              id="profile-autofill-upload"
+              type="file"
+              accept=".pdf,.docx"
+              onChange={(event) => {
+                setAutofillFile(event.target.files?.[0] || null);
+                setAutofillReview(null);
+                setMessage("");
+                setError("");
+              }}
+              className="sr-only"
+            />
+
+            <label
+              htmlFor="profile-autofill-upload"
+              className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-gray-700 bg-gray-950 px-4 text-sm transition hover:border-blue-500"
+            >
+              <Upload className="shrink-0 text-blue-400" size={19} />
+              <span className={`truncate ${autofillFile ? "text-green-400" : "text-gray-400"}`}>
+                {autofillFile ? autofillFile.name : "Choose résumé"}
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={handleAutofill}
+              disabled={autofilling || !autofillFile}
+              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {autofilling ? (
+                <LoaderCircle className="animate-spin" size={19} />
+              ) : (
+                <Sparkles size={19} />
+              )}
+              {autofilling ? "Reading résumé..." : "Autofill profile"}
+            </button>
+          </div>
+        </div>
+
+        {autofillReview && (
+          <div className="mt-6 space-y-4 rounded-xl border border-gray-700 bg-gray-950/70 p-4">
+            <div>
+              <h3 className="text-sm font-semibold text-white">
+                Extraction review
+              </h3>
+              <p className="mt-1 text-sm text-gray-400">
+                Existing profile values were preserved. The following empty
+                fields were found in your résumé.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {autofillReview.extractedFields.map((field) => (
+                  <span
+                    key={field}
+                    className="rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-300"
+                  >
+                    {profileFieldLabels[field] || field}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {autofillReview.targetRoleOptions.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-200">
+                  Target roles found — choose one
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {autofillReview.targetRoleOptions.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => {
+                        setFormData((currentData) => ({
+                          ...currentData,
+                          target_role: role,
+                        }));
+                        setMessage("");
+                      }}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        formData.target_role === role
+                          ? "border-blue-400 bg-blue-500/20 text-blue-200"
+                          : "border-gray-700 bg-gray-900 text-gray-300 hover:border-blue-500"
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {autofillReview.warnings.length > 0 && (
+              <div className="space-y-1 text-sm text-amber-300">
+                {autofillReview.warnings.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <form onSubmit={handleSubmit} className="space-y-6">

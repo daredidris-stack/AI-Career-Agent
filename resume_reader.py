@@ -1,5 +1,7 @@
 import pdfplumber
 
+from resume_text_cleaner import clean_resume_text
+
 
 def read_pdf_resume(filename):
 
@@ -13,4 +15,4 @@ def read_pdf_resume(filename):
             if page_text:
                 text += page_text + "\n"
 
-    return text
+    return clean_resume_text(text)

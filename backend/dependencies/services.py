@@ -48,6 +48,7 @@ from backend.services.billing_service import BillingService
 from backend.services.profile_service import (
     ProfileService,
 )
+from backend.services.profile_autofill_service import ProfileAutofillService
 
 from backend.services.resume_service import (
     ResumeService,
@@ -154,6 +155,12 @@ def get_resume_service(
     ),
 ):
     return ResumeService(profile_repo, analysis_repo, document_service)
+
+
+def get_profile_autofill_service(
+    resume_service: ResumeService = Depends(get_resume_service),
+):
+    return ProfileAutofillService(resume_service)
 
 
 def get_job_search_service(
