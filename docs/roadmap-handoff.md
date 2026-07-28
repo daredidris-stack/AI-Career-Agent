@@ -108,9 +108,9 @@ groups:
      exclusion, retention deactivation, safe listing URLs, normalized UTC
      timestamps, duplicate-target suppression, cached provider status, and
      live-search fallback when the cache is unavailable.
-   - The Compose definition parses successfully and gates the worker on API and
-     database health. Docker is not available in this workspace, so deployed
-     Compose observation remains an external release check.
+   - The Compose definition gates the worker on API and database health. A
+     complete isolated local Compose verification now passes as recorded below;
+     deployed staging observation remains a separate release check.
 
 ### Post-merge PostgreSQL verification — July 27, 2026
 
@@ -133,16 +133,53 @@ groups:
   migration, backup, health, and long-running worker observation in the actual
   deployed staging environment.
 
+### Local Docker Compose verification — July 28, 2026
+
+- Docker Desktop 29.6.2 and Docker Compose 5.3.1 built and started the isolated
+  `nexthireverify` project without changing the already-running IncidentPilot
+  services. A temporary override exposed the API on loopback port 18080 and the
+  frontend on loopback port 15173.
+- The PostgreSQL 17, API, frontend, and optional ingestion-worker containers all
+  started. PostgreSQL and API health checks passed before the worker started.
+  The frontend build context was reduced to 320.48 kB by adding
+  `frontend/.dockerignore`; the backend context was 2.42 MB.
+- Inside the API container, `alembic current` reported
+  `20260721_0006 (head)` and `alembic check` reported no new upgrade operations.
+  `/health/live` and `/health/ready` returned HTTP 200 with `ok` and `ready`,
+  and the frontend returned HTTP 200.
+- A browser smoke test followed the protected-route redirect to `/login`,
+  rendered the complete email/password sign-in form, and found no browser
+  console errors.
+- The worker ran with one bounded Fantastic.jobs target and a one-result cap.
+  The provider returned HTTP 403 because the account's Jobs meter had exceeded
+  its allowed limit. The worker isolated the failure, stored only the generic
+  `Job ingestion failed.` message, scheduled a retry, skipped the not-yet-due
+  target on a later poll, and did not expose the configured credential in its
+  logs. Successful Compose ingestion remains blocked on renewed provider quota;
+  the earlier isolated PostgreSQL verification proves the successful
+  persistence path.
+- `npm audit --omit=dev` reports two high-severity entries for the same
+  React Router advisory in 7.18.1. The reviewed advisory states that it only
+  affects unstable React Server Components APIs; this client-rendered
+  `BrowserRouter` application imports none of those APIs. The registry's current
+  `react-router-dom` release remains 7.18.1, while the advisory names 8.3.0 as
+  patched. Monitor the package for a compatible patched release rather than
+  downgrading to older versions with broader known advisories.
+- After these Compose and build-context changes, `./scripts/verify_release.sh`
+  passed all 282 backend tests, the complete Alembic upgrade/check/downgrade/
+  re-upgrade cycle, frontend lint, the production frontend build, and the diff
+  whitespace check.
+
 ### Recommended continuation order
 
 Groups 1 through 5 are complete and separately auditable. Retain live Turnstile,
-provider commercial approval, and deployed staging/Compose checks as deployment
-gates. Turnstile cannot be tested live in this workspace because its backend
-secret, hostname allowlist, and frontend site key are not configured. Next,
-perform the remaining production credential, deployment, and launch-readiness
-checks. Do not replace the July 17 beta assessment with this engineering
-snapshot; its manual smoke-test evidence and external launch blockers remain
-separate.
+provider commercial approval and quota, and deployed staging checks as
+deployment gates. Turnstile cannot be tested live in this workspace because its
+backend secret, hostname allowlist, and frontend site key are not configured.
+Next, perform the remaining production credential, deployment, and
+launch-readiness checks. Do not replace the July 17 beta assessment with this
+engineering snapshot; its manual smoke-test evidence and external launch
+blockers remain separate.
 
 ### Provider release review — July 26, 2026
 
@@ -171,8 +208,10 @@ separate.
   [current pricing](https://serpapi.com/pricing).
 - **Fantastic.jobs:** Active ATS responses consume one Jobs credit per returned
   record. The adapter caps responses at 20 and caches identical searches for 15
-  minutes. Production requires an account plan and licence matching expected
-  display, retention, and request volume. See the
+  minutes. The configured account returned `Jobs` meter quota exhaustion during
+  the July 28 Compose verification. Production requires renewed quota plus an
+  account plan and licence matching expected display, retention, and request
+  volume. See the
   [endpoint documentation](https://developer.fantastic.jobs/documentation/endpoints/new-jobs).
 - **USAJOBS:** API data is restricted to the requesting company and purpose on
   the registration form; other use requires prior written approval. Keep it
@@ -203,8 +242,9 @@ These cannot be completed honestly through repository code alone:
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
 - Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
-- Deployed staging PostgreSQL backup and migration plus long-running
-  ingestion-worker observation under the actual Compose/runtime configuration.
+- Deployed staging PostgreSQL backup and migration plus extended
+  ingestion-worker observation. The isolated local Compose path is verified,
+  but it does not replace deployment-specific evidence.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
 - Malware scanning service for production resume uploads.
