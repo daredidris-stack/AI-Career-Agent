@@ -3,6 +3,7 @@ import {
   BriefcaseBusiness,
   CalendarClock,
   ExternalLink,
+  FileCheck2,
   Mail,
   MapPin,
   Pencil,
@@ -56,6 +57,7 @@ function dateLabel(value) {
 
 function Applications() {
   const [applications, setApplications] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [filter, setFilter] = useState("active");
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -68,8 +70,12 @@ function Applications() {
     setLoading(true);
     setError("");
     try {
-      const response = await api.get("/applications");
-      setApplications(response.data);
+      const [applicationResponse, documentResponse] = await Promise.all([
+        api.get("/applications"),
+        api.get("/documents").catch(() => ({ data: [] })),
+      ]);
+      setApplications(applicationResponse.data);
+      setDocuments(documentResponse.data);
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "Applications could not be loaded.");
     } finally {
@@ -87,6 +93,10 @@ function Applications() {
       applications.filter((application) => application.status === value).length,
     ]),
   ), [applications]);
+  const documentsById = useMemo(
+    () => new Map(documents.map((document) => [document.id, document])),
+    [documents],
+  );
 
   const visibleApplications = applications.filter((application) => {
     if (filter === "all") return true;
@@ -207,6 +217,19 @@ function Applications() {
                 {application.location && <p className="mt-4 flex items-center gap-2 text-sm text-gray-400"><MapPin size={16} />{application.location}</p>}
                 {application.contact_email && <p className="mt-2 flex items-center gap-2 text-sm text-gray-400"><Mail size={16} />{application.contact_email}</p>}
                 {application.follow_up_at && <p className={`mt-2 flex items-center gap-2 text-sm ${followUpDue ? "text-amber-300" : "text-gray-400"}`}><CalendarClock size={16} />Follow up {dateLabel(application.follow_up_at)}</p>}
+                {application.package_reviewed_at && (
+                  <div className="mt-4 rounded-xl border border-emerald-900/70 bg-emerald-950/30 p-3 text-sm text-emerald-200">
+                    <p className="flex items-center gap-2 font-semibold">
+                      <FileCheck2 size={16} /> Reviewed application package
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-emerald-300">
+                      Resume: {documentsById.get(application.resume_document_id)?.title || "Selected resume"}
+                      {application.cover_letter_document_id && (
+                        <> · Cover letter: {documentsById.get(application.cover_letter_document_id)?.title || "Selected cover letter"}</>
+                      )}
+                    </p>
+                  </div>
+                )}
                 {application.notes && <p className="mt-4 line-clamp-3 border-t border-gray-800 pt-4 text-sm leading-6 text-gray-400">{application.notes}</p>}
                 {application.job_url && <a href={application.job_url} target="_blank" rel="noreferrer" className="mt-5 flex items-center gap-2 text-sm font-medium text-blue-400 hover:text-blue-300">View job posting <ExternalLink size={15} /></a>}
               </article>

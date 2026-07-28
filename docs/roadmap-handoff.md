@@ -7,8 +7,8 @@ uncommitted feature batch. The five feature groups are now separated into
 auditable commits, and the complete implementation passes the automated
 release gate:
 
-- 282 backend tests pass with `ResourceWarning` treated as an error.
-- Alembic upgrades an empty database through `20260721_0006`, reports no
+- 290 backend tests pass with `ResourceWarning` treated as an error.
+- Alembic upgrades an empty database through `20260728_0007`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
 - `git diff --check` passes.
@@ -170,6 +170,38 @@ groups:
   re-upgrade cycle, frontend lint, the production frontend build, and the diff
   whitespace check.
 
+### Apply Assistant foundation — July 28, 2026
+
+- Migration `20260728_0007` adds owner-scoped resume and cover-letter
+  references, provider metadata, and a reviewed-package timestamp to tracked
+  applications.
+- `POST /applications/prepare` requires two explicit confirmations, validates
+  that the selected documents belong to the authenticated user and have the
+  expected kinds, accepts only credential-free HTTPS application links, and
+  records the package as `preparing`.
+- Repeated preparation for the same job URL updates the existing application
+  rather than creating duplicates. Already-applied, interview, offer, rejected,
+  or archived statuses are never downgraded to `preparing`.
+- The Jobs dialog now lets users select and download a saved resume and optional
+  cover letter. The provider link appears only after the reviewed package is
+  stored. The Application Tracker shows the selected document names and makes
+  clear that NextHire has not submitted the employer form.
+- An isolated authenticated browser test searched a seeded SQL-backed job,
+  verified the action remained disabled until both confirmations were checked,
+  saved the tailored resume and cover letter, exposed the correctly labeled
+  provider link, and found one reviewed `preparing` application in the tracker.
+  No browser console errors were recorded.
+- The full release gate passes 290 backend tests, migration upgrade through
+  `20260728_0007`, no schema drift, downgrade and re-upgrade, frontend lint,
+  the production build, and the diff whitespace check.
+- An empty ephemeral PostgreSQL 17 database also upgraded through
+  `20260728_0007`, reported no schema drift, downgraded to base, and re-upgraded
+  to head. Its temporary container and data were removed after verification.
+- This is intentionally assisted apply, not a browser bot. It does not answer
+  sensitive employer questions, bypass CAPTCHA or account security, or submit
+  to external platforms. Direct ATS submission remains future work only where
+  the employer provides credentials and written authorization.
+
 ### Recommended continuation order
 
 Groups 1 through 5 are complete and separately auditable. Retain live Turnstile,
@@ -226,7 +258,9 @@ blockers remain separate.
 
 ## Completed engineering foundation
 
-- Authenticated profile, dashboard, career analytics, Resume Studio, document history/export, job search/matching, skill gap, tailoring, cover letters, and application tracking.
+- Authenticated profile, dashboard, career analytics, Resume Studio, document
+  history/export, job search/matching, skill gap, tailoring, cover letters,
+  reviewed application packages, and application tracking.
 - Multi-provider job aggregation with filtering, pagination, deduplication, graceful provider failures, source attribution, and profile/resume-aware ranking.
 - Registration, login protection, email verification, password recovery, token revocation, account deletion, versioned legal consent, and protected routes.
 - PostgreSQL support, Alembic migrations, backup/restore guidance, tested schema upgrade/downgrade, deployment containers, health endpoints, request IDs, structured logs, and CI.
@@ -256,6 +290,9 @@ Until those items are resolved, run a controlled non-commercial beta, keep billi
 1. Fix issues discovered in the controlled beta before expanding scope.
 2. Add administrator authorization and audited aggregate operations reporting.
 3. Add malware scanning and isolated asynchronous document processing.
-4. Add saved job alerts and application follow-up notifications after email deliverability is proven.
-5. Validate mobile navigation with beta users and address evidence-backed usability issues. Route-level code splitting is implemented and the production build has no large-bundle advisory.
-6. Select further Resume Studio, interview, or learning features based on measured activation and retention rather than assumptions.
+4. Evaluate direct ATS application submission only through employer-authorized
+   APIs with per-application consent, submission receipts, idempotency, and
+   audit logs; do not automate restricted job platforms.
+5. Add saved job alerts and application follow-up notifications after email deliverability is proven.
+6. Validate mobile navigation with beta users and address evidence-backed usability issues. Route-level code splitting is implemented and the production build has no large-bundle advisory.
+7. Select further Resume Studio, interview, or learning features based on measured activation and retention rather than assumptions.

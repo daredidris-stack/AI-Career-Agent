@@ -18,6 +18,21 @@ class JobApplication(Base):
     role = Column(String, nullable=False)
     job_url = Column(String, nullable=True)
     location = Column(String, nullable=True)
+    source = Column(String, nullable=True)
+    source_job_id = Column(String, nullable=True)
+    resume_document_id = Column(
+        Integer,
+        ForeignKey("career_documents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    cover_letter_document_id = Column(
+        Integer,
+        ForeignKey("career_documents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    package_reviewed_at = Column(DateTime, nullable=True)
     status = Column(String, nullable=False, default="saved", index=True)
     notes = Column(Text, nullable=True)
     contact_name = Column(String, nullable=True)

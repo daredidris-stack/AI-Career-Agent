@@ -21,6 +21,12 @@ class JobApplicationRepository:
             JobApplication.user_id == user_id,
         ).first()
 
+    def get_by_job_url(self, user_id: int, job_url: str):
+        return self.db.query(JobApplication).filter(
+            JobApplication.user_id == user_id,
+            JobApplication.job_url == job_url,
+        ).order_by(JobApplication.updated_at.desc()).first()
+
     def create(self, **values):
         application = JobApplication(**values)
         self.db.add(application)

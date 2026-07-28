@@ -75,6 +75,29 @@ class JobApplicationRepositoryTests(unittest.TestCase):
         self.assertEqual(len(applications), 1)
         self.assertEqual(applications[0].company, "One")
 
+    def test_job_url_lookup_is_scoped_to_owner(self):
+        application = self.repository.create(
+            user_id=self.first_id,
+            company="Example",
+            role="Engineer",
+            job_url="https://jobs.example.com/roles/123",
+            status="preparing",
+        )
+
+        self.assertIsNone(
+            self.repository.get_by_job_url(
+                self.second_id,
+                application.job_url,
+            )
+        )
+        self.assertEqual(
+            self.repository.get_by_job_url(
+                self.first_id,
+                application.job_url,
+            ).id,
+            application.id,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

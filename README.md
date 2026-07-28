@@ -15,6 +15,7 @@ The project is evolving toward a production SaaS architecture. The current imple
 - Job aggregation and profile-based ranking
 - Resume tailoring, job matching, and cover-letter prototypes
 - AI-assisted resume template selection with three ATS-safe Word exports
+- Reviewed application packages with explicit user-controlled submission
 
 ## Architecture
 
@@ -304,6 +305,20 @@ docker compose --profile ingestion up --build
 Expired listings are deactivated using provider expiry dates, with a stale-job
 fallback for records that have not been seen within the configured retention
 window. Provider failures do not delete cached jobs or prevent local search.
+
+### Apply Assistant
+
+Open a job’s details and choose **Prepare application** to build a reviewed
+application package from documents already saved in NextHire. A resume is
+required and a cover letter is optional. The package is stored in the
+Application Tracker with status `preparing`.
+
+The official provider link appears only after the user confirms that the job
+and selected documents were reviewed and that the employer form will be
+completed manually. NextHire does not answer work-authorization, sponsorship,
+salary, or voluntary demographic questions, bypass account security or
+CAPTCHA, or submit the external form. After submitting on the employer site,
+the user records the final status in the Application Tracker.
 
 ## Development principles
 

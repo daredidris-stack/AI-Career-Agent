@@ -99,8 +99,12 @@ class CareerDocumentRevisionResponse(BaseModel):
 class JobApplicationData(BaseModel):
     company: str = Field(min_length=1, max_length=200)
     role: str = Field(min_length=1, max_length=200)
-    job_url: str | None = None
-    location: str | None = None
+    job_url: str | None = Field(default=None, max_length=2048)
+    location: str | None = Field(default=None, max_length=500)
+    source: str | None = Field(default=None, max_length=100)
+    source_job_id: str | None = Field(default=None, max_length=300)
+    resume_document_id: int | None = None
+    cover_letter_document_id: int | None = None
     status: str = "saved"
     notes: str | None = None
     contact_name: str | None = None
@@ -118,9 +122,23 @@ class JobApplicationUpdate(JobApplicationData):
     pass
 
 
+class JobApplicationPrepare(BaseModel):
+    company: str = Field(min_length=1, max_length=200)
+    role: str = Field(min_length=1, max_length=200)
+    job_url: str = Field(min_length=1, max_length=2048)
+    location: str | None = Field(default=None, max_length=500)
+    source: str | None = Field(default=None, max_length=100)
+    source_job_id: str | None = Field(default=None, max_length=300)
+    resume_document_id: int
+    cover_letter_document_id: int | None = None
+    review_confirmed: Literal[True]
+    manual_submission_confirmed: Literal[True]
+
+
 class JobApplicationResponse(JobApplicationData):
     id: int
     user_id: int
+    package_reviewed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
