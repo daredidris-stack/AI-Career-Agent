@@ -109,22 +109,40 @@ groups:
      timestamps, duplicate-target suppression, cached provider status, and
      live-search fallback when the cache is unavailable.
    - The Compose definition parses successfully and gates the worker on API and
-     database health. Docker and PostgreSQL tooling are not available in this
-     workspace, so the staging PostgreSQL migration and deployed worker
-     observation remain external release checks.
+     database health. Docker is not available in this workspace, so deployed
+     Compose observation remains an external release check.
 
-The untracked zero-byte file `env` is not referenced by the application or
-tests. Keep it out of feature commits unless its purpose is clarified.
+### Post-merge PostgreSQL verification — July 27, 2026
+
+- PostgreSQL 16.14 was installed and an isolated, empty, loopback-only cluster
+  was created for engine-specific release verification. Because the cluster
+  contained no prior data, no backup was required; the temporary runtime and
+  data directory were removed after the checks.
+- The complete Alembic chain upgraded successfully through `20260721_0006`
+  using PostgreSQL transactional DDL. `alembic check` reported no schema drift,
+  and `alembic current` reported `20260721_0006 (head)`.
+- The API started against PostgreSQL, and both `/health/live` and
+  `/health/ready` returned HTTP 200 with `ok` and `ready` status payloads.
+- A bounded Fantastic.jobs synchronization fetched one result, created one
+  active `job_listings` row, and recorded one successful `job_sync_states` row
+  with a future next-sync time and no error. Repository search returned the
+  stored listing with its cached marker and listing URL.
+- A second one-shot cycle and the watch worker both skipped the target according
+  to its persisted schedule, with no additional provider result fetched.
+- This closes the local PostgreSQL engine-validation gap. It does not replace a
+  migration, backup, health, and long-running worker observation in the actual
+  deployed staging environment.
 
 ### Recommended continuation order
 
 Groups 1 through 5 are complete and separately auditable. Retain live Turnstile,
-provider commercial approval, and staging PostgreSQL/worker checks as
-deployment gates. Next, either organize the unrelated residual worktree files
-into a separately scoped change or leave them untouched, then perform the
-remaining production credential, deployment, and launch-readiness checks.
-Do not replace the July 17 beta assessment with this engineering snapshot; its
-manual smoke-test evidence and external launch blockers remain separate.
+provider commercial approval, and deployed staging/Compose checks as deployment
+gates. Turnstile cannot be tested live in this workspace because its backend
+secret, hostname allowlist, and frontend site key are not configured. Next,
+perform the remaining production credential, deployment, and launch-readiness
+checks. Do not replace the July 17 beta assessment with this engineering
+snapshot; its manual smoke-test evidence and external launch blockers remain
+separate.
 
 ### Provider release review — July 26, 2026
 
@@ -185,8 +203,8 @@ These cannot be completed honestly through repository code alone:
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
 - Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
-- Staging PostgreSQL migration plus one-shot and scheduled ingestion-worker
-  observation under the deployed Compose/runtime configuration.
+- Deployed staging PostgreSQL backup and migration plus long-running
+  ingestion-worker observation under the actual Compose/runtime configuration.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
 - Malware scanning service for production resume uploads.
