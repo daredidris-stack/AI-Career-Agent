@@ -9,7 +9,8 @@
       "Python",
       "Terraform",
       "Kubernetes"
-    ]
+    ],
+    "description": "Design and maintain AWS cloud infrastructure. Build Infrastructure as Code using Terraform. Deploy Kubernetes workloads. Troubleshoot Linux servers. Collaborate with DevOps teams. AWS Solutions Architect certification is preferred."
   },
   {
     "title": "AI Infrastructure Engineer",
@@ -21,7 +22,8 @@
       "Docker",
       "Kubernetes",
       "Machine Learning"
-    ]
+    ],
+    "description": "Support AI training infrastructure using Docker and Kubernetes. Deploy machine learning workloads on AWS. Experience with GPU environments, Python, MLOps, and TensorFlow is highly desirable."
   },
   {
     "title": "DevOps Engineer",
@@ -33,6 +35,7 @@
       "CI/CD",
       "Docker",
       "Terraform"
-    ]
+    ],
+    "description": "Build CI/CD pipelines using GitHub Actions and Jenkins. Automate cloud deployments with Terraform. Manage Docker containers on AWS. Monitor Linux systems and improve deployment reliability."
   }
 ]
