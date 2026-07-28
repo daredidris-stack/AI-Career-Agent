@@ -4,6 +4,7 @@ from backend.dependencies.auth import get_current_user
 from backend.dependencies.services import get_job_application_service
 from backend.models.schemas import (
     JobApplicationCreate,
+    JobApplicationPrepare,
     JobApplicationResponse,
     JobApplicationUpdate,
 )
@@ -38,6 +39,25 @@ def create_application(
     try:
         return service.create_for_user(
             current_user.id, request.model_dump()
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.post(
+    "/prepare",
+    response_model=JobApplicationResponse,
+    status_code=201,
+)
+def prepare_application(
+    request: JobApplicationPrepare,
+    current_user: User = Depends(get_current_user),
+    service: JobApplicationService = Depends(get_job_application_service),
+):
+    try:
+        return service.prepare_for_user(
+            current_user.id,
+            request.model_dump(),
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error

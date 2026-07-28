@@ -128,8 +128,11 @@ def get_job_application_service(
     repo: JobApplicationRepository = Depends(
         get_job_application_repository
     ),
+    document_repo: CareerDocumentRepository = Depends(
+        get_career_document_repository
+    ),
 ):
-    return JobApplicationService(repo)
+    return JobApplicationService(repo, document_repo)
 
 
 def get_ai_usage_service(

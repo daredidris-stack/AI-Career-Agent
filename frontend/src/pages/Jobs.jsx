@@ -11,6 +11,7 @@ import {
 import api from "../services/api";
 import { getProfile } from "../services/api";
 import { countries } from "../data/countries";
+import ApplyAssistant from "../components/jobs/ApplyAssistant";
 
 
 function Jobs() {
@@ -401,6 +402,7 @@ function JobDetailsDialog({ job, onClose }) {
   const [description, setDescription] = useState(fallbackDescription);
   const [descriptionLoading, setDescriptionLoading] = useState(false);
   const [descriptionEnriched, setDescriptionEnriched] = useState(false);
+  const [showApplyAssistant, setShowApplyAssistant] = useState(false);
   const descriptionLooksPartial = (
     !job.description?.trim()
     || /(?:\.\.\.|…)$/.test(job.description.trim())
@@ -437,6 +439,10 @@ function JobDetailsDialog({ job, onClose }) {
       cancelled = true;
     };
   }, [descriptionLooksPartial, fallbackDescription, job]);
+
+  useEffect(() => {
+    setShowApplyAssistant(false);
+  }, [job]);
 
   useEffect(() => {
     function closeOnEscape(event) {
@@ -528,18 +534,24 @@ function JobDetailsDialog({ job, onClose }) {
             </div>
           )}
 
+          {showApplyAssistant && (
+            <ApplyAssistant
+              job={job}
+              onCancel={() => setShowApplyAssistant(false)}
+            />
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
             <ProviderAttribution job={job} />
             {job.listing_url ? (
-              <a
-                href={job.listing_url}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => setShowApplyAssistant(true)}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
               >
-                Continue to listing on {job.source || "provider"}
+                {showApplyAssistant ? "Application package open" : "Prepare application"}
                 <ExternalLink size={17} />
-              </a>
+              </button>
             ) : (
               <span className="text-sm text-slate-500">Application link unavailable</span>
             )}
