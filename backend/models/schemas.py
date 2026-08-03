@@ -57,6 +57,77 @@ class JobDescriptionResponse(BaseModel):
     enriched: bool = False
 
 
+class SavedJobCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    company: str = Field(min_length=1, max_length=300)
+    source: str | None = Field(default=None, max_length=100)
+    source_job_id: str | None = Field(default=None, max_length=300)
+    location: str | None = Field(default=None, max_length=500)
+    listing_url: str | None = Field(default=None, max_length=2048)
+    apply_url: str | None = Field(default=None, max_length=2048)
+    description: str | None = Field(default=None, max_length=50000)
+    job_type: str | None = Field(default=None, max_length=100)
+    workplace_type: str | None = Field(default=None, max_length=100)
+    salary: str | None = Field(default=None, max_length=300)
+    visa_sponsorship: bool | None = None
+    updated: str | None = Field(default=None, max_length=100)
+    analysis: dict = Field(default_factory=dict)
+
+
+class SavedSearchFilters(BaseModel):
+    keyword: str = Field(min_length=1, max_length=300)
+    country: str = Field(default="Worldwide", max_length=200)
+    city: str = Field(default="", max_length=200)
+    industry: str = Field(default="", max_length=200)
+    work_mode: str = Field(default="", max_length=100)
+    employment_type: str = Field(default="", max_length=100)
+    posted_within_days: int = Field(default=0, ge=0, le=365)
+    min_salary: int = Field(default=0, ge=0)
+    min_score: int = Field(default=0, ge=0, le=100)
+
+
+class SavedSearchCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    filters: SavedSearchFilters
+
+
+class SavedSearchAlertUpdate(BaseModel):
+    enabled: bool
+    frequency: Literal["daily", "weekly"] = "daily"
+    timezone: str = Field(default="UTC", min_length=1, max_length=64)
+
+
+class EmailAlertUnsubscribe(BaseModel):
+    token: str = Field(min_length=20, max_length=500)
+
+
+class SupportTicketCreate(BaseModel):
+    category: Literal[
+        "account",
+        "jobs",
+        "documents",
+        "applications",
+        "billing",
+        "bug",
+        "feedback",
+        "other",
+    ]
+    subject: str = Field(min_length=3, max_length=200)
+    message: str = Field(min_length=10, max_length=10000)
+
+
+class SupportTicketUpdate(BaseModel):
+    status: Literal["new", "in_progress", "resolved", "closed"]
+    admin_note: str | None = Field(default=None, max_length=10000)
+
+
+class InterviewPracticeCreate(BaseModel):
+    role: str = Field(min_length=1, max_length=200)
+    interview_type: str = Field(min_length=1, max_length=100)
+    question: str = Field(min_length=5, max_length=2000)
+    answer: str = Field(min_length=20, max_length=10000)
+
+
 class CareerDocumentCreate(BaseModel):
     kind: str
     title: str = Field(min_length=1, max_length=200)

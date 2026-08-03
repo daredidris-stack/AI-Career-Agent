@@ -5,9 +5,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
-from docx_reader import read_docx_resume
 from resume_analyzer import analyze_resume
-from resume_reader import read_pdf_resume
 from backend.repositories.profile_repository import ProfileRepository
 from backend.repositories.resume_analysis_repository import (
     ResumeAnalysisRepository,
@@ -15,12 +13,11 @@ from backend.repositories.resume_analysis_repository import (
 from backend.services.candidate_skills import normalize_explicit_skills
 from backend.services.career_document_service import CareerDocumentService
 from backend.core.settings import MAX_RESUME_UPLOAD_BYTES
+from backend.services.malware_scan_service import MalwareScanService
+from backend.services.resume_parser_service import ResumeParserService
 
 
-SUPPORTED_RESUME_TYPES = {
-    ".docx": read_docx_resume,
-    ".pdf": read_pdf_resume,
-}
+SUPPORTED_RESUME_TYPES = {".docx", ".pdf"}
 FILE_SIGNATURES = {
     ".pdf": (b"%PDF",),
     ".docx": (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"),
@@ -33,19 +30,22 @@ class ResumeService:
         profile_repository: ProfileRepository,
         analysis_repository: ResumeAnalysisRepository,
         document_service: CareerDocumentService | None = None,
+        malware_scanner: MalwareScanService | None = None,
+        resume_parser: ResumeParserService | None = None,
     ):
         self.profile_repository = profile_repository
         self.analysis_repository = analysis_repository
         self.document_service = document_service
+        self.malware_scanner = malware_scanner or MalwareScanService()
+        self.resume_parser = resume_parser or ResumeParserService()
 
     async def extract_text(
         self,
         file: UploadFile,
     ) -> str:
         suffix = Path(file.filename or "").suffix.lower()
-        resume_reader = SUPPORTED_RESUME_TYPES.get(suffix)
 
-        if not resume_reader:
+        if suffix not in SUPPORTED_RESUME_TYPES:
             await file.close()
             raise ValueError(
                 "Only PDF and DOCX files are supported."
@@ -79,8 +79,13 @@ class ResumeService:
             if total_bytes == 0:
                 raise ValueError("The uploaded resume is empty.")
 
-            return resume_reader(
-                str(temporary_path)
+            await asyncio.to_thread(
+                self.malware_scanner.scan_file,
+                temporary_path,
+            )
+            return await self.resume_parser.parse_file(
+                temporary_path,
+                suffix,
             )
         finally:
             await file.close()

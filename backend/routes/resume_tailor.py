@@ -10,6 +10,12 @@ from backend.services.resume_tailor_service import (
     ResumeTailorService,
 )
 from backend.services.resume_template_service import list_resume_templates
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 
 
 router = APIRouter(
@@ -52,6 +58,16 @@ async def tailor_resume_upload(
     except ValueError as error:
         raise HTTPException(
             status_code=400,
+            detail=str(error),
+        ) from error
+    except MalwareScannerUnavailableError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+    except ResumeParserUnavailableError as error:
+        raise HTTPException(
+            status_code=503,
             detail=str(error),
         ) from error
     except ResumeTailorError as error:

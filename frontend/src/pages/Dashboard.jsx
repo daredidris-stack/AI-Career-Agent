@@ -8,6 +8,8 @@ import {
   TrendingUp,
   Award,
   CheckCircle,
+  ArrowRight,
+  ListChecks,
 } from "lucide-react";
 
 import DashboardCard from "../components/cards/DashboardCard";
@@ -139,6 +141,8 @@ function Dashboard() {
   }
 
 
+  const onboarding = data.onboarding;
+
 
   return (
 
@@ -164,6 +168,34 @@ function Dashboard() {
 
 
       </div>
+
+      {onboarding && !onboarding.complete && (
+        <section className="flex flex-col gap-5 rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <span className="rounded-xl bg-blue-100 p-3 text-blue-700">
+              <ListChecks size={24} />
+            </span>
+            <div>
+              <h2 className="text-xl font-bold text-blue-950">
+                Finish getting started
+              </h2>
+              <p className="mt-1 text-blue-800">
+                {onboarding.completed_steps} of {onboarding.total_steps} steps complete.
+                Build your profile, add a resume, set preferences, and track
+                your first opportunity.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/onboarding")}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800"
+          >
+            Continue setup
+            <ArrowRight size={18} />
+          </button>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">

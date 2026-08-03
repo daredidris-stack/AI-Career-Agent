@@ -16,6 +16,11 @@ class UserDataServiceTests(unittest.TestCase):
             "career_documents": [],
             "document_revisions": [],
             "job_applications": [],
+            "saved_jobs": [],
+            "saved_searches": [],
+            "job_alert_deliveries": [],
+            "support_tickets": [],
+            "interview_practice_attempts": [],
             "ai_usage_events": [],
         }
         user = SimpleNamespace(

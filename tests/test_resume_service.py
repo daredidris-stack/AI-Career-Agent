@@ -8,7 +8,6 @@ from backend.services.resume_service import ResumeService
 from backend.services.resume_service import (
     ProfileRequiredError,
     ResumeAnalysisError,
-    SUPPORTED_RESUME_TYPES,
 )
 
 
@@ -21,9 +20,14 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         self.profile_repository = Mock()
         self.profile_repository.get_by_user_id.return_value = self.profile
         self.analysis_repository = Mock()
+        self.resume_parser = Mock()
+        self.resume_parser.parse_file = AsyncMock(
+            return_value="Resume text"
+        )
         self.service = ResumeService(
             self.profile_repository,
             self.analysis_repository,
+            resume_parser=self.resume_parser,
         )
 
     async def test_rejects_unsupported_file_types(self):
@@ -48,9 +52,6 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         self,
         mock_analyze_resume,
     ):
-        mock_read_pdf = Mock(
-            return_value="Resume text"
-        )
         mock_analyze_resume.return_value = {
             "resume_score": 80,
             "ats_score": 75,
@@ -67,14 +68,10 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         )
         file.close = AsyncMock()
 
-        with patch.dict(
-            SUPPORTED_RESUME_TYPES,
-            {".pdf": mock_read_pdf},
-        ):
-            result = await self.service.analyze_upload(
-                file,
-                3,
-            )
+        result = await self.service.analyze_upload(
+            file,
+            3,
+        )
 
         self.assertEqual(result["resume_score"], 80)
         self.assertEqual(result["skills"], ["AWS", "Linux"])
@@ -87,6 +84,7 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
             "resume.pdf",
             result,
         )
+        self.resume_parser.parse_file.assert_awaited_once()
         file.close.assert_awaited_once()
 
     @patch(
@@ -94,21 +92,21 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         new_callable=AsyncMock,
     )
     async def test_runs_ai_analysis_off_the_event_loop(self, mock_to_thread):
-        mock_to_thread.return_value = {
-            "resume_score": 80,
-            "ats_score": 75,
-        }
+        mock_to_thread.side_effect = [
+            None,
+            {
+                "resume_score": 80,
+                "ats_score": 75,
+            },
+        ]
         file = UploadFile(filename="resume.pdf", file=AsyncMock())
         file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
         file.close = AsyncMock()
 
-        with patch.dict(
-            SUPPORTED_RESUME_TYPES,
-            {".pdf": Mock(return_value="Resume text")},
-        ):
-            await self.service.analyze_upload(file, 3)
+        await self.service.analyze_upload(file, 3)
 
-        mock_to_thread.assert_awaited_once_with(
+        self.assertEqual(mock_to_thread.await_count, 2)
+        mock_to_thread.assert_any_await(
             unittest.mock.ANY,
             "Resume text",
             self.profile,
@@ -156,6 +154,31 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
 
         file.close.assert_awaited_once()
 
+    async def test_scans_temporary_file_before_parsing(self):
+        scanner = Mock()
+        parser = Mock()
+        parser.parse_file = AsyncMock(return_value="Resume text")
+        service = ResumeService(
+            self.profile_repository,
+            self.analysis_repository,
+            malware_scanner=scanner,
+            resume_parser=parser,
+        )
+        file = UploadFile(filename="resume.pdf", file=AsyncMock())
+        file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
+        file.close = AsyncMock()
+
+        result = await service.extract_text(file)
+
+        self.assertEqual(result, "Resume text")
+        scanner.scan_file.assert_called_once()
+        scanned_path = scanner.scan_file.call_args.args[0]
+        self.assertFalse(scanned_path.exists())
+        parser.parse_file.assert_awaited_once_with(
+            scanned_path,
+            ".pdf",
+        )
+
     def test_normalizes_and_clamps_scores(self):
         result = self.service._normalize_result({
             "resume_score": 120,
@@ -182,12 +205,8 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
         file.close = AsyncMock()
 
-        with patch.dict(
-            SUPPORTED_RESUME_TYPES,
-            {".pdf": Mock(return_value="Resume text")},
-        ):
-            with self.assertRaises(ResumeAnalysisError):
-                await self.service.analyze_upload(file, 3)
+        with self.assertRaises(ResumeAnalysisError):
+            await self.service.analyze_upload(file, 3)
 
         self.analysis_repository.create.assert_not_called()
 
@@ -206,12 +225,8 @@ class ResumeServiceTests(unittest.IsolatedAsyncioTestCase):
         file.read = AsyncMock(side_effect=[b"%PDF resume bytes", b""])
         file.close = AsyncMock()
 
-        with patch.dict(
-            SUPPORTED_RESUME_TYPES,
-            {".pdf": Mock(return_value="Resume text")},
-        ):
-            with self.assertRaises(ResumeAnalysisError):
-                await self.service.analyze_upload(file, 3)
+        with self.assertRaises(ResumeAnalysisError):
+            await self.service.analyze_upload(file, 3)
 
 
 if __name__ == "__main__":

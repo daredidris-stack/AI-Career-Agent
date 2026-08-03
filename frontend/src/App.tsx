@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SkillGap = lazy(() => import("./pages/SkillGap"));
 const Resume = lazy(() => import("./pages/Resume"));
 const Jobs = lazy(() => import("./pages/Jobs"));
+const JobLibrary = lazy(() => import("./pages/JobLibrary"));
 const Interview = lazy(() => import("./pages/Interview"));
 const Learning = lazy(() => import("./pages/Learning"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -22,7 +23,13 @@ const Register = lazy(() => import("./pages/auth/Register"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
+const EmailPreferences = lazy(() => import("./pages/EmailPreferences"));
 const Profile = lazy(() => import("./pages/Profile"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const AdminOperations = lazy(() => import("./pages/AdminOperations"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function RouteFallback() {
   return (
@@ -59,6 +66,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/email-preferences" element={<EmailPreferences />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<PrivacyNotice />} />
 
@@ -91,6 +99,11 @@ export default function App() {
         <Route
           path="/jobs"
           element={<Jobs />}
+        />
+
+        <Route
+          path="/job-library"
+          element={<JobLibrary />}
         />
 
         <Route
@@ -136,6 +149,31 @@ export default function App() {
         <Route
           path="/applications"
           element={<Applications />}
+        />
+
+        <Route
+          path="/notifications"
+          element={<Notifications />}
+        />
+
+        <Route
+          path="/onboarding"
+          element={<Onboarding />}
+        />
+
+        <Route
+          path="/help"
+          element={<HelpCenter />}
+        />
+
+        <Route
+          path="/admin/operations"
+          element={<AdminOperations />}
+        />
+
+        <Route
+          path="*"
+          element={<NotFound />}
         />
 
       </Route>

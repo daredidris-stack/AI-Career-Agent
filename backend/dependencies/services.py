@@ -10,6 +10,9 @@ from backend.dependencies.repositories import (
     get_job_application_repository,
     get_ai_usage_repository,
     get_user_data_repository,
+    get_job_library_repository,
+    get_support_repository,
+    get_interview_practice_repository,
 )
 
 from backend.repositories.user_repository import (
@@ -34,6 +37,11 @@ from backend.repositories.job_application_repository import JobApplicationReposi
 from backend.repositories.ai_usage_repository import AIUsageRepository
 from backend.repositories.user_data_repository import UserDataRepository
 from backend.repositories.job_listing_repository import JobListingRepository
+from backend.repositories.job_library_repository import JobLibraryRepository
+from backend.repositories.support_repository import SupportRepository
+from backend.repositories.interview_practice_repository import (
+    InterviewPracticeRepository,
+)
 
 from backend.services.auth_service import (
     AuthService,
@@ -47,6 +55,14 @@ from backend.services.job_application_service import JobApplicationService
 from backend.services.ai_usage_service import AIUsageService
 from backend.services.user_data_service import UserDataService
 from backend.services.billing_service import BillingService
+from backend.services.job_library_service import JobLibraryService
+from backend.services.job_alert_service import JobAlertService
+from backend.services.support_service import SupportService
+from backend.services.interview_practice_service import (
+    InterviewPracticeService,
+)
+from backend.services.malware_scan_service import MalwareScanService
+from backend.services.resume_parser_service import ResumeParserService
 
 from backend.services.profile_service import (
     ProfileService,
@@ -153,6 +169,32 @@ def get_billing_service(
     return BillingService(repo)
 
 
+def get_job_library_service(
+    repo: JobLibraryRepository = Depends(get_job_library_repository),
+):
+    return JobLibraryService(repo)
+
+
+def get_job_alert_service(
+    repo: JobLibraryRepository = Depends(get_job_library_repository),
+):
+    return JobAlertService(repo)
+
+
+def get_support_service(
+    repo: SupportRepository = Depends(get_support_repository),
+):
+    return SupportService(repo)
+
+
+def get_interview_practice_service(
+    repo: InterviewPracticeRepository = Depends(
+        get_interview_practice_repository
+    ),
+):
+    return InterviewPracticeService(repo)
+
+
 def get_resume_service(
     profile_repo: ProfileRepository = Depends(
         get_profile_repository
@@ -164,7 +206,13 @@ def get_resume_service(
         get_career_document_service
     ),
 ):
-    return ResumeService(profile_repo, analysis_repo, document_service)
+    return ResumeService(
+        profile_repo,
+        analysis_repo,
+        document_service,
+        MalwareScanService(),
+        ResumeParserService(),
+    )
 
 
 def get_profile_autofill_service(

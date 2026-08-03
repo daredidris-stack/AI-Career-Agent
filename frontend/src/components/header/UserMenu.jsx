@@ -9,12 +9,14 @@ import {
   CreditCard,
   CircleHelp,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu({
   firstName = "Dare",
   fullName = "User",
+  isAdmin = false,
   onLogout,
 }) {
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ export default function UserMenu({
           rounded-xl
           px-3
           py-2
-          hover:bg-gray-800
+          hover:bg-slate-100
           transition
         "
       >
@@ -52,13 +54,13 @@ export default function UserMenu({
           {firstName.charAt(0)}
         </div>
 
-        <span className="hidden text-white font-medium sm:inline">
+        <span className="hidden font-medium text-slate-700 sm:inline">
           {firstName}
         </span>
 
         <ChevronDown
           size={18}
-          className="hidden text-gray-400 sm:block"
+          className="hidden text-slate-500 sm:block"
         />
       </Menu.Button>
 
@@ -117,18 +119,28 @@ export default function UserMenu({
             <MenuItem
               icon={<Bell size={18} />}
               label="Notifications"
+              onClick={() => navigate("/notifications")}
             />
 
             <MenuItem
               icon={<CreditCard size={18} />}
-              label="Billing (Coming Soon)"
-              disabled
+              label="Billing"
+              onClick={() => navigate("/settings#billing")}
             />
 
             <MenuItem
               icon={<CircleHelp size={18} />}
               label="Help Center"
+              onClick={() => navigate("/help")}
             />
+
+            {isAdmin && (
+              <MenuItem
+                icon={<ShieldCheck size={18} />}
+                label="Operations"
+                onClick={() => navigate("/admin/operations")}
+              />
+            )}
 
           </div>
 

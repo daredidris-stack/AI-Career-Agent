@@ -12,6 +12,7 @@ import api from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import TurnstileWidget from "../../components/auth/TurnstileWidget";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
+import { consumeOnboardingAfterLogin } from "../../utils/onboarding";
 
 
 const turnstileSiteKey = (
@@ -83,7 +84,7 @@ export default function Login() {
 
 
       navigate(
-        "/dashboard",
+        consumeOnboardingAfterLogin() ? "/onboarding" : "/dashboard",
         {
           replace: true,
         },
@@ -142,7 +143,10 @@ export default function Login() {
         accept_terms: true,
       });
       login(response.data.access_token);
-      navigate("/dashboard", { replace: true });
+      navigate(
+        consumeOnboardingAfterLogin() ? "/onboarding" : "/dashboard",
+        { replace: true },
+      );
     } catch (requestError: any) {
       setError(
         requestError.response?.data?.detail

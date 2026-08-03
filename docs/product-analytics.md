@@ -16,4 +16,9 @@ Recommended beta funnel definitions:
 6. Resume tailored or cover letter generated.
 7. User returns within seven days.
 
-Aggregate business reporting should be built from privacy-reviewed, pseudonymous events with documented definitions. Admin-wide reporting is intentionally not exposed through customer API routes until an administrator authorization model and audit logging are implemented.
+Aggregate business reporting should be built from privacy-reviewed,
+pseudonymous events with documented definitions. Current admin-wide reporting
+is limited to aggregate operational counts behind a verified-email allowlist.
+Administrator support mutations create append-only audit records, but this
+does not authorize broader customer-level analytics or exposure of customer
+content.

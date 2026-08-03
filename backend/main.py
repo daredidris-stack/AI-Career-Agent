@@ -18,6 +18,9 @@ from backend.routes.documents import router as documents_router
 from backend.routes.applications import router as applications_router
 from backend.routes.health import router as health_router
 from backend.routes.billing import router as billing_router
+from backend.routes.job_library import router as job_library_router
+from backend.routes.support import router as support_router
+from backend.routes.interview_practice import router as interview_practice_router
 from backend.services.ai_usage_service import AIUsageLimitError
 from backend.core.logging import log_request
 from backend.core.settings import CORS_ALLOWED_ORIGINS
@@ -62,6 +65,9 @@ app.include_router(documents_router)
 app.include_router(applications_router)
 app.include_router(health_router)
 app.include_router(billing_router)
+app.include_router(job_library_router)
+app.include_router(support_router)
+app.include_router(interview_practice_router)
 
 
 @app.get("/")

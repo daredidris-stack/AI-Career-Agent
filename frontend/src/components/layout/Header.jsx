@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../hooks/useAuth";
 import { getCurrentUser } from "../../services/api";
 import UserMenu from "../header/UserMenu";
+import GlobalSearch from "../header/GlobalSearch";
+import NotificationButton from "../header/NotificationButton";
 
 function Header({ onMenuOpen }) {
 
@@ -41,6 +43,7 @@ function Header({ onMenuOpen }) {
     "/resume-tailor": "Resume Tailor",
     "/cover-letter": "Cover Letter",
     "/jobs": "Jobs",
+    "/job-library": "Job Library",
     "/applications": "Application Tracker",
     "/job-match": "Job Match",
     "/interview": "Interview Center",
@@ -48,6 +51,10 @@ function Header({ onMenuOpen }) {
     "/settings": "Settings",
     "/profile": "Profile",
     "/skill-gap": "Skill Gap Analysis",
+    "/notifications": "Notifications",
+    "/onboarding": "Getting Started",
+    "/help": "Help Center",
+    "/admin/operations": "Operations",
   };
 
   const pageTitle =
@@ -76,20 +83,7 @@ function Header({ onMenuOpen }) {
 
         </h2>
 
-        <div className="hidden items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
-
-          <Search
-            size={18}
-            className="text-slate-500"
-          />
-
-          <input
-            type="text"
-            placeholder="Search..."
-            className="ml-2 bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
-          />
-
-        </div>
+        <GlobalSearch />
 
       </div>
 
@@ -97,18 +91,18 @@ function Header({ onMenuOpen }) {
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-4">
 
-        <Bell
-          className="hidden cursor-pointer text-slate-500 sm:block"
-          size={20}
-        />
+        <NotificationButton userId={user?.id} />
 
         <UserMenu
           firstName={user?.first_name || "User"}
           fullName={
-              user
-            ? `${user.first_name} ${user.last_name || ""}`.trim()
-            : "User"
+            user
+              ? [user.first_name, user.last_name]
+                .filter(Boolean)
+                .join(" ") || user.email
+              : "User"
           }
+          isAdmin={Boolean(user?.is_admin)}
           onLogout={() => {
             logout();
             navigate("/login", { replace: true });

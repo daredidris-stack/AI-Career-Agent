@@ -12,6 +12,12 @@ from backend.services.resume_service import (
     ResumeAnalysisError,
     ResumeService,
 )
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 
 
 router = APIRouter(
@@ -43,6 +49,16 @@ async def analyze_resume_file(
     except ValueError as error:
         raise HTTPException(
             status_code=400,
+            detail=str(error),
+        ) from error
+    except MalwareScannerUnavailableError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
+    except ResumeParserUnavailableError as error:
+        raise HTTPException(
+            status_code=503,
             detail=str(error),
         ) from error
     except ResumeAnalysisError as error:

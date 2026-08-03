@@ -9,9 +9,16 @@ from backend.models.ai_usage_event import AIUsageEvent
 from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
+from backend.models.job_library import (
+    JobAlertDelivery,
+    SavedJob,
+    SavedSearch,
+)
 from backend.models.profile import Profile
 from backend.models.resume_analysis import ResumeAnalysis
 from backend.models.user import User
+from backend.models.support_ticket import SupportTicket
+from backend.models.interview_practice import InterviewPracticeAttempt
 from backend.repositories.user_repository import UserRepository
 
 
@@ -39,6 +46,11 @@ class UserRepositoryDeletionTests(unittest.TestCase):
             title="Resume",
             content="Content",
         )
+        saved_search = SavedSearch(
+            user_id=user.id,
+            name="Saved search",
+            filters_json='{"keyword": "Engineer"}',
+        )
         self.db.add_all([
             Profile(user_id=user.id),
             ResumeAnalysis(
@@ -56,15 +68,47 @@ class UserRepositoryDeletionTests(unittest.TestCase):
                 company="Example",
                 role="Engineer",
             ),
+            SavedJob(
+                user_id=user.id,
+                job_key="a" * 64,
+                title="Saved role",
+                company="Example",
+                job_data_json="{}",
+            ),
+            saved_search,
+            SupportTicket(
+                user_id=user.id,
+                category="feedback",
+                subject="Delete this request",
+                message="This should be deleted with the account.",
+            ),
+            InterviewPracticeAttempt(
+                user_id=user.id,
+                role="Engineer",
+                interview_type="General interview",
+                question="Tell me about yourself.",
+                answer="This is a sufficiently detailed practice answer.",
+                score=50,
+                rubric_json="{}",
+            ),
             AIUsageEvent(user_id=user.id, feature="job_match"),
         ])
         self.db.flush()
-        self.db.add(CareerDocumentRevision(
-            document_id=document.id,
-            user_id=user.id,
-            title="Old resume",
-            content="Old content",
-        ))
+        self.db.add_all([
+            CareerDocumentRevision(
+                document_id=document.id,
+                user_id=user.id,
+                title="Old resume",
+                content="Old content",
+            ),
+            JobAlertDelivery(
+                user_id=user.id,
+                saved_search_id=saved_search.id,
+                batch_key="b" * 64,
+                status="sent",
+                match_count=1,
+            ),
+        ])
         self.db.commit()
 
         UserRepository(self.db).delete_user(user)
@@ -76,6 +120,11 @@ class UserRepositoryDeletionTests(unittest.TestCase):
             CareerDocument,
             CareerDocumentRevision,
             JobApplication,
+            SavedJob,
+            SavedSearch,
+            JobAlertDelivery,
+            SupportTicket,
+            InterviewPracticeAttempt,
             AIUsageEvent,
         ):
             self.assertEqual(self.db.query(model).count(), 0)

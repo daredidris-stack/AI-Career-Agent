@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Award,
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
@@ -8,6 +9,7 @@ import {
   Target,
 } from "lucide-react";
 
+import api from "../services/api";
 import { getProfile } from "../services/api";
 
 
@@ -84,6 +86,11 @@ function Interview() {
   const [interviewType, setInterviewType] = useState(INTERVIEW_TYPES[0]);
   const [days, setDays] = useState(7);
   const [plan, setPlan] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [scores, setScores] = useState({});
+  const [scoringQuestion, setScoringQuestion] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [practiceError, setPracticeError] = useState("");
 
   useEffect(() => {
     async function loadRole() {
@@ -96,6 +103,12 @@ function Interview() {
     }
 
     loadRole();
+
+    api.get("/interview/practice")
+      .then((response) => setHistory(response.data))
+      .catch(() => {
+        // Planning remains available if practice history cannot be loaded.
+      });
   }, []);
 
   const createPlan = (event) => {
@@ -109,7 +122,50 @@ function Interview() {
       timeline: buildPlan(role, interviewType, days),
       questions: QUESTION_SETS[interviewType],
     });
+    setAnswers({});
+    setScores({});
+    setPracticeError("");
   };
+
+  async function scoreAnswer(question, index) {
+    const answer = (answers[index] || "").trim();
+    if (answer.length < 20) {
+      setPracticeError(
+        "Write at least a few complete sentences before scoring your answer.",
+      );
+      return;
+    }
+    setScoringQuestion(index);
+    setPracticeError("");
+    try {
+      const response = await api.post("/interview/practice", {
+        role: plan.role,
+        interview_type: interviewType,
+        question,
+        answer,
+      });
+      setScores((current) => ({ ...current, [index]: response.data }));
+      setHistory((current) => [
+        response.data,
+        ...current.filter((item) => item.id !== response.data.id),
+      ].slice(0, 20));
+    } catch (requestError) {
+      setPracticeError(
+        requestError.response?.data?.detail
+          || "The practice answer could not be scored.",
+      );
+    } finally {
+      setScoringQuestion(null);
+    }
+  }
+
+  const scoredAttempts = Object.values(scores);
+  const sessionAverage = scoredAttempts.length
+    ? Math.round(
+      scoredAttempts.reduce((total, attempt) => total + attempt.score, 0)
+      / scoredAttempts.length,
+    )
+    : null;
 
   return (
     <div className="space-y-8">
@@ -197,17 +253,79 @@ function Interview() {
             </div>
           </section>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
             <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
               <div className="flex items-center gap-3">
                 <MessageSquare className="text-purple-400" />
-                <h2 className="text-xl font-bold text-white">Practice questions</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Scored practice</h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Practice structure and evidence. This does not judge technical correctness.
+                  </p>
+                </div>
               </div>
-              <ol className="mt-5 space-y-4">
+              {sessionAverage !== null && (
+                <div className="mt-5 flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-500/10 p-4">
+                  <div>
+                    <p className="text-sm text-purple-200">Session average</p>
+                    <p className="mt-1 text-xs text-purple-300">
+                      {scoredAttempts.length} of {plan.questions.length} answers scored
+                    </p>
+                  </div>
+                  <span className="text-3xl font-bold text-white">
+                    {sessionAverage}
+                  </span>
+                </div>
+              )}
+              {practiceError && (
+                <p role="alert" className="mt-5 rounded-xl border border-red-700 bg-red-950/50 p-4 text-sm text-red-200">
+                  {practiceError}
+                </p>
+              )}
+              <ol className="mt-5 space-y-5">
                 {plan.questions.map((question, index) => (
-                  <li key={question} className="flex gap-3 text-gray-300">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-300">{index + 1}</span>
-                    <span>{question}</span>
+                  <li key={question} className="rounded-xl border border-gray-800 bg-gray-950 p-5">
+                    <div className="flex gap-3 text-gray-200">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-300">{index + 1}</span>
+                      <span className="font-semibold">{question}</span>
+                    </div>
+                    <label className="mt-4 block">
+                      <span className="sr-only">
+                        Practice answer for question {index + 1}
+                      </span>
+                      <textarea
+                        rows={6}
+                        value={answers[index] || ""}
+                        onChange={(event) =>
+                          setAnswers({
+                            ...answers,
+                            [index]: event.target.value,
+                          })
+                        }
+                        placeholder="Use a specific example. Explain the situation, your responsibility, what you did, and the result."
+                        className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white outline-none focus:border-purple-500"
+                      />
+                    </label>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-xs text-gray-500">
+                        {(answers[index] || "").trim().split(/\s+/).filter(Boolean).length} words
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => scoreAnswer(question, index)}
+                        disabled={scoringQuestion === index}
+                        className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {scoringQuestion === index
+                          ? "Scoring..."
+                          : scores[index]
+                            ? "Score again"
+                            : "Score answer"}
+                      </button>
+                    </div>
+                    {scores[index] && (
+                      <PracticeScore attempt={scores[index]} />
+                    )}
                   </li>
                 ))}
               </ol>
@@ -236,6 +354,78 @@ function Interview() {
           </div>
         </>
       )}
+
+      {history.length > 0 && (
+        <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+          <div className="flex items-center gap-3">
+            <Award className="text-amber-400" />
+            <div>
+              <h2 className="text-xl font-bold text-white">Recent practice</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Your latest saved structure scores.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {history.slice(0, 6).map((attempt) => (
+              <article
+                key={attempt.id}
+                className="rounded-xl border border-gray-800 bg-gray-950 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="line-clamp-2 text-sm font-semibold text-gray-200">
+                    {attempt.question}
+                  </p>
+                  <span className="rounded-lg bg-amber-500/15 px-3 py-1 font-bold text-amber-300">
+                    {attempt.score}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {attempt.role} ·{" "}
+                  {new Date(attempt.created_at).toLocaleDateString()}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function PracticeScore({ attempt }) {
+  const dimensions = Object.entries(attempt.rubric?.dimensions || {});
+  return (
+    <div className="mt-4 rounded-xl border border-emerald-700/50 bg-emerald-950/30 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-bold text-emerald-100">Practice structure score</p>
+          <p className="mt-1 text-xs text-emerald-300">
+            {attempt.rubric?.word_count || 0} words
+          </p>
+        </div>
+        <span className="text-3xl font-bold text-white">{attempt.score}</span>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {dimensions.map(([name, value]) => (
+          <div key={name} className="rounded-lg bg-gray-950/60 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
+                {name}
+              </p>
+              <span className="text-xs font-bold text-emerald-300">
+                {value.score}/{value.max}
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-gray-400">
+              {value.feedback}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs leading-5 text-emerald-300">
+        {attempt.rubric?.disclaimer}
+      </p>
     </div>
   );
 }

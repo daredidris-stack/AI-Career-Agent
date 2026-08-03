@@ -8,6 +8,13 @@ from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
 from backend.models.ai_usage_event import AIUsageEvent
+from backend.models.job_library import (
+    JobAlertDelivery,
+    SavedJob,
+    SavedSearch,
+)
+from backend.models.support_ticket import SupportTicket
+from backend.models.interview_practice import InterviewPracticeAttempt
 
 
 class UserRepository:
@@ -82,6 +89,21 @@ class UserRepository:
         return user
 
     def delete_user(self, user: User) -> None:
+        self.db.query(InterviewPracticeAttempt).filter(
+            InterviewPracticeAttempt.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.query(SupportTicket).filter(
+            SupportTicket.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.query(JobAlertDelivery).filter(
+            JobAlertDelivery.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.query(SavedSearch).filter(
+            SavedSearch.user_id == user.id
+        ).delete(synchronize_session=False)
+        self.db.query(SavedJob).filter(
+            SavedJob.user_id == user.id
+        ).delete(synchronize_session=False)
         self.db.query(AIUsageEvent).filter(
             AIUsageEvent.user_id == user.id
         ).delete(synchronize_session=False)

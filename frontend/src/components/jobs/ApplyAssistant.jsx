@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Check,
+  Clipboard,
   Download,
   ExternalLink,
   FileCheck2,
@@ -23,6 +25,8 @@ function documentLabel(document) {
 
 export default function ApplyAssistant({ job, onCancel }) {
   const [documents, setDocuments] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [resumeId, setResumeId] = useState("");
   const [coverLetterId, setCoverLetterId] = useState("");
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
@@ -31,17 +35,24 @@ export default function ApplyAssistant({ job, onCancel }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [copiedField, setCopiedField] = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
-    api.get("/documents").then((response) => {
+    Promise.all([
+      api.get("/documents"),
+      api.get("/profile").catch(() => ({ data: null })),
+      api.get("/users/me"),
+    ]).then(([documentResponse, profileResponse, userResponse]) => {
       if (cancelled) return;
-      const available = response.data || [];
+      const available = documentResponse.data || [];
       const preferredResume = available.find(
         (document) => document.kind === "tailored_resume",
       ) || available.find((document) => document.kind === "resume");
       setDocuments(available);
+      setProfile(profileResponse.data);
+      setUser(userResponse.data);
       setResumeId(preferredResume ? String(preferredResume.id) : "");
     }).catch((requestError) => {
       if (!cancelled) {
@@ -75,6 +86,50 @@ export default function ApplyAssistant({ job, onCancel }) {
   const selectedCoverLetter = coverLetters.find(
     (document) => String(document.id) === coverLetterId,
   );
+  const applicationFields = useMemo(() => {
+    const fullName = [user?.first_name, user?.last_name]
+      .filter(Boolean)
+      .join(" ");
+    const location = [profile?.city, profile?.state, profile?.country]
+      .filter(Boolean)
+      .join(", ");
+    return [
+      ["Full name", fullName],
+      ["Email", user?.email],
+      ["Phone", profile?.phone],
+      ["Location", location],
+      ["Current role", profile?.current_role],
+      ["Target role", profile?.target_role],
+      [
+        "Years of experience",
+        profile?.years_experience !== null
+          && profile?.years_experience !== undefined
+          && Number.isFinite(Number(profile.years_experience))
+          ? String(profile.years_experience)
+          : "",
+      ],
+      ["LinkedIn", profile?.linkedin],
+      ["GitHub", profile?.github],
+      ["Portfolio", profile?.portfolio],
+    ].filter(([, value]) => value);
+  }, [profile, user]);
+
+  async function copyValue(label, value) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(label);
+      window.setTimeout(() => setCopiedField(""), 1800);
+    } catch {
+      setError("Your browser did not allow copying this information.");
+    }
+  }
+
+  async function copyAllFields() {
+    const content = applicationFields
+      .map(([label, value]) => `${label}: ${value}`)
+      .join("\n");
+    await copyValue("all", content);
+  }
 
   async function prepareApplication(event) {
     event.preventDefault();
@@ -85,7 +140,7 @@ export default function ApplyAssistant({ job, onCancel }) {
       const response = await api.post("/applications/prepare", {
         company: job.company || "Company not listed",
         role: job.title || "Untitled role",
-        job_url: job.listing_url,
+        job_url: job.listing_url || job.apply_url,
         location: job.location || null,
         source: job.source || null,
         source_job_id: sourceJobId === null ? null : String(sourceJobId),
@@ -266,6 +321,60 @@ export default function ApplyAssistant({ job, onCancel }) {
           </select>
         </label>
       </div>
+
+      {applicationFields.length > 0 && (
+        <section className="mt-5 rounded-xl border border-blue-200 bg-white/80 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h4 className="font-bold text-slate-950">
+                Application information pack
+              </h4>
+              <p className="mt-1 text-xs leading-5 text-slate-600">
+                Copy factual profile fields into the employer form. NextHire
+                does not infer work authorization, salary, demographic,
+                disability, or other sensitive answers.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={copyAllFields}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-50"
+            >
+              {copiedField === "all"
+                ? <Check size={15} />
+                : <Clipboard size={15} />}
+              {copiedField === "all" ? "Copied" : "Copy all"}
+            </button>
+          </div>
+          <dl className="mt-4 grid gap-2 sm:grid-cols-2">
+            {applicationFields.map(([label, value]) => (
+              <div
+                key={label}
+                className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3"
+              >
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 truncate text-sm text-slate-800">
+                    {value}
+                  </dd>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyValue(label, value)}
+                  aria-label={`Copy ${label}`}
+                  className="shrink-0 rounded-lg p-2 text-blue-700 hover:bg-blue-100"
+                >
+                  {copiedField === label
+                    ? <Check size={16} />
+                    : <Clipboard size={16} />}
+                </button>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button

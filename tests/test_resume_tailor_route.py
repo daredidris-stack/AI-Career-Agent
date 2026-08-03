@@ -9,6 +9,12 @@ from backend.services.resume_tailor_service import (
     ProfileRequiredError,
     ResumeTailorError,
 )
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 
 
 class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
@@ -106,6 +112,46 @@ class ResumeTailorRouteTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(context.exception.status_code, 502)
+
+    async def test_unavailable_security_scanner_returns_503(self):
+        service = SimpleNamespace(
+            tailor_for_user=AsyncMock(
+                side_effect=MalwareScannerUnavailableError(
+                    "Scanner unavailable"
+                )
+            )
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await tailor_resume_upload(
+                file=object(),
+                job_description="Cloud role",
+                template_id="auto",
+                current_user=SimpleNamespace(id=12),
+                service=service,
+            )
+
+        self.assertEqual(context.exception.status_code, 503)
+
+    async def test_unavailable_document_parser_returns_503(self):
+        service = SimpleNamespace(
+            tailor_for_user=AsyncMock(
+                side_effect=ResumeParserUnavailableError(
+                    "Parser unavailable"
+                )
+            )
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await tailor_resume_upload(
+                file=object(),
+                job_description="Cloud role",
+                template_id="auto",
+                current_user=SimpleNamespace(id=12),
+                service=service,
+            )
+
+        self.assertEqual(context.exception.status_code, 503)
 
 
 if __name__ == "__main__":

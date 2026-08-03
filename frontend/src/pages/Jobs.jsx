@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  BellPlus,
+  Bookmark,
+  BookmarkCheck,
   Building2,
   ExternalLink,
   MapPin,
@@ -7,14 +10,50 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import api from "../services/api";
 import { getProfile } from "../services/api";
 import { countries } from "../data/countries";
 import ApplyAssistant from "../components/jobs/ApplyAssistant";
 
+function jobIdentity(job) {
+  if (job.source_job_id) {
+    return `source:${String(job.source || "").toLowerCase()}:${job.source_job_id}`;
+  }
+  const providerUrl = job.apply_url || job.listing_url;
+  if (providerUrl) return `url:${providerUrl}`;
+  return [
+    "job",
+    String(job.title || "").toLowerCase(),
+    String(job.company || "").toLowerCase(),
+    String(job.location || "").toLowerCase(),
+  ].join(":");
+}
+
+function savedJobPayload(job) {
+  return {
+    title: job.title,
+    company: job.company,
+    source: job.source || null,
+    source_job_id: job.source_job_id || null,
+    location: job.location || null,
+    listing_url: job.listing_url || null,
+    apply_url: job.apply_url || null,
+    description: job.description || null,
+    job_type: job.job_type || null,
+    workplace_type: job.workplace_type || null,
+    salary: job.salary || null,
+    visa_sponsorship: job.visa_sponsorship ?? null,
+    updated: job.updated || null,
+    analysis: job.analysis || {},
+  };
+}
+
 
 function Jobs() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [targetRole, setTargetRole] = useState("");
   const [country, setCountry] = useState("Worldwide");
   const [city, setCity] = useState("");
@@ -28,6 +67,12 @@ function Jobs() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [savingJobIdentity, setSavingJobIdentity] = useState("");
+  const [showSaveSearch, setShowSaveSearch] = useState(false);
+  const [savedSearchName, setSavedSearchName] = useState("");
+  const [savingSearch, setSavingSearch] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     async function loadProfileDefaults() {
@@ -42,6 +87,49 @@ function Jobs() {
 
     loadProfileDefaults();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    api.get("/job-library/saved-jobs")
+      .then((response) => {
+        if (active) setSavedJobs(response.data);
+      })
+      .catch(() => {
+        // Job search remains available if the saved-job list cannot be loaded.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const savedSearchRun = location.state?.savedSearchRun;
+    if (!savedSearchRun) return;
+
+    const filters = savedSearchRun.saved_search.filters || {};
+    setTargetRole(filters.keyword || "");
+    setCountry(filters.country || "Worldwide");
+    setCity(filters.city || "");
+    setIndustry(filters.industry || "");
+    setWorkMode(filters.work_mode || "");
+    setEmploymentType(filters.employment_type || "");
+    setPostedWithinDays(Number(filters.posted_within_days || 0));
+    setMinimumSalary(Number(filters.min_salary || 0));
+    setMinimumScore(Number(filters.min_score || 0));
+    setResult(savedSearchRun.result);
+    setSaveMessage(
+      savedSearchRun.saved_search.new_match_count > 0
+        ? `${savedSearchRun.saved_search.new_match_count} new matches found.`
+        : "Saved search checked. No new matches this time.",
+    );
+
+    api.post(
+      `/job-library/searches/${savedSearchRun.saved_search.id}/acknowledge`,
+    ).catch(() => {
+      // The result is still usable if the alert badge cannot be acknowledged.
+    });
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   async function searchJobs(event) {
     event.preventDefault();
@@ -70,6 +158,7 @@ function Jobs() {
       });
 
       setResult(response.data);
+      setSaveMessage("");
     } catch (requestError) {
       setResult(null);
       setError(
@@ -81,12 +170,83 @@ function Jobs() {
     }
   }
 
+  function getSavedJob(job) {
+    const identity = jobIdentity(job);
+    return savedJobs.find((item) => jobIdentity(item.job) === identity);
+  }
+
+  async function toggleSavedJob(job) {
+    const identity = jobIdentity(job);
+    const existing = getSavedJob(job);
+    setSavingJobIdentity(identity);
+    setError("");
+    try {
+      if (existing) {
+        await api.delete(`/job-library/saved-jobs/${existing.id}`);
+        setSavedJobs((current) =>
+          current.filter((item) => item.id !== existing.id),
+        );
+      } else {
+        const response = await api.post(
+          "/job-library/saved-jobs",
+          savedJobPayload(job),
+        );
+        setSavedJobs((current) => [
+          response.data,
+          ...current.filter(
+            (item) => jobIdentity(item.job) !== identity,
+          ),
+        ]);
+      }
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.detail
+          || "The saved job could not be updated.",
+      );
+    } finally {
+      setSavingJobIdentity("");
+    }
+  }
+
+  async function saveCurrentSearch(event) {
+    event.preventDefault();
+    setSavingSearch(true);
+    setError("");
+    setSaveMessage("");
+    try {
+      await api.post("/job-library/searches", {
+        name: savedSearchName.trim(),
+        filters: {
+          keyword: targetRole.trim(),
+          country: country.trim() || "Worldwide",
+          city: city.trim(),
+          industry: industry.trim(),
+          work_mode: workMode,
+          employment_type: employmentType,
+          posted_within_days: postedWithinDays,
+          min_salary: minimumSalary,
+          min_score: minimumScore,
+        },
+      });
+      setShowSaveSearch(false);
+      setSavedSearchName("");
+      setSaveMessage("Search saved. You can check it again from Job Library.");
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.detail
+          || "The search could not be saved.",
+      );
+    } finally {
+      setSavingSearch(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <section className="rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white shadow-xl">
         <div className="flex items-center gap-3">
           <Sparkles size={30} />
-          <h1 className="text-4xl font-bold">Matched Jobs</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">Matched Jobs</h1>
         </div>
         <p className="mt-3 max-w-3xl text-lg text-blue-100">
           Search opportunities worldwide. Your profile and latest resume skills improve ranking when available.
@@ -239,6 +399,15 @@ function Jobs() {
         </div>
       )}
 
+      {saveMessage && (
+        <div
+          role="status"
+          className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-emerald-200"
+        >
+          {saveMessage}
+        </div>
+      )}
+
       {result && (
         <section className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -250,7 +419,54 @@ function Jobs() {
                 {result.filters.keyword} - {result.filters.location}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSavedSearchName(
+                  `${targetRole.trim()} · ${country || "Worldwide"}`,
+                );
+                setShowSaveSearch(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-500 bg-blue-500/10 px-4 py-2 font-semibold text-blue-200 hover:bg-blue-500/20"
+            >
+              <BellPlus size={18} />
+              Save this search
+            </button>
           </div>
+
+          {showSaveSearch && (
+            <form
+              onSubmit={saveCurrentSearch}
+              className="flex flex-col gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5 sm:flex-row sm:items-end"
+            >
+              <label className="min-w-0 flex-1">
+                <span className="mb-2 block text-sm font-semibold text-blue-100">
+                  Search name
+                </span>
+                <input
+                  value={savedSearchName}
+                  onChange={(event) => setSavedSearchName(event.target.value)}
+                  required
+                  maxLength={120}
+                  className="w-full rounded-xl border border-blue-400/40 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-400"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowSaveSearch(false)}
+                className="rounded-xl border border-gray-600 px-4 py-3 font-semibold text-gray-200 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingSearch}
+                className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                {savingSearch ? "Saving..." : "Save search"}
+              </button>
+            </form>
+          )}
 
           {result.providers?.length > 0 && (
             <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
@@ -274,6 +490,9 @@ function Jobs() {
                   key={`${job.source}-${job.title}-${index}`}
                   job={job}
                   onViewDetails={() => setSelectedJob(job)}
+                  isSaved={Boolean(getSavedJob(job))}
+                  saving={savingJobIdentity === jobIdentity(job)}
+                  onToggleSaved={() => toggleSavedJob(job)}
                 />
               ))}
             </div>
@@ -307,6 +526,9 @@ function Jobs() {
         <JobDetailsDialog
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
+          isSaved={Boolean(getSavedJob(selectedJob))}
+          saving={savingJobIdentity === jobIdentity(selectedJob)}
+          onToggleSaved={() => toggleSavedJob(selectedJob)}
         />
       )}
     </div>
@@ -336,7 +558,13 @@ function ProviderStatus({ provider }) {
 }
 
 
-function JobCard({ job, onViewDetails }) {
+function JobCard({
+  job,
+  onViewDetails,
+  isSaved,
+  saving,
+  onToggleSaved,
+}) {
   const score = job.analysis?.match_score;
 
   return (
@@ -380,13 +608,25 @@ function JobCard({ job, onViewDetails }) {
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={onViewDetails}
-        className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
-      >
-        View details
-      </button>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onViewDetails}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
+        >
+          View details
+        </button>
+        <button
+          type="button"
+          aria-pressed={isSaved}
+          disabled={saving}
+          onClick={onToggleSaved}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-700 px-4 py-2 font-semibold text-gray-200 transition hover:border-blue-500 hover:text-white disabled:cursor-wait disabled:opacity-60"
+        >
+          {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+          {saving ? "Updating..." : isSaved ? "Saved" : "Save job"}
+        </button>
+      </div>
       <div className="mt-4">
         <ProviderAttribution job={job} />
       </div>
@@ -395,7 +635,13 @@ function JobCard({ job, onViewDetails }) {
 }
 
 
-function JobDetailsDialog({ job, onClose }) {
+function JobDetailsDialog({
+  job,
+  onClose,
+  isSaved,
+  saving,
+  onToggleSaved,
+}) {
   const score = job.analysis?.match_score;
   const fallbackDescription = job.description?.trim()
     || "This provider did not include a full description. Review the original listing before applying.";
@@ -445,6 +691,8 @@ function JobDetailsDialog({ job, onClose }) {
   }, [job]);
 
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     function closeOnEscape(event) {
       if (event.key === "Escape") {
         onClose();
@@ -452,7 +700,10 @@ function JobDetailsDialog({ job, onClose }) {
     }
 
     document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, [onClose]);
 
   return (
@@ -543,18 +794,30 @@ function JobDetailsDialog({ job, onClose }) {
 
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
             <ProviderAttribution job={job} />
-            {job.listing_url ? (
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setShowApplyAssistant(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+                aria-pressed={isSaved}
+                disabled={saving}
+                onClick={onToggleSaved}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
               >
-                {showApplyAssistant ? "Application package open" : "Prepare application"}
-                <ExternalLink size={17} />
+                {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+                {saving ? "Updating..." : isSaved ? "Saved" : "Save job"}
               </button>
-            ) : (
-              <span className="text-sm text-slate-500">Application link unavailable</span>
-            )}
+              {job.listing_url || job.apply_url ? (
+                <button
+                  type="button"
+                  onClick={() => setShowApplyAssistant(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+                >
+                  {showApplyAssistant ? "Application package open" : "Prepare application"}
+                  <ExternalLink size={17} />
+                </button>
+              ) : (
+                <span className="text-sm text-slate-500">Application link unavailable</span>
+              )}
+            </div>
           </div>
         </div>
       </section>

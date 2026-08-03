@@ -69,6 +69,17 @@ class DashboardServiceTests(unittest.TestCase):
         self.assertEqual(result["resume_score"], 84)
         self.assertEqual(result["ats_score"], 79)
         self.assertEqual(result["recent_activity"], [])
+        self.assertEqual(result["onboarding"]["completed_steps"], 3)
+        self.assertFalse(result["onboarding"]["complete"])
+        self.assertEqual(
+            result["onboarding"]["steps"],
+            {
+                "profile": True,
+                "resume": True,
+                "preferences": True,
+                "application": False,
+            },
+        )
 
     def test_missing_profile_returns_onboarding_dashboard(self):
         self.profile_repository.get_by_user_id.return_value = None
@@ -79,9 +90,22 @@ class DashboardServiceTests(unittest.TestCase):
         self.assertEqual(result["career_progress"], 0)
         self.assertEqual(result["profile"]["target_role"], "")
         self.assertEqual(result["jobs_available"], 3)
+        self.assertEqual(result["onboarding"]["completed_steps"], 0)
+        self.assertFalse(result["onboarding"]["complete"])
         self.analytics_service.get_unpersonalized.assert_called_once_with(9)
         self.analytics_service.get_for_profile.assert_not_called()
         self.resume_analysis_repository.get_latest_by_user_id.assert_not_called()
+
+    def test_onboarding_completes_after_application_is_tracked(self):
+        self.analytics_service.get_for_profile.return_value[
+            "application_pipeline"
+        ] = {"preparing": 1}
+
+        result = self.service.get_for_user(self.user)
+
+        self.assertEqual(result["onboarding"]["completed_steps"], 4)
+        self.assertTrue(result["onboarding"]["complete"])
+        self.assertTrue(result["onboarding"]["steps"]["application"])
 
     def test_dashboard_supports_user_without_resume_analysis(self):
         self.resume_analysis_repository.get_latest_by_user_id.return_value = (
