@@ -7,8 +7,8 @@ uncommitted feature batch. The five feature groups are now separated into
 auditable commits, and the complete implementation passes the automated
 release gate:
 
-- 290 backend tests pass with `ResourceWarning` treated as an error.
-- Alembic upgrades an empty database through `20260728_0007`, reports no
+- 354 backend tests pass with `ResourceWarning` treated as an error.
+- Alembic upgrades an empty database through `20260729_0012`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
 - `git diff --check` passes.
@@ -202,16 +202,265 @@ groups:
   to external platforms. Direct ATS submission remains future work only where
   the employer provides credentials and written authorization.
 
+### User-facing completion pass — July 28, 2026
+
+- Every visible header and account-menu control now has a real destination or
+  action. Global search navigates to product pages and matching Help Center
+  articles; the notification bell and account-menu notification item open the
+  notification center; Billing opens the existing plan section; and Help
+  Center opens the new searchable documentation.
+- The Help Center documents account access, profile and resume setup, document
+  history and export, worldwide job search and provider states, reviewed
+  applications, reminders, career tools, AI availability, billing, privacy,
+  and job-source safety. It links directly to the relevant product workflow.
+- Notifications derives real application follow-ups, deadlines, and reviewed
+  packages from the authenticated user's Application Tracker data. It shows
+  upcoming and overdue work, provides an unread badge, links each notification
+  to the tracker, and keeps read state isolated by user in the current browser.
+- Billing no longer appears as an unexplained disabled placeholder. Settings
+  loads the backend billing status, routes errors to the correct section, and
+  explains that Free remains available while paid plans are disabled until
+  approved Stripe configuration exists.
+- Unknown authenticated routes now render a useful 404 page instead of an
+  empty screen. The account menu also falls back to the account email when the
+  profile has no name, and its header colors match the light application
+  header.
+- An isolated authenticated browser smoke test registered and signed in a
+  disposable user, navigated to Help Center through global search, filtered
+  the articles, rendered the empty notification state, created an application,
+  verified an overdue follow-up and unread badge from isolated SQL data, marked
+  it read, opened Billing from the account menu, and verified the 404 route.
+  A duplicate Google Identity initialization warning found during the test was
+  fixed; a fresh login tab rendered the Google button with no console warnings
+  or errors.
+- The complete release gate still passes 290 backend tests, the Alembic
+  upgrade/check/downgrade/re-upgrade cycle, frontend lint, the production
+  build, and the whitespace check.
+- Production Google sign-in remains a deployment configuration task: the same
+  OAuth client ID must be provided to both services and the deployed frontend
+  origin must be authorized in Google Cloud. SMTP, paid billing, credentialed
+  job providers, and production AI remain separate external gates.
+
+### Guided onboarding — July 29, 2026
+
+- A protected Getting Started page now guides users through four durable
+  activation steps: career profile, resume analysis, job preferences, and the
+  first tracked opportunity. Each step links directly to the existing product
+  workflow.
+- Progress comes from the authenticated dashboard service and saved
+  profile, resume-analysis, preference, and application records. Visiting a
+  page alone never marks a step complete.
+- Newly registered email/password users are routed to Getting Started after
+  their first successful sign-in. Normal sign-ins for existing accounts still
+  open the dashboard, and all users can reopen onboarding from the sidebar,
+  global search, dashboard progress card, or Help Center.
+- Eight focused dashboard service and route tests pass. An isolated local API
+  check created a disposable user, returned zero of four onboarding steps,
+  saved synthetic profile and preference data, and then returned two of four
+  completed steps with the correct step flags.
+- The complete release gate passes 291 backend tests, the full Alembic
+  upgrade/check/downgrade/re-upgrade cycle with no schema drift, frontend lint,
+  the production build, and the whitespace check.
+- Automated control of the existing localhost preview tab was blocked by the
+  browser URL safety policy during this pass, so no new visual browser-smoke
+  claim is made for onboarding. The API behavior and compiled UI are verified;
+  a manual visual pass remains before deployment.
+
+### Product workflow completion batch — July 29, 2026
+
+- Saved jobs can be added and removed from job results and reviewed in the new
+  Job Library. Saved searches preserve the complete filter set, establish a
+  first-run baseline, and report previously unseen matches on later checks.
+  New-match counts appear in Job Library and the in-app notification center.
+- Help Center now accepts owner-scoped feedback and support requests and shows
+  each user's recent request status. Administrator access is enforced by the
+  backend using the deployment's `ADMIN_EMAILS` allowlist and verified-email
+  state. The protected
+  Operations page reports aggregate account, job, application, AI-use, and
+  support counts, shows configuration as boolean status only, and supports
+  ticket status and internal-note updates.
+- Resume Studio version history now compares an earlier revision with the
+  current document side by side before restore. Application Tracker now
+  switches between the existing pipeline and a monthly calendar of deadlines,
+  follow-ups, and applied dates.
+- Interview Center now stores owner-scoped practice attempts and provides a
+  transparent structure score for clarity, STAR-style organization, evidence,
+  and ownership. The interface explicitly states that this is not a technical
+  correctness or hiring-likelihood score.
+- Apply Assistant now provides a copyable information pack built only from the
+  authenticated user's saved name, contact, location, role, experience, and
+  professional-link fields. It does not infer work authorization, salary,
+  demographic, disability, or other sensitive responses; it still does not
+  bypass CAPTCHA, complete restricted forms, or submit to employers.
+- The new workflows include a main-content skip link, keyboard-visible focus,
+  reduced-motion handling, labeled dialogs, Escape-to-close behavior, body
+  scroll locking, responsive titles, and bounded horizontal scrolling for
+  dense comparison and calendar layouts.
+- Migrations `20260729_0008`, `20260729_0009`, and `20260729_0010` add saved
+  jobs/searches, support tickets, and interview practice attempts. Account
+  export and deletion include all three data groups, and owner-isolation tests
+  cover their repositories.
+- `./scripts/verify_release.sh` passes 317 backend tests, the full Alembic
+  upgrade/check/downgrade/re-upgrade cycle through `20260729_0010`, frontend
+  lint, the production Vite build, and `git diff --check`.
+- Automatic email delivery for saved-search alerts is intentionally not
+  activated. In-app alerts are complete. Scheduled email alerts should be
+  enabled only after the deployed SMTP sender, opt-in/opt-out behavior,
+  deliverability, unsubscribe handling, rate controls, and background-worker
+  observation are verified.
+- No deployment was performed in this batch. The local implementation remains
+  on `codex/complete-user-facing-workflows` for review before migration and
+  staging deployment.
+
+### Saved-search email alert foundation — July 29, 2026
+
+- Migration `20260729_0011` adds per-search email consent, daily or weekly
+  frequency, timezone-aware next-run state, last-send time, and owner-scoped
+  delivery records with batch idempotency.
+- Email alerts require three conditions: the deployment flag, configured SMTP,
+  and an explicitly enabled saved search belonging to a verified-email account.
+  They remain off by default. Disabling an alert still works when deployment
+  delivery is unavailable.
+- Job Library exposes consent, frequency, next-run, last-email, and recent
+  delivery state. Email links open a public confirmation page and do not mutate
+  the preference until the user chooses to turn off that one alert. Signed
+  unsubscribe tokens authorize only that action for that saved search.
+- The one-shot `backend.jobs.send_job_alerts` worker is suitable for a Railway
+  cron service. It processes a bounded due batch and exits. A saved search's
+  first scheduled run establishes a baseline without sending. Failed delivery
+  records a generic error and leaves new jobs unseen for retry.
+- Account export and deletion include alert delivery records. Operations
+  exposes alert enablement and aggregate delivery state without configuration
+  secrets.
+- Focused coverage verifies SMTP header allowlisting, verified-email consent,
+  timezone scheduling, tamper-resistant unsubscribe tokens, delivery history,
+  owner scoping, first-run baseline, successful send, and retry-safe failure.
+- `./scripts/verify_release.sh` passes 330 backend tests, the complete Alembic
+  upgrade/check/downgrade/re-upgrade cycle through `20260729_0011`, frontend
+  lint, the production build, and `git diff --check`.
+- No external email provider was created or charged, and no deployment was
+  performed. `JOB_ALERT_EMAIL_ENABLED` remains `false` by default. The exact
+  Postmark/Railway staged activation and rollback procedure is recorded in
+  `docs/job-alert-email-setup.md`.
+
+### Administrator accountability and registration retry — July 29, 2026
+
+- Migration `20260729_0012` adds administrator audit events. Support-ticket
+  status and internal-note changes commit atomically with an event containing
+  the administrator ID/email snapshot, request ID, target, status transition,
+  and whether a note is present. Ticket messages and note text are excluded.
+- Audit events are exposed only through the verified-email administrator
+  dependency. The Operations page shows recent history and aggregate audited
+  change counts without exposing secrets.
+- SQLAlchemy mutation guards and SQLite/PostgreSQL database triggers reject
+  updates and deletion. A migrated isolated SQLite database rejected direct
+  SQL update and delete attempts and preserved the original event.
+- Registration now clears stale success/error state for every attempt, reports
+  accessible status, prevents duplicate submission while loading, uses email
+  and password autocomplete metadata, and enforces the backend's password
+  length in the browser.
+- An isolated browser test reproduced a duplicate-account error, retried with a
+  new disposable account, and confirmed that only the successful state
+  remained. A verified disposable administrator then resolved a support
+  request; Operations immediately displayed the append-only event and request
+  ID without copied ticket or note text. Test accounts, ticket, and audit event
+  were removed, and the isolated services were stopped.
+- The complete suite passes 333 backend tests and frontend lint. Full release
+  verification through migration `20260729_0012` is recorded after this
+  documentation update.
+
+### Resume upload malware-scanning foundation — July 29, 2026
+
+- Resume Studio analysis, profile autofill, and Resume Tailor uploads all
+  converge on `ResumeService.extract_text`; the new scanner therefore runs
+  once after bounded extension/signature validation and before any PDF/DOCX
+  parser.
+- `MalwareScanService` implements ClamAV INSTREAM over a configured private
+  connection. Clean responses continue, detections return a generic rejection,
+  and missing configuration, timeouts, connection errors, empty responses, or
+  unexpected responses fail closed with HTTP 503.
+- Scanning and parsing run outside the async event loop. Temporary files remain
+  bounded to 5 MB and are removed on clean, detected, unavailable, invalid, and
+  parser-failure paths.
+- Operations exposes configuration as a boolean only. The deployment switch is
+  `false` by default, so no unverified protection is claimed and current local
+  behavior is unchanged.
+- Focused coverage verifies disabled behavior, clean protocol exchange,
+  detection without signature disclosure, missing configuration, timeout,
+  scan-before-parse ordering, and 503 handling across all three upload routes.
+- Deployment guidance requires a private ClamAV network, maintained signature
+  updates, measured memory capacity, fail-closed outage testing, monitoring,
+  and continued parser isolation. No scanner service was deployed in this
+  batch.
+- The complete suite passes 342 backend tests. Full release verification
+  through migration `20260729_0012` is recorded after this documentation
+  update.
+
+### Isolated resume-parser foundation — August 2, 2026
+
+- After extension, size, signature, and optional malware validation, each PDF
+  or DOCX is parsed in a fresh subprocess that the API awaits asynchronously.
+  Document parsers no longer execute in the API process or its thread pool,
+  and there is no in-process fallback.
+- The worker receives only the application-generated temporary path, validated
+  suffix, and bounded settings. Its environment excludes database, JWT, SMTP,
+  provider, billing, and other application secrets.
+- The worker applies CPU, core-dump, file-descriptor, extracted-text, and
+  wall-clock limits, plus an address-space limit on Linux. Python socket entry
+  points are disabled before parsing. Timeout or request cancellation stops
+  the worker, and the parent removes the temporary file on every path.
+- Malformed or unreadable documents return a generic HTTP 400 response. Worker
+  startup, resource, timeout, protocol, and unexpected-exit failures fail
+  closed with HTTP 503 without exposing parser output or internal exceptions.
+- Real PDF and DOCX subprocess tests pass. Additional coverage verifies the
+  secret-free environment, extracted-text limit, timeout termination,
+  scan-before-parse ordering, cleanup, and 503 handling for Resume Studio,
+  profile autofill, and Resume Tailor.
+- The subprocess is not represented as a complete operating-system sandbox.
+  Production still requires an unprivileged/read-only container, narrow temp
+  storage, platform egress and cloud-metadata blocking, container resource and
+  process limits, patched dependencies, monitoring, and deployed staging
+  observation.
+- The complete suite passes 354 backend tests. Full release verification
+  through migration `20260729_0012` is recorded after this documentation
+  update.
+
+### Temporary Railway staging verification — August 2, 2026
+
+- Commit `95c759f` from `codex/complete-user-facing-workflows` was deployed to
+  an isolated `staging-pr6` Railway environment with separate PostgreSQL,
+  backend, and frontend instances.
+- The backend and frontend were connected to the feature branch. The frontend
+  API URL, backend frontend URL, and CORS origin pointed only to the staging
+  domains. `JOB_ALERT_EMAIL_ENABLED` and `MALWARE_SCANNING_ENABLED` remained
+  explicitly `false`.
+- Both application services and PostgreSQL reached Online. The live and ready
+  health endpoints returned HTTP 200, reported release `95c759f`, and confirmed
+  database readiness.
+- Deployed browser smoke testing completed registration, login, onboarding,
+  profile creation, Help Center rendering, support-request creation, and the
+  recent-request status view against the isolated database.
+- After verification, `staging-pr6` and its disposable data were permanently
+  deleted. Railway showed the production API, PostgreSQL, and frontend still
+  Online, and production was not redeployed or reconfigured.
+- This proves the release build and core account/support persistence on
+  Railway. It does not prove SMTP delivery, the scheduled alert worker,
+  ClamAV, hardened parser controls, backup/restore, job-provider contracts, or
+  production AI capacity; those gates remain open.
+
 ### Recommended continuation order
 
-Groups 1 through 5 are complete and separately auditable. Retain live Turnstile,
-provider commercial approval and quota, and deployed staging checks as
-deployment gates. Turnstile cannot be tested live in this workspace because its
-backend secret, hostname allowlist, and frontend site key are not configured.
-Next, perform the remaining production credential, deployment, and
-launch-readiness checks. Do not replace the July 17 beta assessment with this
-engineering snapshot; its manual smoke-test evidence and external launch
-blockers remain separate.
+Review the current branch and the recorded Railway smoke evidence. Configure
+at least one administrator email, verify the established admin workflows, and
+complete a manual mobile/keyboard visual pass. Next, configure a verified SMTP
+sender and Railway cron service and run the single-account staged activation
+test before enabling saved-search email for a wider group. Deploy and prove the
+completed fail-closed ClamAV integration and isolated parser under hardened
+container egress, filesystem, process, and resource controls. Retain live
+Turnstile, provider commercial approval and quota, and the remaining deployed
+staging checks as release gates. Do not replace the July 17 beta assessment
+with this engineering snapshot; its manual smoke-test evidence and external
+launch blockers remain separate.
 
 ### Provider release review — July 26, 2026
 
@@ -276,23 +525,31 @@ These cannot be completed honestly through repository code alone:
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
 - Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
-- Deployed staging PostgreSQL backup and migration plus extended
-  ingestion-worker observation. The isolated local Compose path is verified,
-  but it does not replace deployment-specific evidence.
+- Deployed PostgreSQL backup/restore plus extended ingestion-worker
+  observation. The Railway application and migration smoke path is verified,
+  but it does not replace backup restoration and long-running worker evidence.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
-- Malware scanning service for production resume uploads.
+- Private ClamAV deployment, signature/update monitoring, staged outage
+  verification, and platform-level egress, filesystem, process, and resource
+  hardening for isolated asynchronous parsing.
 
 Until those items are resolved, run a controlled non-commercial beta, keep billing disabled, limit invited users, and avoid claims of provider partnership or guaranteed employment outcomes.
 
 ## Recommended next product work after beta evidence
 
 1. Fix issues discovered in the controlled beta before expanding scope.
-2. Add administrator authorization and audited aggregate operations reporting.
-3. Add malware scanning and isolated asynchronous document processing.
+2. Assign operational ownership and approve the retention/archive period for
+   the completed append-only administrator audit log.
+3. Deploy and prove the completed fail-closed ClamAV and parser-subprocess
+   integrations under platform-level sandboxing and monitoring.
 4. Evaluate direct ATS application submission only through employer-authorized
    APIs with per-application consent, submission receipts, idempotency, and
    audit logs; do not automate restricted job platforms.
-5. Add saved job alerts and application follow-up notifications after email deliverability is proven.
-6. Validate mobile navigation with beta users and address evidence-backed usability issues. Route-level code splitting is implemented and the production build has no large-bundle advisory.
+5. Deploy and prove the completed opt-in saved-search email flow with the
+   selected SMTP sender and scheduled worker before considering application
+   reminder emails.
+6. Validate the completed responsive and keyboard behavior with beta users and
+   address evidence-backed usability issues. Route-level code splitting is
+   implemented and the production build has no large-bundle advisory.
 7. Select further Resume Studio, interview, or learning features based on measured activation and retention rather than assumptions.

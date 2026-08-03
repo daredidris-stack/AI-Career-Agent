@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api";
+import { requestOnboardingAfterLogin } from "../../utils/onboarding";
 
 
 export default function Register() {
@@ -15,6 +16,7 @@ export default function Register() {
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
 
   async function handleRegister(
@@ -22,7 +24,9 @@ export default function Register() {
   ) {
 
     e.preventDefault();
-
+    setError("");
+    setMessage("");
+    setLoading(true);
 
     try {
 
@@ -39,7 +43,9 @@ export default function Register() {
       setMessage(
         "Account created successfully"
       );
+      setPassword("");
 
+      requestOnboardingAfterLogin();
 
       setTimeout(() => {
 
@@ -61,11 +67,15 @@ export default function Register() {
       } else {
 
         setError(
-          "Registration failed"
+          error.response?.status === 422
+            ? "Enter a valid email and a password with at least 8 characters."
+            : "Registration is temporarily unavailable. Please try again."
         );
 
       }
 
+    } finally {
+      setLoading(false);
     }
 
   }
@@ -108,6 +118,7 @@ export default function Register() {
         {error && (
 
           <p
+            role="alert"
             className="
               text-red-500
               mb-4
@@ -122,6 +133,7 @@ export default function Register() {
         {message && (
 
           <p
+            role="status"
             className="
               text-green-600
               mb-4
@@ -142,6 +154,9 @@ export default function Register() {
             rounded
           "
           placeholder="Email"
+          type="email"
+          required
+          autoComplete="email"
           value={email}
           onChange={
             e => setEmail(e.target.value)
@@ -164,6 +179,10 @@ export default function Register() {
           "
           placeholder="Password"
           type="password"
+          required
+          minLength={8}
+          maxLength={128}
+          autoComplete="new-password"
           value={password}
           onChange={
             e => setPassword(e.target.value)
@@ -172,16 +191,19 @@ export default function Register() {
 
 
         <button
-          disabled={!acceptTerms}
+          type="submit"
+          disabled={!acceptTerms || loading}
           className="
             bg-black
             text-white
             w-full
             p-3
             rounded
+            disabled:cursor-wait
+            disabled:opacity-60
           "
         >
-          Register
+          {loading ? "Creating account..." : "Register"}
         </button>
 
 

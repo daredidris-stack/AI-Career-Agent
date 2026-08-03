@@ -17,7 +17,13 @@ class EmailService:
     def configured(self) -> bool:
         return bool(SMTP_HOST and SMTP_FROM_EMAIL)
 
-    def send(self, recipient: str, subject: str, body: str) -> bool:
+    def send(
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+        headers: dict[str, str] | None = None,
+    ) -> bool:
         if not self.configured:
             return False
 
@@ -25,6 +31,12 @@ class EmailService:
         message["From"] = SMTP_FROM_EMAIL
         message["To"] = recipient
         message["Subject"] = subject
+        for name, value in (headers or {}).items():
+            if name.casefold() != "list-unsubscribe":
+                continue
+            if "\r" in value or "\n" in value:
+                continue
+            message[name] = value
         message.set_content(body)
 
         try:

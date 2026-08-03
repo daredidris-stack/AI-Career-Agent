@@ -22,6 +22,9 @@ The command runs all backend tests with resource warnings enforced, validates a 
 - Analyze a resume and verify persisted scores, skills, document history, PDF/DOCX export, and revision restore.
 - Run skill-gap, job search, job match, resume tailor, and cover-letter flows using the authenticated profile and resume evidence.
 - Verify job-source attribution and provider failure handling.
+- Verify a saved-search email alert is off by default, requires a verified
+  account and explicit opt-in, sends only after a baseline, records delivery,
+  and can be disabled from Job Library and its public unsubscribe page.
 - Create, edit, move, follow up, archive, and delete an application.
 - Confirm dashboard resume/ATS history, application pipeline, document counts, and AI usage.
 - Confirm Free AI limits return a clear 429 response and do not affect another account.

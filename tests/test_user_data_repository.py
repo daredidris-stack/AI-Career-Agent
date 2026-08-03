@@ -9,9 +9,16 @@ from backend.models.career_document import CareerDocument
 from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.ai_usage_event import AIUsageEvent
 from backend.models.job_application import JobApplication
+from backend.models.job_library import (
+    JobAlertDelivery,
+    SavedJob,
+    SavedSearch,
+)
 from backend.models.profile import Profile
 from backend.models.resume_analysis import ResumeAnalysis
 from backend.models.user import User
+from backend.models.support_ticket import SupportTicket
+from backend.models.interview_practice import InterviewPracticeAttempt
 from backend.repositories.user_data_repository import UserDataRepository
 
 
@@ -59,6 +66,11 @@ class UserDataRepositoryTests(unittest.TestCase):
             (self.first_id, first_document, "First"),
             (self.second_id, second_document, "Private"),
         ):
+            saved_search = SavedSearch(
+                user_id=user_id,
+                name=f"{marker} search",
+                filters_json='{"keyword": "Engineer"}',
+            )
             self.db.add_all([
                 CareerDocumentRevision(
                     document_id=document.id,
@@ -78,8 +90,39 @@ class UserDataRepositoryTests(unittest.TestCase):
                     role="Engineer",
                     status="saved",
                 ),
+                SavedJob(
+                    user_id=user_id,
+                    job_key=(marker.lower()[0] * 64),
+                    title=f"{marker} saved role",
+                    company=f"{marker} saved company",
+                    job_data_json="{}",
+                ),
+                saved_search,
+                SupportTicket(
+                    user_id=user_id,
+                    category="feedback",
+                    subject=f"{marker} request",
+                    message=f"{marker} support message",
+                ),
+                InterviewPracticeAttempt(
+                    user_id=user_id,
+                    role="Engineer",
+                    interview_type="Behavioral interview",
+                    question=f"{marker} question",
+                    answer=f"{marker} answer with enough detail to store.",
+                    score=75,
+                    rubric_json="{}",
+                ),
                 AIUsageEvent(user_id=user_id, feature=f"{marker} feature"),
             ])
+            self.db.flush()
+            self.db.add(JobAlertDelivery(
+                user_id=user_id,
+                saved_search_id=saved_search.id,
+                batch_key=marker.lower()[0] * 64,
+                status="sent",
+                match_count=1,
+            ))
         self.db.commit()
 
         result = UserDataRepository(self.db).snapshot(self.first_id)
@@ -100,6 +143,29 @@ class UserDataRepositoryTests(unittest.TestCase):
         self.assertEqual(
             [item.company for item in result["job_applications"]],
             ["First company"],
+        )
+        self.assertEqual(
+            [item.title for item in result["saved_jobs"]],
+            ["First saved role"],
+        )
+        self.assertEqual(
+            [item.name for item in result["saved_searches"]],
+            ["First search"],
+        )
+        self.assertEqual(
+            [item.status for item in result["job_alert_deliveries"]],
+            ["sent"],
+        )
+        self.assertEqual(
+            [item.subject for item in result["support_tickets"]],
+            ["First request"],
+        )
+        self.assertEqual(
+            [
+                item.question
+                for item in result["interview_practice_attempts"]
+            ],
+            ["First question"],
         )
         self.assertEqual(
             [item.feature for item in result["ai_usage_events"]],

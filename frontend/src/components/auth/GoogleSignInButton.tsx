@@ -40,6 +40,10 @@ declare global {
 
 const googleScriptId = "google-identity-services";
 const googleScriptUrl = "https://accounts.google.com/gsi/client";
+let initializedGoogleClientId = "";
+let activeCredentialHandler:
+  | ((response: GoogleCredentialResponse) => void)
+  | null = null;
 
 
 export default function GoogleSignInButton({
@@ -62,23 +66,29 @@ export default function GoogleSignInButton({
     }
 
     let active = true;
+    const handleCredential = (response: GoogleCredentialResponse) => {
+      if (response.credential) {
+        onCredential(response.credential);
+      } else {
+        onError();
+      }
+    };
+    activeCredentialHandler = handleCredential;
+
     const renderButton = () => {
       if (!active || !window.google) {
         return;
       }
 
       container.replaceChildren();
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => {
-          if (response.credential) {
-            onCredential(response.credential);
-          } else {
-            onError();
-          }
-        },
-        ux_mode: "popup",
-      });
+      if (initializedGoogleClientId !== clientId) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response) => activeCredentialHandler?.(response),
+          ux_mode: "popup",
+        });
+        initializedGoogleClientId = clientId;
+      }
       window.google.accounts.id.renderButton(
         container,
         {
@@ -118,6 +128,9 @@ export default function GoogleSignInButton({
       active = false;
       script?.removeEventListener("load", renderButton);
       script?.removeEventListener("error", onError);
+      if (activeCredentialHandler === handleCredential) {
+        activeCredentialHandler = null;
+      }
       container.replaceChildren();
     };
   }, [clientId, onCredential, onError]);

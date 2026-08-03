@@ -56,6 +56,11 @@ class DashboardService:
         latest_resume = (
             self.resume_analysis_repository.get_latest_by_user_id(user.id)
         )
+        onboarding = self._onboarding_state(
+            profile=profile,
+            analytics=analytics,
+            latest_resume=latest_resume,
+        )
 
         return {
             "profile_missing": False,
@@ -94,6 +99,7 @@ class DashboardService:
             "application_pipeline": analytics.get("application_pipeline", {}),
             "ai_requests_30d": analytics.get("ai_requests_30d", 0),
             "recent_activity": self._recent_activity(analytics),
+            "onboarding": onboarding,
         }
 
     @classmethod
@@ -137,6 +143,47 @@ class DashboardService:
             "application_pipeline": overview["application_pipeline"],
             "ai_requests_30d": overview["ai_requests_30d"],
             "recent_activity": cls._recent_activity(overview),
+            "onboarding": {
+                "completed_steps": 0,
+                "total_steps": 4,
+                "complete": False,
+                "steps": {
+                    "profile": False,
+                    "resume": False,
+                    "preferences": False,
+                    "application": False,
+                },
+            },
+        }
+
+    @classmethod
+    def _onboarding_state(
+        cls,
+        profile: Any,
+        analytics: dict[str, Any],
+        latest_resume: Any,
+    ) -> dict[str, Any]:
+        steps = {
+            "profile": bool(
+                cls._value(profile, "current_role")
+                or cls._value(profile, "target_role")
+            ),
+            "resume": latest_resume is not None,
+            "preferences": bool(
+                cls._value(profile, "preferred_job_type")
+                or cls._value(profile, "preferred_work_mode")
+                or cls._value(profile, "country")
+            ),
+            "application": (
+                sum(analytics.get("application_pipeline", {}).values()) > 0
+            ),
+        }
+
+        return {
+            "completed_steps": sum(steps.values()),
+            "total_steps": len(steps),
+            "complete": all(steps.values()),
+            "steps": steps,
         }
 
     @staticmethod

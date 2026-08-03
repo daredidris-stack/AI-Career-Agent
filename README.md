@@ -202,6 +202,15 @@ npm --prefix frontend run build
 | `AI_MAX_PROMPT_CHARACTERS` | No | Caps model input size; defaults to 30,000 characters |
 | `AI_REQUESTS_PER_HOUR` | No | Per-account hourly AI request allowance; defaults to 20 |
 | `AI_REQUESTS_PER_DAY` | No | Per-account daily AI request allowance; defaults to 100 |
+| `MAX_RESUME_UPLOAD_BYTES` | No | Maximum PDF/DOCX resume upload size; defaults to 5 MB |
+| `MALWARE_SCANNING_ENABLED` | No | Fail-closed ClamAV upload scanning switch; defaults to `false` |
+| `CLAMAV_HOST` | With scanning | Private-network hostname for the ClamAV daemon |
+| `CLAMAV_PORT` | No | ClamAV daemon TCP port; defaults to `3310` |
+| `CLAMAV_TIMEOUT_SECONDS` | No | Upload scan connection/read timeout; defaults to 10 seconds |
+| `RESUME_PARSER_TIMEOUT_SECONDS` | No | Wall-clock limit for one parser subprocess; defaults to 20 seconds |
+| `RESUME_PARSER_MAX_CPU_SECONDS` | No | CPU limit for one parser subprocess; defaults to 15 seconds |
+| `RESUME_PARSER_MAX_MEMORY_MB` | No | Linux address-space limit for one parser subprocess; defaults to 512 MB |
+| `RESUME_PARSER_MAX_TEXT_CHARACTERS` | No | Maximum extracted resume text; defaults to 200,000 characters |
 | `FRONTEND_URL` | No | Frontend origin used in verification and reset links |
 | `REQUIRE_EMAIL_VERIFICATION` | No | Blocks unverified login when set to `true` |
 | `SMTP_HOST` | Production | SMTP server used for account emails |
@@ -210,6 +219,12 @@ npm --prefix frontend run build
 | `SMTP_PASSWORD` | Production | SMTP login password |
 | `SMTP_FROM_EMAIL` | Production | Sender address for account emails |
 | `SMTP_USE_TLS` | No | Enables SMTP STARTTLS; defaults to `true` |
+| `JOB_ALERT_EMAIL_ENABLED` | No | Explicit deployment switch for saved-search email alerts; defaults to `false` |
+| `JOB_ALERT_BATCH_SIZE` | No | Maximum due saved searches processed per scheduled run; defaults to 50 |
+| `JOB_ALERT_RETRY_MINUTES` | No | Delay before retrying a failed alert; defaults to 60 minutes |
+| `JOB_ALERT_SEND_HOUR` | No | User-local delivery hour from 0 to 23; defaults to 8 |
+| `JOB_ALERT_MAX_JOBS_PER_EMAIL` | No | Maximum job details included in one alert email; defaults to 10 |
+| `ADMIN_EMAILS` | No | Comma-separated verified account emails allowed to access Operations |
 
 ### Direct job feeds and Google Jobs
 
@@ -305,6 +320,62 @@ docker compose --profile ingestion up --build
 Expired listings are deactivated using provider expiry dates, with a stale-job
 fallback for records that have not been seen within the configured retention
 window. Provider failures do not delete cached jobs or prevent local search.
+
+### Saved-search email alerts
+
+Saved searches always support manual checks and in-app new-match notifications.
+Automatic email is off by default at both the deployment and user levels.
+After SMTP and the scheduled worker are verified, a user with a verified email
+can explicitly enable a daily or weekly alert for each saved search in Job
+Library. The first scheduled search establishes a baseline and sends nothing;
+later emails contain only previously unseen matches and include a signed
+unsubscribe link for that one search.
+
+Run one due batch and exit with:
+
+```bash
+.venv/bin/python -m backend.jobs.send_job_alerts
+```
+
+Use a scheduler to invoke that command periodically; do not run it as a
+continuous process. Setup, staged activation, verification, and rollback are
+documented in [Saved-search email alert setup](docs/job-alert-email-setup.md).
+
+### Administrator operations and auditing
+
+Verified accounts listed in `ADMIN_EMAILS` can review aggregate deployment
+status and manage support requests from Operations. Every support status or
+internal-note change creates an append-only audit event containing the
+administrator identity, request ID, target, status transition, and note-presence
+change. Ticket messages and internal-note text are not duplicated into the
+audit history. Application code and database triggers reject audit event
+updates and deletions.
+
+Production operations must assign access ownership and approve an audit-event
+retention/archive policy before public launch.
+
+### Resume upload malware scanning
+
+Every uploaded PDF or DOCX used by Resume Studio, profile autofill, or Resume
+Tailor passes through the same temporary-file boundary. When
+`MALWARE_SCANNING_ENABLED=true`, the complete bounded upload is streamed to a
+configured ClamAV daemon before any document parser runs. A detection returns a
+generic rejection; scanner connection, timeout, or protocol failures return
+HTTP 503 and do not parse the file. Temporary files are removed in every path.
+
+Scanning is disabled by default so local development does not claim protection
+it does not have. Private-network deployment, safe validation, rollback, and
+resource requirements are documented in
+[Resume upload malware scanning](docs/upload-malware-scanning.md).
+
+After validation and the optional malware scan, document parsing always runs
+in a fresh subprocess that the API awaits asynchronously. The subprocess
+receives only the temporary file path and bounded parser settings; database,
+JWT, SMTP, provider, and other application secrets are not inherited. It has
+CPU, file-descriptor, output, and wall-clock limits, plus a Linux memory limit,
+and is stopped if the request is cancelled or times out. There is no
+in-process parsing fallback. Deployment limitations and staged checks are in
+[Resume parser isolation](docs/resume-parser-isolation.md).
 
 ### Apply Assistant
 

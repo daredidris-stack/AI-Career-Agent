@@ -32,6 +32,12 @@ from backend.services.profile_autofill_service import (
     ProfileAutofillError,
     ProfileAutofillService,
 )
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 
 
 router = APIRouter(
@@ -55,6 +61,10 @@ async def autofill_profile(
         return await service.autofill_upload(file)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
+    except MalwareScannerUnavailableError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except ResumeParserUnavailableError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     except ProfileAutofillError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
 

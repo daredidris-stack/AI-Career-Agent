@@ -10,6 +10,12 @@ from services.ollama_service import reliable_chat
 from backend.repositories.profile_repository import ProfileRepository
 from backend.services.candidate_skills import normalize_explicit_skills
 from backend.services.resume_service import ResumeService
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 from backend.services.career_document_service import CareerDocumentService
 from backend.services.resume_template_service import (
     resolve_resume_template_id,
@@ -76,6 +82,10 @@ class ResumeTailorService:
             try:
                 resume_text = await self.resume_service.extract_text(file)
             except ValueError:
+                raise
+            except MalwareScannerUnavailableError:
+                raise
+            except ResumeParserUnavailableError:
                 raise
             except Exception as error:
                 raise ResumeTailorError(

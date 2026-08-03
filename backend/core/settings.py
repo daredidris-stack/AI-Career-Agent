@@ -135,6 +135,30 @@ AI_PRO_REQUESTS_PER_DAY = max(
 MAX_RESUME_UPLOAD_BYTES = max(
     1024, int(os.getenv("MAX_RESUME_UPLOAD_BYTES", str(5 * 1024 * 1024)))
 )
+MALWARE_SCANNING_ENABLED = (
+    os.getenv("MALWARE_SCANNING_ENABLED", "false").casefold() == "true"
+)
+CLAMAV_HOST = os.getenv("CLAMAV_HOST")
+CLAMAV_PORT = max(1, min(65535, int(os.getenv("CLAMAV_PORT", "3310"))))
+CLAMAV_TIMEOUT_SECONDS = max(
+    1.0, min(60.0, float(os.getenv("CLAMAV_TIMEOUT_SECONDS", "10")))
+)
+RESUME_PARSER_TIMEOUT_SECONDS = max(
+    1.0, min(120.0, float(os.getenv("RESUME_PARSER_TIMEOUT_SECONDS", "20")))
+)
+RESUME_PARSER_MAX_CPU_SECONDS = max(
+    1, min(60, int(os.getenv("RESUME_PARSER_MAX_CPU_SECONDS", "15")))
+)
+RESUME_PARSER_MAX_MEMORY_MB = max(
+    128, min(2048, int(os.getenv("RESUME_PARSER_MAX_MEMORY_MB", "512")))
+)
+RESUME_PARSER_MAX_TEXT_CHARACTERS = max(
+    10_000,
+    min(
+        1_000_000,
+        int(os.getenv("RESUME_PARSER_MAX_TEXT_CHARACTERS", "200000")),
+    ),
+)
 
 APP_ENV = os.getenv("APP_ENV", "development")
 APP_RELEASE = os.getenv("APP_RELEASE", "development")
@@ -161,9 +185,29 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").casefold() == "true"
+JOB_ALERT_EMAIL_ENABLED = (
+    os.getenv("JOB_ALERT_EMAIL_ENABLED", "false").casefold() == "true"
+)
+JOB_ALERT_BATCH_SIZE = max(
+    1, min(500, int(os.getenv("JOB_ALERT_BATCH_SIZE", "50")))
+)
+JOB_ALERT_RETRY_MINUTES = max(
+    5, int(os.getenv("JOB_ALERT_RETRY_MINUTES", "60"))
+)
+JOB_ALERT_SEND_HOUR = max(
+    0, min(23, int(os.getenv("JOB_ALERT_SEND_HOUR", "8")))
+)
+JOB_ALERT_MAX_JOBS_PER_EMAIL = max(
+    1, min(25, int(os.getenv("JOB_ALERT_MAX_JOBS_PER_EMAIL", "10")))
+)
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PRO_PRICE_ID = os.getenv("STRIPE_PRO_PRICE_ID")
+ADMIN_EMAILS = {
+    email.strip().casefold()
+    for email in os.getenv("ADMIN_EMAILS", "").split(",")
+    if email.strip()
+}
 
 
 def require_jwt_secret() -> str:

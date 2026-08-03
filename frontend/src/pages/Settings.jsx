@@ -10,28 +10,37 @@ function Settings() {
   const { logout } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [error, setError] = useState("");
+  const [billingError, setBillingError] = useState("");
+  const [dataError, setDataError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [billing, setBilling] = useState(null);
+  const [billingLoading, setBillingLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/billing/status").then((response) => setBilling(response.data)).catch(() => {});
+    api.get("/billing/status")
+      .then((response) => setBilling(response.data))
+      .catch(() => setBillingError("Billing status could not be loaded."))
+      .finally(() => setBillingLoading(false));
   }, []);
 
   async function openBilling(endpoint) {
-    setError("");
+    setBillingError("");
     try {
       const response = await api.post(endpoint);
       window.location.assign(response.data.url);
     } catch (requestError) {
-      setError(requestError.response?.data?.detail || "Billing is temporarily unavailable.");
+      setBillingError(
+        requestError.response?.data?.detail
+          || "Billing is temporarily unavailable.",
+      );
     }
   }
 
   async function exportAccountData() {
     setExporting(true);
-    setError("");
+    setDataError("");
     try {
       const response = await api.get("/users/me/export");
       const blob = new Blob(
@@ -45,7 +54,9 @@ function Settings() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (requestError) {
-      setError(requestError.response?.data?.detail || "Data export failed.");
+      setDataError(
+        requestError.response?.data?.detail || "Data export failed.",
+      );
     } finally {
       setExporting(false);
     }
@@ -54,18 +65,18 @@ function Settings() {
   async function deleteAccount(event) {
     event.preventDefault();
     if (confirmation !== "DELETE") {
-      setError("Type DELETE to confirm account deletion.");
+      setDeleteError("Type DELETE to confirm account deletion.");
       return;
     }
 
     setDeleting(true);
-    setError("");
+    setDeleteError("");
     try {
       await api.delete("/users/me", { data: { password } });
       logout();
       navigate("/login", { replace: true });
     } catch (requestError) {
-      setError(
+      setDeleteError(
         requestError.response?.data?.detail
           || "Account deletion failed. Please try again.",
       );
@@ -81,14 +92,26 @@ function Settings() {
         <p className="mt-2 text-gray-400">Manage your account and security.</p>
       </div>
 
-      <section className="max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <section id="billing" className="scroll-mt-24 max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
         <div className="flex items-start justify-between gap-4">
           <div><h2 className="text-xl font-bold text-white">Plan and billing</h2><p className="mt-2 text-sm text-gray-400">Current plan: <span className="font-semibold capitalize text-blue-300">{billing?.plan || "Free"}</span></p></div>
           {billing?.subscription_status && <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold capitalize text-emerald-300">{billing.subscription_status}</span>}
         </div>
         <p className="mt-4 text-sm leading-6 text-gray-400">Free includes up to 20 AI requests per hour and 100 per day. Pro raises those safeguards to 100 per hour and 1,000 per day.</p>
+        {billing && !billing.billing_enabled && (
+          <p className="mt-3 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">
+            Paid plans are currently disabled in this deployment. Your Free
+            plan remains available; upgrade controls will activate after
+            approved Stripe pricing and billing configuration are connected.
+          </p>
+        )}
+        {billingError && (
+          <p role="alert" className="mt-3 text-sm text-red-300">
+            {billingError}
+          </p>
+        )}
         <div className="mt-5 flex flex-wrap gap-3">
-          {billing?.plan === "pro" ? <button type="button" onClick={() => openBilling("/billing/portal")} className="rounded-xl bg-gray-800 px-5 py-3 font-semibold text-white">Manage subscription</button> : <button type="button" disabled={!billing?.billing_enabled} onClick={() => openBilling("/billing/checkout")} className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{billing?.billing_enabled ? "Upgrade to Pro" : "Pro coming soon"}</button>}
+          {billing?.plan === "pro" ? <button type="button" onClick={() => openBilling("/billing/portal")} className="rounded-xl bg-gray-800 px-5 py-3 font-semibold text-white">Manage subscription</button> : <button type="button" disabled={billingLoading || !billing?.billing_enabled} onClick={() => openBilling("/billing/checkout")} className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{billingLoading ? "Loading plan..." : billing?.billing_enabled ? "Upgrade to Pro" : "Paid plans unavailable"}</button>}
         </div>
       </section>
 
@@ -101,6 +124,11 @@ function Settings() {
         <button type="button" onClick={exportAccountData} disabled={exporting} className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
           {exporting ? "Preparing export..." : "Download my data"}
         </button>
+        {dataError && (
+          <p role="alert" className="mt-3 text-sm text-red-300">
+            {dataError}
+          </p>
+        )}
       </section>
 
       <section className="max-w-2xl rounded-2xl border border-red-500/30 bg-gray-900 p-6">
@@ -112,7 +140,7 @@ function Settings() {
         </p>
 
         <form onSubmit={deleteAccount} className="mt-6 space-y-4">
-          {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+          {deleteError && <p role="alert" className="text-sm text-red-300">{deleteError}</p>}
           <label className="block">
             <span className="mb-2 block text-sm text-gray-300">Current password</span>
             <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none focus:border-red-500" />

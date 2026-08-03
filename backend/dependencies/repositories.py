@@ -27,6 +27,11 @@ from backend.repositories.job_application_repository import (
 from backend.repositories.ai_usage_repository import AIUsageRepository
 from backend.repositories.user_data_repository import UserDataRepository
 from backend.repositories.job_listing_repository import JobListingRepository
+from backend.repositories.job_library_repository import JobLibraryRepository
+from backend.repositories.support_repository import SupportRepository
+from backend.repositories.interview_practice_repository import (
+    InterviewPracticeRepository,
+)
 
 
 def get_user_repository(
@@ -52,6 +57,12 @@ def get_job_listing_repository(
     db: Session = Depends(get_db),
 ) -> JobListingRepository:
     return JobListingRepository(db)
+
+
+def get_job_library_repository(
+    db: Session = Depends(get_db),
+) -> JobLibraryRepository:
+    return JobLibraryRepository(db)
 
 
 def get_resume_analysis_repository(
@@ -82,3 +93,15 @@ def get_user_data_repository(
     db: Session = Depends(get_db),
 ) -> UserDataRepository:
     return UserDataRepository(db)
+
+
+def get_support_repository(
+    db: Session = Depends(get_db),
+) -> SupportRepository:
+    return SupportRepository(db)
+
+
+def get_interview_practice_repository(
+    db: Session = Depends(get_db),
+) -> InterviewPracticeRepository:
+    return InterviewPracticeRepository(db)

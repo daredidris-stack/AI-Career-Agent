@@ -15,6 +15,11 @@ Deletion from the primary database is immediate. Backup copies expire according 
 - Active customer content is retained until the user deletes it or closes the account.
 - AI usage events should be retained only as long as needed for abuse prevention, billing reconciliation, and security review.
 - Application logs must not contain resumes, profile content, job descriptions, access tokens, passwords, or request bodies.
+- Administrator support mutations create separate append-only audit events.
+  They retain the administrator identity, request ID, target, and change
+  metadata but do not copy ticket messages or internal-note text. Production
+  must define an access-controlled retention and archive period for these
+  operational records.
 - Production backups must have a documented retention period, encryption, access controls, and tested deletion/restore procedures.
 
 Before commercial launch, publish a jurisdiction-appropriate privacy notice that identifies the company acting as data controller, subprocessors, international transfers, lawful bases, contact channel, retention periods, and user rights.
@@ -23,7 +28,15 @@ Before commercial launch, publish a jurisdiction-appropriate privacy notice that
 
 Resume uploads accept only PDF and DOCX, are capped at 5 MB by default, and are checked for matching file signatures before parsing. Files are processed through short-lived temporary storage and removed after extraction. Uploaded filenames are metadata only and are never used as filesystem paths.
 
-Production should additionally scan uploads with a maintained malware scanner in an isolated worker before document parsing. Parsing workers should have no cloud metadata access, minimal filesystem permissions, memory/CPU limits, and no unrestricted outbound network access.
+The application now has a fail-closed ClamAV boundary before document parsing,
+but it is disabled until a deployed scanner and signature-update path pass the
+staged verification in
+[Resume upload malware scanning](upload-malware-scanning.md). Parsing now runs
+in a fresh subprocess that does not inherit application secrets, has bounded
+CPU/output/wall time and Linux memory, and has no in-process fallback. The
+remaining production requirement is platform-level egress, filesystem,
+process, and container resource hardening described in
+[Resume parser isolation](resume-parser-isolation.md).
 
 ## Isolation verification
 

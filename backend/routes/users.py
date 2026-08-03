@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from backend.models.user import User
 
-from backend.dependencies.auth import get_current_user
+from backend.dependencies.auth import get_current_user, is_admin_user
 from backend.dependencies.services import get_user_data_service
 from backend.services.user_data_service import UserDataService
 
@@ -25,6 +25,7 @@ def get_me(
         "last_name": current_user.last_name,
         "created_at": current_user.created_at,
         "is_email_verified": current_user.is_email_verified,
+        "is_admin": is_admin_user(current_user),
     }
 
 

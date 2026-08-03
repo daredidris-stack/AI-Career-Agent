@@ -17,6 +17,7 @@ request_logger = logging.getLogger("career_agent.requests")
 
 async def log_request(request: Request, call_next):
     request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+    request.state.request_id = request_id
     started_at = time.perf_counter()
     try:
         response = await call_next(request)

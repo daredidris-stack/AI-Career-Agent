@@ -9,6 +9,12 @@ from backend.services.resume_service import (
     ProfileRequiredError,
     ResumeAnalysisError,
 )
+from backend.services.malware_scan_service import (
+    MalwareScannerUnavailableError,
+)
+from backend.services.resume_parser_service import (
+    ResumeParserUnavailableError,
+)
 
 
 class ResumeRouteTests(unittest.IsolatedAsyncioTestCase):
@@ -56,6 +62,26 @@ class ResumeRouteTests(unittest.IsolatedAsyncioTestCase):
             await analyze_resume_file(self.file, self.user, self.service)
 
         self.assertEqual(context.exception.status_code, 502)
+
+    async def test_unavailable_security_scanner_returns_503(self):
+        self.service.analyze_upload.side_effect = (
+            MalwareScannerUnavailableError("Scanner unavailable")
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await analyze_resume_file(self.file, self.user, self.service)
+
+        self.assertEqual(context.exception.status_code, 503)
+
+    async def test_unavailable_document_parser_returns_503(self):
+        self.service.analyze_upload.side_effect = (
+            ResumeParserUnavailableError("Parser unavailable")
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await analyze_resume_file(self.file, self.user, self.service)
+
+        self.assertEqual(context.exception.status_code, 503)
 
 
 if __name__ == "__main__":

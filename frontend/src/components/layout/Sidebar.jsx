@@ -10,7 +10,9 @@ import {
   Sparkles,
   UserRound,
   SearchCheck,
+  LibraryBig,
   ClipboardList,
+  ListChecks,
   X,
 } from "lucide-react";
 
@@ -21,8 +23,14 @@ const menuItems = [
 
   {
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
     icon: LayoutDashboard,
+  },
+
+  {
+    name: "Getting Started",
+    path: "/onboarding",
+    icon: ListChecks,
   },
 
   {
@@ -53,6 +61,12 @@ const menuItems = [
     name: "Jobs",
     path: "/jobs",
     icon: SearchCheck,
+  },
+
+  {
+    name: "Job Library",
+    path: "/job-library",
+    icon: LibraryBig,
   },
 
   {

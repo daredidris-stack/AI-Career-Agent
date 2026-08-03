@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
-import { Download, FileText, History, Pencil, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeftRight,
+  Download,
+  FileText,
+  History,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import api from "../../services/api";
 
@@ -11,6 +19,25 @@ const kindLabels = {
   job_match: "Job match",
 };
 
+function readableContent(value) {
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function compareContent(previousValue, currentValue) {
+  const previous = readableContent(previousValue).split("\n").slice(0, 500);
+  const current = readableContent(currentValue).split("\n").slice(0, 500);
+  const width = Math.max(previous.length, current.length);
+  return Array.from({ length: width }, (_, index) => ({
+    previous: previous[index] ?? "",
+    current: current[index] ?? "",
+    changed: previous[index] !== current[index],
+  }));
+}
+
 
 export default function DocumentLibrary({ refreshToken }) {
   const [documents, setDocuments] = useState([]);
@@ -18,11 +45,29 @@ export default function DocumentLibrary({ refreshToken }) {
   const [structuredResume, setStructuredResume] = useState(null);
   const [versionDocument, setVersionDocument] = useState(null);
   const [versions, setVersions] = useState([]);
+  const [compareRevision, setCompareRevision] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     loadDocuments();
   }, [refreshToken]);
+
+  useEffect(() => {
+    if (!editing && !versionDocument) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function closeOnEscape(event) {
+      if (event.key !== "Escape") return;
+      setEditing(null);
+      setVersionDocument(null);
+      setCompareRevision(null);
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [editing, versionDocument]);
 
   async function loadDocuments() {
     try {
@@ -137,6 +182,7 @@ export default function DocumentLibrary({ refreshToken }) {
     const response = await api.get(`/documents/${document.id}/versions`);
     setVersionDocument(document);
     setVersions(response.data);
+    setCompareRevision(null);
   }
 
   async function restoreVersion(revision) {
@@ -145,6 +191,7 @@ export default function DocumentLibrary({ refreshToken }) {
     );
     setVersionDocument(null);
     setVersions([]);
+    setCompareRevision(null);
     await loadDocuments();
   }
 
@@ -162,6 +209,14 @@ export default function DocumentLibrary({ refreshToken }) {
     URL.revokeObjectURL(url);
   }
 
+  const comparison = useMemo(
+    () => compareRevision && versionDocument
+      ? compareContent(compareRevision.content, versionDocument.content)
+      : [],
+    [compareRevision, versionDocument],
+  );
+  const changedLineCount = comparison.filter((line) => line.changed).length;
+
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -169,7 +224,7 @@ export default function DocumentLibrary({ refreshToken }) {
         <h2 className="text-2xl font-bold text-white">Document library</h2>
         <p className="mt-1 text-sm text-gray-400">Your resumes and generated career documents are saved privately.</p>
         </div>
-        <button onClick={createResume} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">New resume</button>
+        <button type="button" onClick={createResume} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">New resume</button>
       </div>
 
       {error && <p role="alert" className="mt-4 text-red-300">{error}</p>}
@@ -188,21 +243,21 @@ export default function DocumentLibrary({ refreshToken }) {
             </div>
             <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{document.content}</p>
             <div className="mt-5 flex gap-4 text-sm">
-              <button onClick={() => beginEdit(document)} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
-              <button onClick={() => showVersions(document)} className="flex items-center gap-1 text-violet-400"><History size={15} /> History</button>
-              <button onClick={() => downloadDocument(document, "pdf")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> PDF</button>
-              <button onClick={() => downloadDocument(document, "docx")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> DOCX</button>
-              <button onClick={() => deleteDocument(document)} className="flex items-center gap-1 text-red-400"><Trash2 size={15} /> Delete</button>
+              <button type="button" onClick={() => beginEdit(document)} className="flex items-center gap-1 text-blue-400"><Pencil size={15} /> Edit</button>
+              <button type="button" onClick={() => showVersions(document)} className="flex items-center gap-1 text-violet-400"><History size={15} /> History</button>
+              <button type="button" onClick={() => downloadDocument(document, "pdf")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> PDF</button>
+              <button type="button" onClick={() => downloadDocument(document, "docx")} className="flex items-center gap-1 text-emerald-400"><Download size={15} /> DOCX</button>
+              <button type="button" onClick={() => deleteDocument(document)} className="flex items-center gap-1 text-red-400"><Trash2 size={15} /> Delete</button>
             </div>
           </article>
         ))}
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <form onSubmit={saveDocument} className="w-full max-w-3xl rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="presentation">
+          <form onSubmit={saveDocument} role="dialog" aria-modal="true" aria-labelledby="edit-document-title" className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Edit document</h3>
+              <h3 id="edit-document-title" className="text-xl font-bold text-white">Edit document</h3>
               <button type="button" onClick={() => setEditing(null)} aria-label="Close"><X className="text-gray-400" /></button>
             </div>
             <input value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} required className="mt-5 w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white" />
@@ -227,10 +282,53 @@ export default function DocumentLibrary({ refreshToken }) {
       )}
 
       {versionDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <section className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
-            <div className="flex items-center justify-between"><div><h3 className="text-xl font-bold text-white">Version history</h3><p className="mt-1 text-sm text-gray-400">{versionDocument.title}</p></div><button onClick={() => setVersionDocument(null)} aria-label="Close"><X className="text-gray-400" /></button></div>
-            {versions.length === 0 ? <p className="mt-6 text-gray-400">No earlier versions yet.</p> : <div className="mt-6 space-y-3">{versions.map((revision) => <article key={revision.id} className="rounded-xl border border-gray-700 bg-gray-950 p-4"><p className="font-medium text-white">{revision.title}</p><p className="mt-1 text-xs text-gray-500">{new Date(revision.created_at).toLocaleString()}</p><p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{revision.content}</p><button onClick={() => restoreVersion(revision)} className="mt-4 text-sm font-semibold text-blue-400">Restore this version</button></article>)}</div>}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="version-history-title" className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between"><div><h3 id="version-history-title" className="text-xl font-bold text-white">Version history</h3><p className="mt-1 text-sm text-gray-400">{versionDocument.title}</p></div><button type="button" onClick={() => setVersionDocument(null)} aria-label="Close"><X className="text-gray-400" /></button></div>
+            {compareRevision && (
+              <section className="mt-6 rounded-xl border border-blue-500/40 bg-blue-500/10 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h4 className="flex items-center gap-2 font-bold text-white">
+                      <ArrowLeftRight size={18} />
+                      Compare with current version
+                    </h4>
+                    <p className="mt-1 text-xs text-blue-200">
+                      {new Date(compareRevision.created_at).toLocaleString()} ·{" "}
+                      {changedLineCount} changed {changedLineCount === 1 ? "line" : "lines"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCompareRevision(null)}
+                    className="text-sm font-semibold text-blue-300 hover:text-white"
+                  >
+                    Close comparison
+                  </button>
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                  <div className="grid min-w-[760px] grid-cols-2 gap-px overflow-hidden rounded-lg border border-gray-700 bg-gray-700">
+                    <div className="bg-gray-900 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gray-300">
+                      Earlier version
+                    </div>
+                    <div className="bg-gray-900 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gray-300">
+                      Current version
+                    </div>
+                    {comparison.map((line, index) => (
+                      <div key={`previous-${index}`} className={`contents ${line.changed ? "text-amber-100" : "text-gray-400"}`}>
+                        <pre className={`whitespace-pre-wrap break-words px-3 py-1 text-xs ${line.changed ? "bg-amber-950/50" : "bg-gray-950"}`}>
+                          {line.previous || " "}
+                        </pre>
+                        <pre className={`whitespace-pre-wrap break-words px-3 py-1 text-xs ${line.changed ? "bg-emerald-950/40" : "bg-gray-950"}`}>
+                          {line.current || " "}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+            {versions.length === 0 ? <p className="mt-6 text-gray-400">No earlier versions yet.</p> : <div className="mt-6 space-y-3">{versions.map((revision) => <article key={revision.id} className="rounded-xl border border-gray-700 bg-gray-950 p-4"><p className="font-medium text-white">{revision.title}</p><p className="mt-1 text-xs text-gray-500">{new Date(revision.created_at).toLocaleString()}</p><p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm text-gray-400">{revision.content}</p><div className="mt-4 flex flex-wrap gap-4"><button type="button" onClick={() => setCompareRevision(revision)} className="flex items-center gap-1 text-sm font-semibold text-violet-400"><ArrowLeftRight size={15} /> Compare with current</button><button type="button" onClick={() => restoreVersion(revision)} className="text-sm font-semibold text-blue-400">Restore this version</button></div></article>)}</div>}
           </section>
         </div>
       )}

@@ -10,6 +10,10 @@ from backend.models.career_document_revision import CareerDocumentRevision
 from backend.models.job_application import JobApplication
 from backend.models.ai_usage_event import AIUsageEvent
 from backend.models.job_listing import JobListing, JobSyncState
+from backend.models.admin_audit_event import AdminAuditEvent
+from backend.models.interview_practice import InterviewPracticeAttempt
+from backend.models.job_library import JobAlertDelivery, SavedJob, SavedSearch
+from backend.models.support_ticket import SupportTicket
 
 
 print("Creating database...")
