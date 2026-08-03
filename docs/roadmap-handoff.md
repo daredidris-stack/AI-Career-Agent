@@ -425,11 +425,33 @@ groups:
   through migration `20260729_0012` is recorded after this documentation
   update.
 
+### Temporary Railway staging verification — August 2, 2026
+
+- Commit `95c759f` from `codex/complete-user-facing-workflows` was deployed to
+  an isolated `staging-pr6` Railway environment with separate PostgreSQL,
+  backend, and frontend instances.
+- The backend and frontend were connected to the feature branch. The frontend
+  API URL, backend frontend URL, and CORS origin pointed only to the staging
+  domains. `JOB_ALERT_EMAIL_ENABLED` and `MALWARE_SCANNING_ENABLED` remained
+  explicitly `false`.
+- Both application services and PostgreSQL reached Online. The live and ready
+  health endpoints returned HTTP 200, reported release `95c759f`, and confirmed
+  database readiness.
+- Deployed browser smoke testing completed registration, login, onboarding,
+  profile creation, Help Center rendering, support-request creation, and the
+  recent-request status view against the isolated database.
+- After verification, `staging-pr6` and its disposable data were permanently
+  deleted. Railway showed the production API, PostgreSQL, and frontend still
+  Online, and production was not redeployed or reconfigured.
+- This proves the release build and core account/support persistence on
+  Railway. It does not prove SMTP delivery, the scheduled alert worker,
+  ClamAV, hardened parser controls, backup/restore, job-provider contracts, or
+  production AI capacity; those gates remain open.
+
 ### Recommended continuation order
 
-Review the current branch, then deploy the saved migrations and application
-build to staging with `JOB_ALERT_EMAIL_ENABLED=false`. Configure at least one
-administrator email, verify the established owner and admin workflows, and
+Review the current branch and the recorded Railway smoke evidence. Configure
+at least one administrator email, verify the established admin workflows, and
 complete a manual mobile/keyboard visual pass. Next, configure a verified SMTP
 sender and Railway cron service and run the single-account staged activation
 test before enabling saved-search email for a wider group. Deploy and prove the
@@ -503,14 +525,14 @@ These cannot be completed honestly through repository code alone:
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
 - Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
-- Deployed staging PostgreSQL backup and migration plus extended
-  ingestion-worker observation. The isolated local Compose path is verified,
-  but it does not replace deployment-specific evidence.
+- Deployed PostgreSQL backup/restore plus extended ingestion-worker
+  observation. The Railway application and migration smoke path is verified,
+  but it does not replace backup restoration and long-running worker evidence.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
 - Private ClamAV deployment, signature/update monitoring, staged outage
-  verification, and isolated asynchronous parsing for production resume
-  uploads.
+  verification, and platform-level egress, filesystem, process, and resource
+  hardening for isolated asynchronous parsing.
 
 Until those items are resolved, run a controlled non-commercial beta, keep billing disabled, limit invited users, and avoid claims of provider partnership or guaranteed employment outcomes.
 

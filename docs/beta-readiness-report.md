@@ -7,6 +7,18 @@
 
 - `./scripts/verify_release.sh` passes with 354 backend tests as of the August 2
   isolated resume-parser foundation.
+- Commit `95c759f` was deployed from `codex/complete-user-facing-workflows` to
+  an isolated Railway environment on August 2. Both application services and
+  PostgreSQL reached Online; `/health/live` and `/health/ready` returned 200
+  with release `95c759f` and a healthy production-database check.
+- The temporary deployment completed registration, authenticated login,
+  onboarding, profile creation, populated Help Center rendering, and support
+  request persistence through the deployed interface. Its frontend and CORS
+  URLs were isolated to staging, while saved-search email and malware scanning
+  were explicitly disabled.
+- The staging environment and its disposable data were deleted immediately
+  after verification. Railway then showed the production API, PostgreSQL, and
+  frontend services still Online; no production configuration was changed.
 - Alembic upgrades from an empty database to the current revision, reports no schema drift, downgrades to base, and upgrades again successfully.
 - Frontend lint and the production build pass. Route-level code splitting keeps every generated JavaScript chunk below the build advisory threshold.
 - Authenticated navigation adapts to mobile widths with an accessible slide-out menu, compact header controls, responsive content padding, and a viewport-bounded account menu.
@@ -101,4 +113,11 @@ Keep billing disabled. Do not market the service as production-ready, sell subsc
 
 ## Recommended next milestone
 
-Complete the open beta checks in a deployed staging environment, record results here, and fix evidence-backed failures before adding new roadmap features. After that, invite a small cohort and measure activation, first successful resume analysis, first job search, first tracked application, seven-day return, core-flow failures, AI timeouts, provider availability, export/deletion completion, and support volume.
+Complete the remaining integration-specific staging checks: SMTP verification
+and password-reset delivery, saved-search email activation and unsubscribe,
+the scheduled worker, private ClamAV scanning and outage behavior, hardened
+parser isolation, backup/restore, and concurrent AI capacity. Fix any
+evidence-backed failures before inviting a small cohort, then measure
+activation, first successful resume analysis, first job search, first tracked
+application, seven-day return, core-flow failures, AI timeouts, provider
+availability, export/deletion completion, and support volume.
