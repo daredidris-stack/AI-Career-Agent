@@ -12,8 +12,28 @@ in staging.
 
 ## 1. Create and verify the sender
 
-Postmark is a suitable SMTP option, but the app remains provider-neutral. In
-Postmark:
+Railway disables outbound SMTP on Free, Trial, and Hobby plans. On those plans,
+use Brevo's HTTPS transactional-email API. The Free plan supports a verified
+Gmail sender for beta testing, but Brevo rewrites free-domain sender addresses;
+use an authenticated custom domain before public launch.
+
+In Brevo:
+
+1. Create a Free account and verify the sender address.
+2. Create a transactional API key dedicated to NextHire.
+3. Store the key only in Railway variables. Never put it in a frontend
+   variable, committed file, ticket, or support message.
+4. Review the provider's current pricing, limits, and production-approval
+   requirements before inviting users.
+
+Brevo's sender and API documentation:
+
+- [Create a sender](https://help.brevo.com/hc/en-us/articles/208836149-Create-a-new-sender-From-name-and-From-email)
+- [Send a transactional email](https://developers.brevo.com/docs/send-a-transactional-email)
+- [Free-plan limits](https://help.brevo.com/hc/en-us/articles/208580669-FAQs-What-are-the-limits-of-the-Free-plan)
+
+Postmark remains a suitable SMTP option on Railway Pro or another host that
+allows SMTP. In Postmark:
 
 1. Create a server for the staging or production environment.
 2. Verify either the exact sender address or its domain.
@@ -30,7 +50,22 @@ Postmark's current SMTP and sender documentation:
 
 ## 2. Configure the Railway API service
 
-Set these server-side variables on the API service:
+Set these server-side variables on the API service when using Brevo:
+
+```env
+BREVO_API_KEY=<transactional API key from Brevo>
+BREVO_API_URL=https://api.brevo.com/v3/smtp/email
+SMTP_FROM_EMAIL=<verified sender address>
+EMAIL_FROM_NAME=NextHire AI
+FRONTEND_URL=https://<public frontend host>
+JOB_ALERT_EMAIL_ENABLED=false
+JOB_ALERT_BATCH_SIZE=50
+JOB_ALERT_RETRY_MINUTES=60
+JOB_ALERT_SEND_HOUR=8
+JOB_ALERT_MAX_JOBS_PER_EMAIL=10
+```
+
+On a host that allows SMTP, use:
 
 ```env
 SMTP_HOST=smtp.postmarkapp.com
@@ -48,7 +83,8 @@ JOB_ALERT_MAX_JOBS_PER_EMAIL=10
 ```
 
 The API and worker must use the same `DATABASE_URL`, `JWT_SECRET_KEY`,
-`FRONTEND_URL`, SMTP settings, and `JOB_ALERT_*` settings. `FRONTEND_URL` must
+`FRONTEND_URL`, email-provider settings, and `JOB_ALERT_*` settings.
+`FRONTEND_URL` must
 be the public origin that serves `/email-preferences`; otherwise unsubscribe
 links will point to the wrong site.
 
@@ -108,8 +144,8 @@ with the deployed sender and public frontend.
 ## 5. Monitoring and rollback
 
 Monitor the scheduled-service exit status and the Operations delivery totals.
-Application logs record only generic failure types; SMTP credentials must never
-appear in logs.
+Application logs record only generic failure types; email-provider credentials
+must never appear in logs.
 
 To stop all automatic saved-search email immediately, set:
 
