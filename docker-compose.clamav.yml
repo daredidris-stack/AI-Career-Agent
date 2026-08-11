@@ -1,0 +1,21 @@
+services:
+  clamav:
+    image: clamav/clamav:1.5_base
+    restart: unless-stopped
+    mem_limit: 4g
+    cpus: 1.0
+    volumes:
+      - clamav_data:/var/lib/clamav
+
+  api:
+    environment:
+      MALWARE_SCANNING_ENABLED: "true"
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_TIMEOUT_SECONDS: 10
+    depends_on:
+      clamav:
+        condition: service_healthy
+
+volumes:
+  clamav_data:

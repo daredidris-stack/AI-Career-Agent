@@ -7,7 +7,7 @@ uncommitted feature batch. The five feature groups are now separated into
 auditable commits, and the complete implementation passes the automated
 release gate:
 
-- 354 backend tests pass with `ResourceWarning` treated as an error.
+- 356 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260729_0012`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -448,15 +448,49 @@ groups:
   ClamAV, hardened parser controls, backup/restore, job-provider contracts, or
   production AI capacity; those gates remain open.
 
+### Production email and scheduled-alert verification — August 11, 2026
+
+- The production API and hourly Railway one-shot worker use Brevo's HTTPS
+  transactional-email API. The deployment and per-search consent gates are
+  enabled only for explicitly opted-in, verified-email accounts.
+- A disabled safe run reported `configured: false`, `sent: 0`, and `failed: 0`.
+  The first enabled due run established one baseline and sent nothing.
+- After a new matching listing became available, the next due run sent one
+  email with no failures. Brevo recorded Sent, Delivered, and First opening for
+  the expected NextHire saved-search subject.
+- Opening the public unsubscribe URL with GET did not change the preference.
+  Submitting the confirmation with POST disabled only that saved search. The
+  user then re-enabled it from Job Library and the next daily run appeared.
+- This completes automatic saved-search email for the controlled production
+  beta. A custom authenticated sender domain, ongoing deliverability and worker
+  monitoring, and wider-user capacity remain public-launch operations.
+
+### ClamAV deployment preparation — August 11, 2026
+
+- The private-scanner implementation remains fail closed and all 23 focused
+  scanner and upload-route tests pass. The complete release gate passes 356
+  backend tests, the Alembic upgrade/check/downgrade/re-upgrade cycle, frontend
+  lint, the production build, and `git diff --check`.
+- `docker-compose.clamav.yml` adds an optional local proof using the official
+  ClamAV 1.5 feature image, persistent signatures, a 4 GB memory limit, one
+  vCPU, the image health check, and no published port. The merged Compose model
+  validates. Docker was not running locally, so no live-container result is
+  claimed.
+- The Railway runbook now records the private-network, volume, health,
+  clean-file, harmless-fixture, fail-closed outage, recovery, and no-public-port
+  checks. The current billing cycle showed $0.93 usage against $5 included; a
+  24-hour proof at the configured resource ceilings is bounded to roughly $2
+  of compute, but ongoing monthly cost still requires owner approval.
+
 ### Recommended continuation order
 
 Review the current branch and the recorded Railway smoke evidence. Configure
 at least one administrator email, verify the established admin workflows, and
-complete a manual mobile/keyboard visual pass. Next, configure a verified SMTP
-sender and Railway cron service and run the single-account staged activation
-test before enabling saved-search email for a wider group. Deploy and prove the
-completed fail-closed ClamAV integration and isolated parser under hardened
-container egress, filesystem, process, and resource controls. Retain live
+complete a manual mobile/keyboard visual pass. The Brevo sender, scheduled
+worker, baseline, delivery, and unsubscribe activation path are proven for the
+controlled beta. Next, deploy and prove the completed fail-closed ClamAV
+integration and isolated parser under hardened container egress, filesystem,
+process, and resource controls. Retain live
 Turnstile, provider commercial approval and quota, and the remaining deployed
 staging checks as release gates. Do not replace the July 17 beta assessment
 with this engineering snapshot; its manual smoke-test evidence and external
@@ -524,7 +558,10 @@ These cannot be completed honestly through repository code alone:
 
 - Operating company identity, launch markets, counsel-approved legal documents, support/privacy contact, subprocessors, and jurisdiction-specific compliance.
 - Written approval of each job provider’s commercial use and attribution requirements.
-- Production hosting, domain, PostgreSQL, SMTP, monitoring, backup storage, secret manager, incident contacts, and restore drill.
+- Custom production domain and authenticated email-sender domain, monitoring,
+  backup storage, secret manager, incident contacts, and restore drill.
+  Railway hosting, PostgreSQL, Brevo transactional delivery, and the hourly
+  alert worker are active for the controlled beta.
 - Deployed PostgreSQL backup/restore plus extended ingestion-worker
   observation. The Railway application and migration smoke path is verified,
   but it does not replace backup restoration and long-running worker evidence.
@@ -546,9 +583,9 @@ Until those items are resolved, run a controlled non-commercial beta, keep billi
 4. Evaluate direct ATS application submission only through employer-authorized
    APIs with per-application consent, submission receipts, idempotency, and
    audit logs; do not automate restricted job platforms.
-5. Deploy and prove the completed opt-in saved-search email flow with the
-   selected SMTP sender and scheduled worker before considering application
-   reminder emails.
+5. Monitor the proven opt-in saved-search email flow and collect delivery,
+   bounce, complaint, unsubscribe, worker-failure, and latency evidence before
+   considering application reminder emails.
 6. Validate the completed responsive and keyboard behavior with beta users and
    address evidence-backed usability issues. Route-level code splitting is
    implemented and the production build has no large-bundle advisory.

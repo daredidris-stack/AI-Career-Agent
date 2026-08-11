@@ -5,8 +5,8 @@
 
 ## Verified release evidence
 
-- `./scripts/verify_release.sh` passes with 354 backend tests as of the August 2
-  isolated resume-parser foundation.
+- `./scripts/verify_release.sh` passes with 356 backend tests as of the August
+  11 email-evidence and ClamAV deployment-preparation update.
 - Commit `95c759f` was deployed from `codex/complete-user-facing-workflows` to
   an isolated Railway environment on August 2. Both application services and
   PostgreSQL reached Online; `/health/live` and `/health/ready` returned 200
@@ -43,6 +43,12 @@
   record delivery status, retry without hiding unsent matches, and provide a
   signed public unsubscribe confirmation page. The scheduled worker exits
   after one bounded batch.
+- On August 11, the Railway production API and hourly worker completed the
+  Brevo activation sequence: disabled safe run, no-email first-run baseline,
+  one delivered new-match email, GET-safe and POST-confirmed unsubscribe, and
+  re-enablement with the next daily run scheduled. Automatic alerts are now
+  complete for the controlled beta; a custom authenticated sender domain and
+  ongoing deliverability monitoring remain public-launch gates.
 - Help feedback creates owner-scoped support requests. Administrator operations
   routes require a configured email allowlist and expose aggregate status rather
   than secrets.
@@ -74,15 +80,14 @@
 
 ## Open beta checks
 
-These items should be completed before inviting a wider tester group:
+These items should be completed before inviting a wider tester group. The
+production Brevo sender, saved-search alert, unsubscribe, and Railway
+scheduled-worker activation paths have passed:
 
-- Exercise registration email verification and password reset against the selected SMTP provider. Automated service coverage is not a substitute for delivery testing.
-- Keep saved-search email alerts deployment-disabled until SMTP delivery,
-  sender verification, public unsubscribe routing, and the Railway scheduled
-  worker pass the staged activation test in
-  [Saved-search email alert setup](job-alert-email-setup.md). Consent,
-  unsubscribe, batch, retry, and delivery-record behavior have automated
-  coverage but still require deployed proof.
+- Exercise registration email verification and password reset against the
+  production Brevo sender. The transactional channel is live, but the release
+  handoff does not yet contain separate end-to-end evidence for both auth
+  messages.
 - Manually enter and persist an application follow-up reminder. Native date-time entry could not be completed reliably through browser automation.
 - Exercise the Free-plan 429 response through the deployed interface and confirm a second account remains unaffected. Per-user accounting has automated coverage.
 - Confirm the deployed AI timeout, retry, model, and capacity settings under concurrent beta usage. Local AI responses took roughly 12–30 seconds during smoke testing.
@@ -103,7 +108,10 @@ Keep billing disabled. Do not market the service as production-ready, sell subsc
 
 - Legal entity, launch jurisdictions, counsel-approved Terms and Privacy Notice, support/privacy contacts, subprocessors, accessibility review, retention, and international-transfer decisions.
 - Written commercial-use review for every enabled job provider, including attribution, caching, rate limits, geography, and termination requirements.
-- Managed production hosting, domain, PostgreSQL, SMTP, monitoring, alert routing, encrypted backups, secret management, incident ownership, and a completed restore drill.
+- Custom production domain and authenticated email-sender domain, monitoring,
+  alert routing, encrypted backups, secret management, incident ownership, and
+  a completed restore drill. Railway hosting, PostgreSQL, Brevo delivery, and
+  the scheduled alert worker are active for the controlled beta.
 - Approved AI-provider commercial and privacy terms, production capacity, cost limits, and concurrency behavior.
 - Deployed ClamAV capacity/signature monitoring plus platform-level egress,
   filesystem, process, and resource hardening for the isolated parser. The
@@ -113,10 +121,10 @@ Keep billing disabled. Do not market the service as production-ready, sell subsc
 
 ## Recommended next milestone
 
-Complete the remaining integration-specific staging checks: SMTP verification
-and password-reset delivery, saved-search email activation and unsubscribe,
-the scheduled worker, private ClamAV scanning and outage behavior, hardened
-parser isolation, backup/restore, and concurrent AI capacity. Fix any
+Complete the remaining integration-specific staging checks: private ClamAV
+scanning and outage behavior, hardened parser isolation, backup/restore,
+registration/password email delivery, monitoring/alert routing, and concurrent
+AI capacity. Fix any
 evidence-backed failures before inviting a small cohort, then measure
 activation, first successful resume analysis, first job search, first tracked
 application, seven-day return, core-flow failures, AI timeouts, provider

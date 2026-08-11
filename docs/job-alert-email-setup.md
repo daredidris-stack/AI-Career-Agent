@@ -6,9 +6,31 @@ Saved-search email delivery has two independent safety switches:
 2. Each user must have a verified account email and explicitly enable an alert
    for an individual saved search.
 
-Keep the deployment switch `false` until the sender, database migration,
-scheduled worker, consent control, delivery record, and unsubscribe flow pass
-in staging.
+For a new environment, keep the deployment switch `false` until the sender,
+database migration, scheduled worker, consent control, delivery record, and
+unsubscribe flow pass the staged activation test.
+
+## Production evidence — August 11, 2026
+
+The Railway production API and hourly one-shot worker now use Brevo's HTTPS
+transactional-email API. The activation sequence completed without exposing
+credentials or recipient addresses:
+
+- A disabled safe run reported `configured: false`, `sent: 0`, and `failed: 0`.
+- The first enabled due run reported one baseline and no email, preventing old
+  matches from being sent as new.
+- After a new matching listing was available, the next due run reported one
+  sent delivery and no failures. Brevo recorded Sent, Delivered, and First
+  opening for the expected NextHire saved-search subject.
+- Opening the public unsubscribe page with GET did not mutate the preference.
+  Submitting the confirmation with POST disabled only that saved-search alert.
+- The alert was re-enabled from Job Library and showed its next daily run. The
+  Railway worker remains scheduled hourly and processes only user-local due
+  searches.
+
+This proves the bounded automatic-alert path for the production beta. A custom
+authenticated sender domain, ongoing deliverability monitoring, and wider-user
+capacity remain launch operations rather than implementation claims.
 
 ## 1. Create and verify the sender
 
