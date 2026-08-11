@@ -185,6 +185,11 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL")
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").casefold() == "true"
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_API_URL = os.getenv(
+    "BREVO_API_URL", "https://api.brevo.com/v3/smtp/email"
+)
+EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "NextHire AI")
 JOB_ALERT_EMAIL_ENABLED = (
     os.getenv("JOB_ALERT_EMAIL_ENABLED", "false").casefold() == "true"
 )
