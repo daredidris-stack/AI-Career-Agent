@@ -6,7 +6,7 @@
 ## Verified release evidence
 
 - `./scripts/verify_release.sh` passes with 356 backend tests as of the August
-  11 email-evidence and ClamAV deployment-preparation update.
+  13 temporary ClamAV verification update.
 - Commit `95c759f` was deployed from `codex/complete-user-facing-workflows` to
   an isolated Railway environment on August 2. Both application services and
   PostgreSQL reached Online; `/health/live` and `/health/ready` returned 200
@@ -68,8 +68,14 @@
 - Automated coverage rejects unsupported, spoofed, oversized, and empty resume files.
 - Optional ClamAV scanning now runs before PDF/DOCX parsing for every upload
   workflow. Detection is generic, scanner failures return 503, and local
-  behavior remains disabled by default until a private deployed scanner passes
-  the staged activation test.
+  behavior remains disabled by default.
+- From August 11 through 13, a capped private Railway ClamAV service proved the
+  deployed API's service-layer clean-file, harmless-fixture rejection, and
+  fail-closed unavailable-scanner paths. The scanner had no public domain or
+  TCP proxy. It and its signature volume were deleted after the proof; the API
+  was redeployed with scanning disabled and its stale scanner variables
+  removed. Continuous protection and the three user-facing upload-path checks
+  therefore remain open.
 - PDF/DOCX parsing now runs in a fresh asynchronously awaited subprocess with a
   secret-free environment, CPU/file/output/wall-time bounds, a Linux memory
   bound, cancellation cleanup, and no in-process fallback. Genuine PDF and
@@ -91,6 +97,10 @@ scheduled-worker activation paths have passed:
 - Manually enter and persist an application follow-up reminder. Native date-time entry could not be completed reliably through browser automation.
 - Exercise the Free-plan 429 response through the deployed interface and confirm a second account remains unaffected. Per-user accounting has automated coverage.
 - Confirm the deployed AI timeout, retry, model, and capacity settings under concurrent beta usage. Local AI responses took roughly 12–30 seconds during smoke testing.
+- Repeat the ClamAV activation check with a retained private scanner through
+  Resume Studio, profile autofill, and Resume Tailor, including clean PDF/DOCX,
+  harmless-fixture, outage, recovery, latency, restart, and signature-update
+  evidence.
 
 ## Safe scope for invited testers
 
@@ -100,7 +110,10 @@ saved-resume job matching, resume tailoring, cover-letter generation, document
 comparison/history, interview practice scoring, application preparation and
 calendar tracking, Help feedback, data export, and account deletion.
 
-Use synthetic or non-sensitive resume data until production privacy operations and malware scanning are available. Tell testers that job listings come from identified third parties, must be verified on the provider site, and do not imply provider partnership or guaranteed employment outcomes.
+Use synthetic or non-sensitive resume data until production privacy operations
+and continuously deployed malware scanning are available. Tell testers that job
+listings come from identified third parties, must be verified on the provider
+site, and do not imply provider partnership or guaranteed employment outcomes.
 
 Keep billing disabled. Do not market the service as production-ready, sell subscriptions, or promise continuous availability during this phase.
 
@@ -113,18 +126,19 @@ Keep billing disabled. Do not market the service as production-ready, sell subsc
   a completed restore drill. Railway hosting, PostgreSQL, Brevo delivery, and
   the scheduled alert worker are active for the controlled beta.
 - Approved AI-provider commercial and privacy terms, production capacity, cost limits, and concurrency behavior.
-- Deployed ClamAV capacity/signature monitoring plus platform-level egress,
+- A continuously deployed private ClamAV service with capacity/signature
+  monitoring, full upload-route activation evidence, and platform-level egress,
   filesystem, process, and resource hardening for the isolated parser. The
-  fail-closed scanner and subprocess integrations are complete but not yet
-  proven in deployed staging.
+  fail-closed service layer passed a temporary Railway proof but is not active
+  after the billable test resources were removed.
 - Stripe account configuration, approved prices, tax/refund/cancellation policy, signed webhook validation, reconciliation, and support ownership before billing is enabled.
 
 ## Recommended next milestone
 
-Complete the remaining integration-specific staging checks: private ClamAV
-scanning and outage behavior, hardened parser isolation, backup/restore,
-registration/password email delivery, monitoring/alert routing, and concurrent
-AI capacity. Fix any
+Approve and retain a private scanner, then complete its three-route upload,
+recovery, and sustained-monitoring checks alongside hardened parser isolation,
+backup/restore, registration/password email delivery, monitoring/alert routing,
+and concurrent AI capacity. Fix any
 evidence-backed failures before inviting a small cohort, then measure
 activation, first successful resume analysis, first job search, first tracked
 application, seven-day return, core-flow failures, AI timeouts, provider

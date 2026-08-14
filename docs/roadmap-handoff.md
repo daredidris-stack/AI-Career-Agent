@@ -482,15 +482,49 @@ groups:
   24-hour proof at the configured resource ceilings is bounded to roughly $2
   of compute, but ongoing monthly cost still requires owner approval.
 
+### Temporary Railway ClamAV proof and cleanup — August 13, 2026
+
+- A temporary `clamav/clamav:1.5_base` service ran in the production Railway
+  environment with one replica, a one-vCPU limit, a 4 GB memory limit, a
+  persistent `/var/lib/clamav` volume, and serverless sleeping disabled. It had
+  no public domain or TCP proxy. FreshClam loaded daily database 28089, main
+  database 63, and bytecode database 339 before `clamd` became ready.
+- The production API was first redeployed healthy with scanning disabled, then
+  with `MALWARE_SCANNING_ENABLED=true` and a Railway private-domain reference.
+  Its deployed `MalwareScanService` reported active/configured, accepted a clean
+  stream, rejected the exact approved harmless antivirus fixture with only the
+  generic `The uploaded file failed security scanning.` message, and converted
+  a simulated unreachable scanner into the generic temporarily-unavailable
+  error. Public `/health/ready` remained HTTP 200 with healthy database checks.
+- This proves private connectivity and the deployed service-layer clean,
+  detection, and fail-closed paths. It does not prove valid PDF/DOCX behavior
+  through Resume Studio, profile autofill, and Resume Tailor, restored-service
+  recovery, or sustained signature, latency, memory, and restart monitoring.
+- After proof, the API was redeployed with scanning disabled. The stale
+  `CLAMAV_HOST`, `CLAMAV_PORT`, and `CLAMAV_TIMEOUT_SECONDS` variables were
+  removed in a second successful deployment. The temporary scanner service and
+  signature volume were then permanently deleted. Railway showed the API,
+  frontend, and PostgreSQL Online, and `/health/ready` returned HTTP 200.
+- Railway's usage page showed $1.80 current project usage and a $4.20 estimate.
+  Deleted services, which include this temporary scanner, accounted for
+  $0.7254. No recurring scanner resource remains. Ongoing deployment still
+  requires owner cost approval.
+- The readiness response still reports release `d4ab044` while Railway labels
+  the active source deployment as `Add Brevo transactional email delivery
+  (#7)`. Treat `APP_RELEASE` as stale configuration and correct it before using
+  that field as production provenance evidence.
+
 ### Recommended continuation order
 
 Review the current branch and the recorded Railway smoke evidence. Configure
 at least one administrator email, verify the established admin workflows, and
 complete a manual mobile/keyboard visual pass. The Brevo sender, scheduled
 worker, baseline, delivery, and unsubscribe activation path are proven for the
-controlled beta. Next, deploy and prove the completed fail-closed ClamAV
-integration and isolated parser under hardened container egress, filesystem,
-process, and resource controls. Retain live
+controlled beta. The temporary ClamAV proof covers private service-layer clean,
+detection, and fail-closed behavior; next approve a retained scanner and prove
+all three upload routes, recovery, and monitoring while hardening the isolated
+parser's container egress, filesystem, process, and resource controls. Retain
+live
 Turnstile, provider commercial approval and quota, and the remaining deployed
 staging checks as release gates. Do not replace the July 17 beta assessment
 with this engineering snapshot; its manual smoke-test evidence and external
@@ -567,9 +601,10 @@ These cannot be completed honestly through repository code alone:
   but it does not replace backup restoration and long-running worker evidence.
 - AI provider commercial/privacy approval and production capacity.
 - Stripe account, approved product price, tax/refund/cancellation policy, webhook secret, live-mode testing, and reconciliation ownership.
-- Private ClamAV deployment, signature/update monitoring, staged outage
-  verification, and platform-level egress, filesystem, process, and resource
-  hardening for isolated asynchronous parsing.
+- Retained private ClamAV deployment, signature/update monitoring, complete
+  upload-route activation and recovery evidence, and platform-level egress,
+  filesystem, process, and resource hardening for isolated asynchronous
+  parsing. A temporary service-layer proof passed and was removed.
 
 Until those items are resolved, run a controlled non-commercial beta, keep billing disabled, limit invited users, and avoid claims of provider partnership or guaranteed employment outcomes.
 
@@ -578,8 +613,9 @@ Until those items are resolved, run a controlled non-commercial beta, keep billi
 1. Fix issues discovered in the controlled beta before expanding scope.
 2. Assign operational ownership and approve the retention/archive period for
    the completed append-only administrator audit log.
-3. Deploy and prove the completed fail-closed ClamAV and parser-subprocess
-   integrations under platform-level sandboxing and monitoring.
+3. Approve a retained private ClamAV service, complete all upload-route and
+   recovery checks, and prove the parser-subprocess integration under
+   platform-level sandboxing and monitoring.
 4. Evaluate direct ATS application submission only through employer-authorized
    APIs with per-application consent, submission receipts, idempotency, and
    audit logs; do not automate restricted job platforms.
