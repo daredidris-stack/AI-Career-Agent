@@ -7,7 +7,7 @@ uncommitted feature batch. The five feature groups are now separated into
 auditable commits, and the complete implementation passes the automated
 release gate:
 
-- 356 backend tests pass with `ResourceWarning` treated as an error.
+- 359 backend tests pass with `ResourceWarning` treated as an error.
 - Alembic upgrades an empty database through `20260729_0012`, reports no
   schema drift, downgrades to base, and upgrades to head again.
 - Frontend lint and the production Vite build pass.
@@ -468,7 +468,7 @@ groups:
 ### ClamAV deployment preparation — August 11, 2026
 
 - The private-scanner implementation remains fail closed and all 23 focused
-  scanner and upload-route tests pass. The complete release gate passes 356
+  scanner and upload-route tests pass. The complete release gate passes 359
   backend tests, the Alembic upgrade/check/downgrade/re-upgrade cycle, frontend
   lint, the production build, and `git diff --check`.
 - `docker-compose.clamav.yml` adds an optional local proof using the official
@@ -509,10 +509,11 @@ groups:
   Deleted services, which include this temporary scanner, accounted for
   $0.7254. No recurring scanner resource remains. Ongoing deployment still
   requires owner cost approval.
-- The readiness response still reports release `d4ab044` while Railway labels
-  the active source deployment as `Add Brevo transactional email delivery
-  (#7)`. Treat `APP_RELEASE` as stale configuration and correct it before using
-  that field as production provenance evidence.
+- The August 13 readiness response reported release `d4ab044` while Railway
+  labeled the active source deployment as `Add Brevo transactional email
+  delivery (#7)`. Release resolution now prefers Railway's platform-provided
+  Git commit SHA over a stale manual `APP_RELEASE`; future deployment smoke
+  checks must confirm the readiness release matches the pushed commit.
 
 ### Recommended continuation order
 

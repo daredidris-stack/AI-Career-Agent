@@ -160,8 +160,17 @@ RESUME_PARSER_MAX_TEXT_CHARACTERS = max(
     ),
 )
 
+
+def resolve_app_release() -> str:
+    return (
+        os.getenv("RAILWAY_GIT_COMMIT_SHA")
+        or os.getenv("APP_RELEASE")
+        or "development"
+    )
+
+
 APP_ENV = os.getenv("APP_ENV", "development")
-APP_RELEASE = os.getenv("APP_RELEASE", "development")
+APP_RELEASE = resolve_app_release()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LEGAL_TERMS_VERSION = os.getenv("LEGAL_TERMS_VERSION", "2026-07-17")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")

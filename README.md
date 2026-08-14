@@ -211,6 +211,7 @@ npm --prefix frontend run build
 | `RESUME_PARSER_MAX_CPU_SECONDS` | No | CPU limit for one parser subprocess; defaults to 15 seconds |
 | `RESUME_PARSER_MAX_MEMORY_MB` | No | Linux address-space limit for one parser subprocess; defaults to 512 MB |
 | `RESUME_PARSER_MAX_TEXT_CHARACTERS` | No | Maximum extracted resume text; defaults to 200,000 characters |
+| `APP_RELEASE` | No | Release label outside Railway; Railway Git deploys automatically prefer `RAILWAY_GIT_COMMIT_SHA` |
 | `FRONTEND_URL` | No | Frontend origin used in verification and reset links |
 | `REQUIRE_EMAIL_VERIFICATION` | No | Blocks unverified login when set to `true` |
 | `SMTP_HOST` | Production | SMTP server used for account emails |

@@ -5,8 +5,8 @@
 
 ## Verified release evidence
 
-- `./scripts/verify_release.sh` passes with 356 backend tests as of the August
-  13 temporary ClamAV verification update.
+- `./scripts/verify_release.sh` passes with 359 backend tests as of the August
+  13 release-provenance update.
 - Commit `95c759f` was deployed from `codex/complete-user-facing-workflows` to
   an isolated Railway environment on August 2. Both application services and
   PostgreSQL reached Online; `/health/live` and `/health/ready` returned 200

@@ -17,7 +17,9 @@ The API container performs migration before startup for a single-instance deploy
 ## Required production configuration
 
 - `APP_ENV=production`
-- `APP_RELEASE` set to the Git commit or release identifier
+- `APP_RELEASE` set to the Git commit or release identifier outside Railway;
+  Git-based Railway deployments automatically prefer the platform-provided
+  `RAILWAY_GIT_COMMIT_SHA`
 - a managed PostgreSQL `DATABASE_URL`
 - a randomly generated `JWT_SECRET_KEY` stored in the platform secret manager
 - exact HTTPS values for `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS`
