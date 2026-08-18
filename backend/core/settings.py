@@ -24,7 +24,7 @@ DATABASE_URL = normalize_database_url(
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_HOURS = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24")
+    os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "0.25")
 )
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
@@ -231,3 +231,7 @@ def require_jwt_secret() -> str:
         )
 
     return JWT_SECRET_KEY
+
+REFRESH_TOKEN_EXPIRE_DAYS = int(
+    os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30")
+)

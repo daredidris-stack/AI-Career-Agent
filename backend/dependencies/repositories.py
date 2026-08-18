@@ -105,3 +105,10 @@ def get_interview_practice_repository(
     db: Session = Depends(get_db),
 ) -> InterviewPracticeRepository:
     return InterviewPracticeRepository(db)
+
+
+def get_refresh_token_repository(
+    db: Session = Depends(get_db),
+):
+    from backend.repositories.refresh_token_repository import RefreshTokenRepository
+    return RefreshTokenRepository(db)

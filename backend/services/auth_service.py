@@ -1,4 +1,5 @@
 from datetime import timedelta
+import hashlib
 import secrets
 
 from backend.auth.hashing import (
@@ -15,10 +16,12 @@ from backend.core.settings import (
     FRONTEND_URL,
     LEGAL_TERMS_VERSION,
     REQUIRE_EMAIL_VERIFICATION,
+    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from backend.core.time import utc_now
 
 from backend.repositories.user_repository import UserRepository
+from backend.repositories.refresh_token_repository import RefreshTokenRepository
 
 from backend.exceptions.auth_exceptions import (
     UserAlreadyExistsError,
@@ -42,9 +45,11 @@ class AuthService:
         self,
         repo: UserRepository,
         email_service: EmailService | None = None,
+        refresh_token_repo: RefreshTokenRepository | None = None,
     ):
         self.repo = repo
         self.email_service = email_service or EmailService()
+        self.refresh_token_repo = refresh_token_repo
 
 
     def register_user(
@@ -109,15 +114,18 @@ class AuthService:
             user.locked_until = None
             self.repo.save(user)
 
-        return create_access_token(
+        access_token = create_access_token(
             {
                 "user_id": user.id,
                 "email": user.email,
                 "token_version": user.token_version or 0,
             }
         )
+        refresh_token = self._create_refresh_token_for_user(user) if self.refresh_token_repo else None
+        return access_token, refresh_token
 
-    def authenticate_google(self, identity: GoogleIdentity) -> str:
+
+    def authenticate_google(self, identity: GoogleIdentity):
         user = self.repo.get_by_google_subject(identity.subject)
         needs_save = False
         if not user:
@@ -169,13 +177,79 @@ class AuthService:
         if needs_save:
             self.repo.save(user)
 
-        return create_access_token(
+        access_token = create_access_token(
             {
                 "user_id": user.id,
                 "email": user.email,
                 "token_version": user.token_version or 0,
             }
         )
+        refresh_token = self._create_refresh_token_for_user(user) if self.refresh_token_repo else None
+        return access_token, refresh_token
+
+    def _create_refresh_token_for_user(self, user) -> str:
+        """Generate a refresh token, store its hash, and return the plain token."""
+        # Generate a random token
+        plain_token = secrets.token_urlsafe(64)
+        # Hash the token (SHA-256)
+        token_hash = hashlib.sha256(plain_token.encode()).hexdigest()
+        # Expiration
+        expires_at = utc_now() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        # Store
+        self.refresh_token_repo.create(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        return plain_token
+
+    def _get_user_id_from_refresh_token(self, token: str) -> int | None:
+        """Validate a refresh token and return the user ID if valid."""
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        stored = self.refresh_token_repo.get_by_token_hash(token_hash)
+        if not stored:
+            return None
+        if stored.revoked_at is not None:
+            return None
+        if stored.expires_at < utc_now():
+            return None
+        return stored.user_id
+
+    def rotate_refresh_token(self, token: str):
+        """Validate the refresh token, revoke it, and create a new pair."""
+        user_id = self._get_user_id_from_refresh_token(token)
+        if not user_id:
+            return None, None
+        # Revoke the old refresh token
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        self.refresh_token_repo.revoke(token_hash)
+        # Get the user
+        user = self.repo.get_by_id(user_id)
+        if not user:
+            return None, None
+        # Create new access and refresh tokens
+        access_token = create_access_token(
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "token_version": user.token_version or 0,
+            }
+        )
+        refresh_token = self._create_refresh_token_for_user(user)
+        return access_token, refresh_token
+
+    def revoke_refresh_token(self, token: str) -> None:
+        """Revoke a refresh token (given the plain token)."""
+        if not self.refresh_token_repo:
+            return
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        self.refresh_token_repo.revoke(token_hash)
+
+    def revoke_all_refresh_tokens_for_user(self, user_id: int) -> None:
+        """Revoke all refresh tokens for a user."""
+        if not self.refresh_token_repo:
+            return
+        self.refresh_token_repo.revoke_all_for_user(user_id)
 
     def delete_account(self, user, password: str) -> None:
         if not verify_password(password, user.password_hash):

@@ -10,6 +10,7 @@ from backend.models.ai_usage_event import AIUsageEvent
 from backend.models.support_ticket import SupportTicket
 from backend.models.interview_practice import InterviewPracticeAttempt
 from backend.models.admin_audit_event import AdminAuditEvent
+from backend.models.refresh_token import RefreshToken
 
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "SupportTicket",
     "InterviewPracticeAttempt",
     "AdminAuditEvent",
+    "RefreshToken",
 ]
