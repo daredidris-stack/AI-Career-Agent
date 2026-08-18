@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from backend.core.security_middleware import SecurityHeadersMiddleware
+from fastapi import Depends
 
 from backend.routes.skills import router as skills_router
 from backend.routes.dashboard import router as dashboard_router
@@ -24,6 +26,7 @@ from backend.routes.interview_practice import router as interview_practice_route
 from backend.services.ai_usage_service import AIUsageLimitError
 from backend.core.logging import log_request
 from backend.core.settings import CORS_ALLOWED_ORIGINS
+from backend.core.simple_rate_limiter import auth_rate_limit, job_search_rate_limit, ai_endpoint_rate_limit
 
 
 app = FastAPI(
@@ -40,6 +43,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.middleware("http")(log_request)
 
 
@@ -50,15 +55,15 @@ def ai_usage_limit_handler(
     return JSONResponse(status_code=429, content={"detail": str(error)})
 
 
-app.include_router(skills_router)
+app.include_router(skills_router, dependencies=[Depends(ai_endpoint_rate_limit)])
 app.include_router(dashboard_router)
-app.include_router(resume_router)
+app.include_router(resume_router, dependencies=[Depends(ai_endpoint_rate_limit)])
 app.include_router(job_match_router)
 app.include_router(resume_tailor_router)
-app.include_router(cover_letter_router)
+app.include_router(cover_letter_router, dependencies=[Depends(ai_endpoint_rate_limit)])
 app.include_router(analytics_router)
-app.include_router(job_search_router)
-app.include_router(auth_router)
+app.include_router(job_search_router, dependencies=[Depends(job_search_rate_limit)])
+app.include_router(auth_router, dependencies=[Depends(auth_rate_limit)])
 app.include_router(users_router)
 app.include_router(profile_router)
 app.include_router(documents_router)
