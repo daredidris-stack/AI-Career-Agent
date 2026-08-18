@@ -188,11 +188,10 @@ def get_support_service(
 
 
 def get_interview_practice_service(
-    repo: InterviewPracticeRepository = Depends(
-        get_interview_practice_repository
-    ),
+    repo: InterviewPracticeRepository = Depends(get_interview_practice_repository),
+    profile_repo: ProfileRepository = Depends(get_profile_repository),
 ):
-    return InterviewPracticeService(repo)
+    return InterviewPracticeService(repo, profile_repo)
 
 
 def get_resume_service(

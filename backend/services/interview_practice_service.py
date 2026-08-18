@@ -2,14 +2,21 @@ import json
 import re
 from typing import Any
 
+from backend.models.profile import Profile
 from backend.repositories.interview_practice_repository import (
     InterviewPracticeRepository,
 )
+from backend.repositories.profile_repository import ProfileRepository
 
 
 class InterviewPracticeService:
-    def __init__(self, repository: InterviewPracticeRepository):
+    def __init__(
+        self,
+        repository: InterviewPracticeRepository,
+        profile_repository: ProfileRepository,
+    ):
         self.repository = repository
+        self.profile_repository = profile_repository
 
     def score_for_user(
         self,
@@ -20,7 +27,8 @@ class InterviewPracticeService:
         answer: str,
     ) -> dict[str, Any]:
         cleaned_answer = answer.strip()
-        rubric = self.score_answer(cleaned_answer)
+        profile = self.profile_repository.get_by_user_id(user_id)
+        rubric = self.score_answer(cleaned_answer, profile)
         attempt = self.repository.create(
             user_id=user_id,
             role=role.strip(),
@@ -39,7 +47,7 @@ class InterviewPracticeService:
         ]
 
     @staticmethod
-    def score_answer(answer: str) -> dict[str, Any]:
+    def score_answer(answer: str, profile: Profile | None = None) -> dict[str, Any]:
         words = re.findall(r"\b[\w'-]+\b", answer)
         word_count = len(words)
         normalized = answer.casefold()
@@ -107,6 +115,19 @@ class InterviewPracticeService:
             else "State what you personally decided and did, while still crediting the team."
         )
 
+        # Personalize feedback based on profile
+        if profile:
+            target_role = profile.target_role
+            years_experience = profile.years_experience
+            if target_role:
+                structure_feedback = f"For a {target_role} role, clearly outlining the situation, your responsibility, the actions you took, and the results is key. {structure_feedback}"
+                evidence_feedback = f"In {target_role} positions, backing up your claims with concrete numbers or measurable outcomes strengthens your answer. {evidence_feedback}"
+            # Optionally, we could adjust clarity based on years_experience, but we keep it simple for now.
+        else:
+            # Generic feedback when no profile
+            structure_feedback = "In behavioral interviews, clearly outlining the situation, your responsibility, the actions you took, and the results is key. " + structure_feedback
+            evidence_feedback = "In any role, backing up your claims with concrete numbers or measurable outcomes strengthens your answer. " + evidence_feedback
+
         score = min(100, clarity + structure + evidence + ownership)
         return {
             "score": score,
@@ -138,6 +159,7 @@ class InterviewPracticeService:
                 "judgment of technical correctness or hiring likelihood."
             ),
         }
+
     @classmethod
     def _response(cls, attempt) -> dict[str, Any]:
         try:
