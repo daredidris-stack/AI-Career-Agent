@@ -9,6 +9,14 @@ import Header from "../components/layout/Header";
 export default function AppLayout() {
 
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (!mobileNavigationOpen) return undefined;
@@ -38,6 +46,8 @@ export default function AppLayout() {
       <Sidebar
         mobileOpen={mobileNavigationOpen}
         onClose={() => setMobileNavigationOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={setSidebarCollapsed}
       />
 
 
@@ -50,7 +60,11 @@ export default function AppLayout() {
         "
       >
 
-        <Header onMenuOpen={() => setMobileNavigationOpen(true)} />
+        <Header
+          onMenuOpen={() => setMobileNavigationOpen(true)}
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+          sidebarCollapsed={sidebarCollapsed}
+        />
 
 
         <main
@@ -81,5 +95,4 @@ export default function AppLayout() {
     </div>
 
   );
-
 }

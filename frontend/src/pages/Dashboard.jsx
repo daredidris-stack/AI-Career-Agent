@@ -10,6 +10,7 @@ import {
   CheckCircle,
   ArrowRight,
   ListChecks,
+  Zap,
 } from "lucide-react";
 
 import DashboardCard from "../components/cards/DashboardCard";
@@ -88,7 +89,7 @@ function Dashboard() {
 
   }, [reloadKey]);
 
-
+  const loading = !data && !error && !requiresProfile;
 
   if (!data) {
 
@@ -197,120 +198,80 @@ function Dashboard() {
         </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
-          <h2 className="text-xl font-bold text-white">Application pipeline</h2>
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {Object.entries(data.application_pipeline || {}).map(([status, count]) => <div key={status} className="rounded-xl bg-gray-950 p-4"><p className="text-xs capitalize text-gray-500">{status}</p><p className="mt-1 text-2xl font-bold text-white">{count}</p></div>)}
-          </div>
-          {Object.keys(data.application_pipeline || {}).length === 0 && <p className="mt-4 text-sm text-gray-400">No applications tracked yet.</p>}
-        </section>
-        <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
-          <h2 className="text-xl font-bold text-white">Monthly activity</h2>
-          <p className="mt-5 text-4xl font-bold text-blue-400">{data.ai_requests_30d || 0}</p>
-          <p className="mt-1 text-sm text-gray-400">AI-assisted actions in the last 30 days</p>
-          <p className="mt-5 text-sm text-gray-400">{Object.values(data.document_counts || {}).reduce((total, count) => total + count, 0)} saved career documents</p>
-        </section>
-      </div>
-
-
-
-
-
-      {/* Cards */}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-
+      {/* Unified Card Grid */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        {/* Application Pipeline Status Cards */}
+        {Object.entries(data.application_pipeline || {}).map(([status, count]) => (
+          <DashboardCard
+            key={status}
+            title={status.charAt(0).toUpperCase() + status.slice(1)}
+            value={count}
+            icon={<CheckCircle size={28} />}
+            loading={loading}
+          />
+        ))}
+        {/* Monthly Activity Cards */}
         <DashboardCard
-
-          title="Missing Skills"
-
-          value={data.skill_gap}
-
-          icon={<Briefcase size={28}/>}
-
+          title="AI-assisted actions (30d)"
+          value={data.ai_requests_30d || 0}
+          icon={<Zap size={28} />}
+          loading={loading}
         />
-
-
-
         <DashboardCard
-
+          title="Saved career documents"
+          value={Object.values(data.document_counts || {}).reduce((total, count) => total + count, 0)}
+          icon={<FileText size={28} />}
+          loading={loading}
+        />
+        {/* Existing Six Cards */}
+        <DashboardCard
+          title="Missing Skills"
+          value={data.skill_gap}
+          icon={<Briefcase size={28}/>}
+          loading={loading}
+        />
+        <DashboardCard
           title="Resume Score"
-
           value={
             data.resume_score == null
               ? "Not scored"
               : `${data.resume_score}%`
           }
-
           icon={<FileText size={28}/>}
-
+          loading={loading}
         />
-
-
-
         <DashboardCard
-
           title="Jobs Available"
-
           value={data.jobs_available}
-
           icon={<Target size={28}/>}
-
+          loading={loading}
         />
-
-
-
         <DashboardCard
-
           title="Career Progress"
-
           value={`${data.career_progress}%`}
-
           icon={<TrendingUp size={28}/>}
-
+          loading={loading}
         />
-
         <DashboardCard
-
           title="ATS Score"
-
           value={
             data.ats_score == null
               ? "Not scored"
               : `${data.ats_score}%`
           }
-
           icon={<Award size={28}/>}
-
+          loading={loading}
         />
-
-
         <DashboardCard
-
           title="Skills Completed"
-
           value={data.skills_completed}
-
           icon={<CheckCircle size={28}/>}
-
+          loading={loading}
         />
-
-
       </div>
 
-
-
-
-
-
-      {/* Progress + Skill */}
-
-
+      {/* Progress + Skill Section (now using cards above, but we keep the detailed progress and recommended skill sections) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-
 
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
 
@@ -322,14 +283,11 @@ function Dashboard() {
           </h2>
 
 
-
           <p className="text-gray-400 mt-2">
 
             Progress toward becoming a {data.profile.target_role || "stronger candidate"}.
 
           </p>
-
-
 
 
           <div className="mt-8 w-full bg-gray-700 rounded-full h-5">
@@ -349,7 +307,6 @@ function Dashboard() {
           </div>
 
 
-
           <p className="mt-3 text-right text-blue-400 font-bold">
 
             {data.career_progress}%
@@ -358,10 +315,6 @@ function Dashboard() {
 
 
         </div>
-
-
-
-
 
 
 
@@ -386,7 +339,6 @@ function Dashboard() {
               className="text-yellow-400"
 
             />
-
 
 
             <div>
@@ -418,14 +370,7 @@ function Dashboard() {
 
       </div>
 
-
-
-
-
-
-
       {/* Activity */}
-
 
       {data.recent_activity.length > 0 && (
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
@@ -481,21 +426,11 @@ function Dashboard() {
         </div>
       )}
 
-
-
-
-
-
       {/* Analytics */}
 
-
       {data.weekly_progress.length > 0 && (
-        <CareerAnalytics progress={data.weekly_progress} />
+        <CareerAnalytics progress={data.weekly_progress} loading={loading} />
       )}
-
-
-
-
 
     </div>
 

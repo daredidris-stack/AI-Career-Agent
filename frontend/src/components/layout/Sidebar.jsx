@@ -107,7 +107,7 @@ const menuItems = [
 ];
 
 
-function Sidebar({ mobileOpen = false, onClose }) {
+function Sidebar({ mobileOpen = false, onClose, collapsed = false, onToggleCollapse }) {
 
   return (
 
@@ -120,19 +120,34 @@ function Sidebar({ mobileOpen = false, onClose }) {
         className="fixed inset-0 z-40 bg-black/60 md:hidden"
       />
     )}
-    <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-r border-slate-200 bg-white text-slate-900 shadow-xl transition-transform duration-200 md:sticky md:top-0 md:z-auto md:block md:h-screen md:w-64 md:shrink-0 md:translate-x-0 md:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+    <aside className={`fixed inset-y-0 left-0 z-50 ${collapsed ? 'w-16' : 'w-72'} max-w-[85vw] overflow-y-auto border-r border-slate-200 bg-white text-slate-900 shadow-xl transition-transform duration-200 md:sticky md:top-0 md:z-auto md:block md:h-screen md:shrink-0 md:translate-x-0 md:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
-      <div className="flex items-start justify-between border-b border-slate-200 p-6">
+      <div className="flex items-start justify-between border-b border-slate-200 p-4">
 
-        <div>
+        <div className="flex items-center gap-3">
 
-        <h1 className="text-2xl font-bold text-blue-400">
-          NextHire AI
-        </h1>
+          {!collapsed && (
+            <>
+            <h1 className="text-xl font-bold text-blue-400">
+              NextHire AI
+            </h1>
 
-        <p className="mt-1 text-sm text-slate-500">
-          AI Career Copilot
-        </p>
+            <p className="mt-0 text-xs text-slate-500">
+              AI Career Copilot
+            </p>
+            </>
+          )}
+
+          {collapsed && (
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={onToggleCollapse}
+              className="rounded-lg p-3 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            >
+              <LayoutDashboard size={24} />
+            </button>
+          )}
 
         </div>
 
@@ -148,7 +163,7 @@ function Sidebar({ mobileOpen = false, onClose }) {
       </div>
 
 
-      <nav className="mt-6 px-3">
+      <nav className="mt-4 px-2">
 
         {menuItems.map((item) => {
 
@@ -162,7 +177,7 @@ function Sidebar({ mobileOpen = false, onClose }) {
               onClick={onClose}
 
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition ${
+                `flex items-center gap-2 px-3 py-2 rounded-md mb-1 transition ${
                   isActive
                     ? "bg-blue-600 text-white"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -172,9 +187,9 @@ function Sidebar({ mobileOpen = false, onClose }) {
 
               <Icon size={20} />
 
-              <span>
-                {item.name}
-              </span>
+              {!collapsed && (
+                <span>{item.name}</span>
+              )}
 
             </NavLink>
 

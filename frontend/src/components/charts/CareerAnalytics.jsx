@@ -9,7 +9,30 @@ import {
 } from "recharts";
 
 
-function CareerAnalytics({ progress }) {
+function CareerAnalytics({ progress, loading = false }) {
+
+
+  if (loading || !progress || progress.length === 0) {
+    return (
+      <div className="bg-gray-900 rounded-2xl p-6 shadow-lg border border-gray-800 animate-pulse">
+        <h2 className="text-2xl font-bold text-white mb-4">
+          Career Analytics
+        </h2>
+
+        <p className="text-gray-400 mb-6">
+          Resume and ATS improvement progress over time.
+        </p>
+
+        <div className="w-full h-[300px] bg-gray-800 rounded-lg">
+          {/* Skeleton bars */}
+          <div className="flex h-full">
+            <div className="w-1/3 bg-gray-700 h-full rounded-l-lg"></div>
+            <div className="w-2/3 bg-gray-600 h-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
   const formattedData = progress.map((item) => ({
